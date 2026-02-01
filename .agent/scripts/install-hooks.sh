@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # .agent/scripts/install-hooks.sh
-# KAVEN AGENT CORE - Git Hooks Installation
+# Agent Core - Git Hooks Installation
 # Version: 1.0.0
 # Purpose: Install pre-commit and pre-push hooks
 

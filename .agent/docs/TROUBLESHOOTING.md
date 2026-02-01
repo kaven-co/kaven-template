@@ -1,408 +1,255 @@
-# KAVEN AGENT CORE - Troubleshooting
+# Agent Core - Troubleshooting
 
-Version: 1.0.0  
-Last Updated: January 24, 2026
+**Version:** 1.0.0  
+**Last Updated:** January 29, 2026
 
 ---
 
-## Common Issues & Solutions
+## Common Issues
 
-### 🔒 Git Signing Issues
+### 1. Git Signing Not Working
 
-#### Problem: "Unsigned commit"
+**Symptom:**
 ```
-❌ Error: Found 1 unsigned commit(s)
+error: gpg failed to sign the data
 ```
 
-**Solution:**
+**Solutions:**
+
+1. Check SSH key exists:
 ```bash
-# Configure SSH signing
-git config --local gpg.format ssh
-git config --local commit.gpgsign true
-git config --local user.signingkey ~/.ssh/id_ed25519.pub
-
-# If you don't have an SSH key
-ssh-keygen -t ed25519 -C "your_email@example.com"
-
-# Add to GitHub as "Signing Key"
-cat ~/.ssh/id_ed25519.pub
+ls ~/.ssh/id_ed25519.pub
+# or
+ls ~/.ssh/id_rsa.pub
 ```
 
-#### Problem: "Signing key not found"
-```
-❌ Error: Signing key not found at ~/.ssh/id_ed25519.pub
-```
-
-**Solution:**
+2. Verify git config:
 ```bash
-# Check available keys
-ls -la ~/.ssh/
-
-# Use different key
-git config --local user.signingkey ~/.ssh/id_rsa.pub
-
-# Or generate new one
-ssh-keygen -t ed25519 -C "your_email@example.com"
+git config --local commit.gpgsign
+git config --local gpg.format
+git config --local user.signingkey
 ```
 
-#### Problem: "No signature could be verified"
-```
-error: no signature found
-```
-
-**Cause:** `allowed_signers` file missing
-
-**Solution:**
+3. Recreate allowed_signers:
 ```bash
-# Create allowed_signers file
 echo "$(git config user.email) $(cat ~/.ssh/id_ed25519.pub)" > ~/.ssh/allowed_signers
-
-# Configure Git to use it
-git config --local gpg.ssh.allowedSignersFile ~/.ssh/allowed_signers
-
-# Verify
-cat ~/.ssh/allowed_signers
-```
-
-#### Problem: "Bad signature"
-```
-error: gpg.ssh.allowedSignersFile needs to be configured
-```
-
-**Solution:**
-```bash
 git config --local gpg.ssh.allowedSignersFile ~/.ssh/allowed_signers
 ```
 
-#### Problem: "Wrong email in signature"
-
-**Cause:** Signature email doesn't match allowed_signers
-
-**Solution:**
+4. Run setup script:
 ```bash
-# Check current email
-git config user.email
-
-# Update allowed_signers with correct email
-echo "$(git config user.email) $(cat ~/.ssh/id_ed25519.pub)" > ~/.ssh/allowed_signers
-```
-
-#### Problem: Re-sign old commits
-
-**Solution:**
-```bash
-# Re-sign last commit
-git commit --amend --no-edit -S
-
-# Re-sign all commits since origin/main
-git rebase -i origin/main --exec 'git commit --amend --no-edit -S'
-```
-
-**For complete Git signing setup, see:** [DEV_SETUP.md](DEV_SETUP.md)
-
----
-
-### 🧪 Quality Gate Failures
-
-#### Problem: Lint fails
-```
-❌ Lint failed
-```
-
-**Solution:**
-```bash
-# Run lint to see errors
-pnpm run lint
-
-# Auto-fix if possible
-pnpm run lint:fix
-
-# If no lint:fix script exists
-pnpm eslint 'src/**/*.{ts,tsx}' --fix
-```
-
-#### Problem: Typecheck fails
-```
-❌ Typecheck failed (3 errors)
-```
-
-**Solution:**
-```bash
-# See detailed errors
-pnpm run typecheck
-
-# Common fixes:
-# 1. Add missing types
-# 2. Fix type mismatches
-# 3. Add @ts-expect-error for third-party issues (last resort)
-```
-
-#### Problem: Tests fail
-```
-❌ Tests failed (2 tests)
-```
-
-**Solution:**
-```bash
-# Run tests in watch mode
-pnpm test:watch
-
-# Run specific test file
-pnpm test src/module.test.ts
-
-# Update snapshots if needed
-pnpm test -u
+./.agent/scripts/setup-git-signing.sh
 ```
 
 ---
 
-### 📦 Evidence Bundle Issues
+### 2. Pre-commit Hook Not Running
 
-#### Problem: "Evidence bundle failed"
-```
-❌ Quality gates failed. Evidence bundle contains failure details.
-```
+**Symptom:**
+Commits succeed without quality gates running
 
-**Solution:**
-1. Fix the failing quality gate first
-2. Re-run evidence bundle generation:
-   ```bash
-   ./.agent/scripts/evidence-bundle.sh manual test
-   ```
-3. Validate the bundle:
-   ```bash
-   ./.agent/scripts/validate-evidence.sh .agent/artifacts/evidence/latest.json
-   ```
+**Solutions:**
 
-#### Problem: "jq: command not found"
-```
-/bin/sh: 1: jq: not found
-```
-
-**Solution:**
+1. Reinstall hooks:
 ```bash
-# Install jq
-# macOS
-brew install jq
-
-# Ubuntu/Debian
-sudo apt-get install jq
-
-# Verify
-jq --version
+./.agent/scripts/install-hooks.sh
 ```
 
----
-
-### 🚀 Git Hook Issues
-
-#### Problem: "Pre-commit hook failed"
-```
-❌ Error: Git user not configured
-```
-
-**Solution:**
+2. Check hook permissions:
 ```bash
-git config --local user.name "Your Name"
-git config --local user.email "your@email.com"
-```
-
-#### Problem: "Hook not executable"
-```
-permission denied: .git/hooks/pre-commit
-```
-
-**Solution:**
-```bash
-# Make hooks executable
 chmod +x .git/hooks/pre-commit
 chmod +x .git/hooks/pre-push
-
-# Or re-install hooks
-./.agent/scripts/install-hooks.sh
 ```
 
-#### Problem: "Hook symlink broken"
-```
-cannot execute: No such file or directory
-```
-
-**Solution:**
+3. Verify symlinks:
 ```bash
-# Remove broken symlinks
-rm .git/hooks/pre-commit
-rm .git/hooks/pre-push
-
-# Reinstall hooks
-./.agent/scripts/install-hooks.sh
+ls -la .git/hooks/pre-commit
+# Should point to ../../.agent/scripts/pre-commit.sh
 ```
 
 ---
 
-### 📊 Telemetry Issues
+### 3. Telemetry Issues
 
-#### Problem: Telemetry file permission denied
+**Symptom:**
 ```
-❌ Permission denied: ~/.kaven/telemetry.log
+Permission denied: ~/.agent-core/project-name/telemetry.log
 ```
 
-**Solution:**
+**Solutions:**
+
+1. Fix permissions:
 ```bash
-# Fix permissions
-chmod 600 ~/.kaven/telemetry.log
-
-# Or recreate directory
-rm -rf ~/.kaven
-mkdir -p ~/.kaven
-touch ~/.kaven/telemetry.log
-chmod 600 ~/.kaven/telemetry.log
+PROJECT_NAME=$(basename $(pwd))
+chmod 755 ~/.agent-core/$PROJECT_NAME
+chmod 644 ~/.agent-core/$PROJECT_NAME/telemetry.log
 ```
 
-#### Problem: Want to disable telemetry
-```
-How do I turn off telemetry?
-```
-
-**Solution:**
+2. Recreate telemetry directory:
 ```bash
-# Add to ~/.zshrc or ~/.bashrc
-export KAVEN_TELEMETRY=0
+PROJECT_NAME=$(basename $(pwd))
+rm -rf ~/.agent-core/$PROJECT_NAME
+mkdir -p ~/.agent-core/$PROJECT_NAME
+touch ~/.agent-core/$PROJECT_NAME/telemetry.log
+```
 
-# Or set temporarily
-KAVEN_TELEMETRY=0 pnpm dev
+3. Disable telemetry (temporary):
+```bash
+export AGENT_CORE_TELEMETRY=0
+```
+
+4. View telemetry:
+```bash
+tail -f ~/.agent-core/$(basename $PWD)/telemetry.log
 ```
 
 ---
 
-### 🔀 PR Creation Issues
+### 4. Quality Gates Failing
 
-#### Problem: "gh: command not found"
+**Symptom:**
 ```
-❌ Error: GitHub CLI (gh) is not installed
+AG_LINT_CMD not found
 ```
 
-**Solution:**
+**Solutions:**
+
+1. Check config exists:
 ```bash
-# Install GitHub CLI
-# macOS
-brew install gh
-
-# Ubuntu/Debian
-sudo apt install gh
-
-# Other
-# https://cli.github.com
-
-# Authenticate
-gh auth login
+cat .agent/config/quality.env
 ```
 
-#### Problem: "Invalid branch name"
-```
-❌ Error: Invalid branch name: my-feature
-```
-
-**Solution:**
+2. Source config before running:
 ```bash
-# Branch must follow pattern: type/name
-# Valid types: feat, fix, docs, chore, refactor, test
+source .agent/config/quality.env
+echo $AG_LINT_CMD
+```
 
-# Rename branch
-git branch -m feat/my-feature
+3. Verify commands work:
+```bash
+pnpm lint
+pnpm typecheck
+pnpm test
+```
 
-# Or create correct branch
+---
+
+### 5. Evidence Bundle Errors
+
+**Symptom:**
+```
+Error: Evidence directory not found
+```
+
+**Solutions:**
+
+1. Create directories:
+```bash
+mkdir -p .agent/artifacts/evidence
+mkdir -p .agent/artifacts/reports
+mkdir -p .agent/artifacts/logs
+```
+
+2. Run bootstrap:
+```bash
+./.agent/scripts/bootstrap.sh
+```
+
+---
+
+### 6. Branch Name Rejected
+
+**Symptom:**
+```
+Error: Invalid branch name
+```
+
+**Solutions:**
+
+Valid branch patterns:
+- `feat/feature-name`
+- `fix/bug-description`
+- `docs/update-readme`
+- `chore/cleanup`
+- `refactor/module-name`
+- `test/add-tests`
+
+Create correct branch:
+```bash
 git checkout -b feat/my-feature
 ```
 
 ---
 
-### 🏗️ Bootstrap Issues
+### 7. Unsigned Commits Error
 
-#### Problem: Bootstrap fails halfway
+**Symptom:**
 ```
-❌ Bootstrap completed with errors
-```
-
-**Solution:**
-1. Check which step failed
-2. Fix the specific issue
-3. Re-run bootstrap:
-   ```bash
-   ./.agent/scripts/bootstrap.sh
-   ```
-
-#### Problem: "pnpm: command not found"
-```
-⚠️  No package manager found
+Error: Found unsigned commit(s)
 ```
 
-**Solution:**
+**Solutions:**
+
+1. Re-sign last commit:
 ```bash
-# Install pnpm
-npm install -g pnpm
+git commit --amend --no-edit -S
+```
 
-# Or use npm instead
-# (bootstrap will detect npm automatically)
+2. Re-sign multiple commits:
+```bash
+git rebase -i origin/main --exec 'git commit --amend --no-edit -S'
+```
+
+3. Check signing is enabled:
+```bash
+git config --local commit.gpgsign
+# Should return: true
+```
+
+---
+
+### 8. BASH_SOURCE Error (Zsh)
+
+**Symptom:**
+```
+BASH_SOURCE[0]: parameter not set
+```
+
+**Solution:**
+Scripts are compatible with both Bash and Zsh. If you see this error:
+
+1. Ensure you're using latest scripts
+2. Run scripts with bash explicitly:
+```bash
+bash ./.agent/scripts/telemetry.sh
 ```
 
 ---
 
 ## Getting Help
 
-If none of these solutions work:
-
-1. **Check logs:**
-   ```bash
-   cat .agent/artifacts/logs/latest.log
-   ```
-
-2. **Check telemetry:**
-   ```bash
-   tail -f ~/.kaven/telemetry.log
-   ```
-
-3. **Validate agent setup:**
-   ```bash
-   ./.agent/scripts/validate_agent.sh
-   ```
-
-4. **Generate evidence for debugging:**
-   ```bash
-   ./.agent/scripts/evidence-bundle.sh debug troubleshooting
-   ```
-
-5. **Ask in Claude:**
-   - Describe the issue
-   - Attach evidence bundle
-   - Include error messages
+1. Check this troubleshooting guide
+2. Review `.agent/docs/DEV_SETUP.md`
+3. Check skill: `.agent/skills/lessons-learned/SKILL.md`
+4. Search existing issues on GitHub
 
 ---
 
-## Reset Everything
+## Debug Mode
 
-If all else fails, nuclear option:
-
+Enable verbose output:
 ```bash
-# WARNING: This will reset everything!
-
-# 1. Remove all artifacts
-rm -rf .agent/artifacts/*
-
-# 2. Remove git hooks
-rm .git/hooks/pre-commit
-rm .git/hooks/pre-push
-
-# 3. Re-bootstrap
+export DEBUG=1
 ./.agent/scripts/bootstrap.sh
-
-# 4. Verify
-./.agent/scripts/validate_agent.sh
 ```
 
----
+Check all configs:
+```bash
+git config --local --list | grep -E "(gpg|sign)"
+```
 
-## References
-
-- Scripts: `.agent/scripts/`
-- Documentation: `.agent/docs/`
-- MASTER PLAN: Full implementation guide
+Test telemetry:
+```bash
+./.agent/scripts/telemetry.sh test.event true 0 '{}'
+cat ~/.agent-core/$(basename $PWD)/telemetry.log | tail -1
+```

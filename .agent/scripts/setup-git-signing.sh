@@ -2,7 +2,7 @@
 set -e
 
 # =============================================================================
-# KAVEN CLI - Git Signing Setup Script
+# Agent Core - Git Signing Setup Script
 # =============================================================================
 # Automates the setup of SSH-based commit signing for Git
 # Compatible with: Bash, Zsh, macOS, Linux

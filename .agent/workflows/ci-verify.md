@@ -1,43 +1,38 @@
 ---
-name: ci-verify
+description: Quality gates do projeto. Usa comandos configurados em quality.env.
 ---
 
-# /ci-verify — Quality gates + evidência (workspace)
+Este workflow executa os quality gates configurados para este projeto.
 
-## 0) Iniciar evidências
+1. Carregue configuração
+   // turbo
+   ```bash
+   source .agent/config/quality.env
+   echo "Lint: $AG_LINT_CMD"
+   echo "Type: $AG_TYPECHECK_CMD"
+   echo "Test: $AG_TEST_CMD"
+   ```
 
-```bash
-bash .agent/scripts/evidence_init.sh ci-verify "rodando gates"
-```
+2. Execute lint
+   ```bash
+   source .agent/config/quality.env && $AG_LINT_CMD
+   ```
 
-## 1) Rodar gates
+3. Execute typecheck
+   ```bash
+   source .agent/config/quality.env && $AG_TYPECHECK_CMD
+   ```
 
-```bash
-bash .agent/scripts/ag.sh lint
-bash .agent/scripts/ag.sh typecheck
-bash .agent/scripts/ag.sh test
-```
+4. Execute testes
+   ```bash
+   source .agent/config/quality.env && $AG_TEST_CMD
+   ```
 
-## 2) Evidência mínima
+5. Gere evidência
+   // turbo
+   ```bash
+   git diff --stat
+   ```
 
-- outputs dos comandos
-- `git diff --stat`
-
-## 3) Finalizar evidências
-
-```bash
-bash .agent/scripts/evidence_finalize.sh ci-verify
-```
-
-## 4) Documentar
-
-- `/impl-notes`
-
----
-
-## Fechamento de documentação (aplicação)
-
-Após concluir o PR (gates verdes) e fazer o commit do código, rode também:
-
-- `/document` para gerar **documentação Nextra/MDX** em `apps/docs/content/...` e atualizar `_meta.js`.
-- Commit separado de docs é recomendado.
+6. Se falhou, use /g-retry-loop
+   Não ignore erros. Corrija antes de prosseguir.

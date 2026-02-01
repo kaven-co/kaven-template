@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # .agent/scripts/create-pr.sh
-# KAVEN AGENT CORE - Automated PR Creation
+# Agent Core - PR Information Generator
 # Version: 1.0.0
-# Purpose: Create Pull Requests automatically
+# Purpose: Generate PR information for manual creation (NO direct gh usage)
 
 set -euo pipefail
 
@@ -14,200 +14,143 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 echo ""
-echo "🚀 Creating Pull Request..."
+echo "📋 Generating Pull Request Information..."
 echo ""
 
 # ==============================================================================
-# 1. VALIDATE ENVIRONMENT
-# ==============================================================================
-
-# Check if gh CLI is installed
-if ! command -v gh &> /dev/null; then
-    echo -e "${RED}❌ Error: GitHub CLI (gh) is not installed${NC}"
-    echo ""
-    echo "Install with:"
-    echo "  brew install gh         (macOS)"
-    echo "  apt install gh          (Ubuntu/Debian)"
-    echo "  https://cli.github.com  (Other)"
-    echo ""
-    exit 1
-fi
-
-# Check if authenticated
-if ! gh auth status &> /dev/null; then
-    echo -e "${RED}❌ Error: Not authenticated with GitHub${NC}"
-    echo ""
-    echo "Authenticate with:"
-    echo "  gh auth login"
-    echo ""
-    exit 1
-fi
-
-# ==============================================================================
-# 2. GET CURRENT BRANCH
+# 1. GET CURRENT BRANCH
 # ==============================================================================
 
 CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
-# Validate branch name
-if ! echo "$CURRENT_BRANCH" | grep -qE "^(feat|fix|docs|chore|refactor|test)/"; then
-    echo -e "${RED}❌ Error: Invalid branch name: $CURRENT_BRANCH${NC}"
+# Validate not on main
+if [[ "$CURRENT_BRANCH" == "main" || "$CURRENT_BRANCH" == "master" ]]; then
+    echo -e "${RED}❌ Error: Cannot create PR from main/master branch${NC}"
     echo ""
-    echo "Branch must follow pattern: <type>/<name>"
-    echo ""
-    echo "Valid types:"
-    echo "  feat     - New feature"
-    echo "  fix      - Bug fix"
-    echo "  docs     - Documentation"
-    echo "  chore    - Maintenance"
-    echo "  refactor - Refactoring"
-    echo "  test     - Tests"
-    echo ""
+    echo "Create a feature branch first:"
+    echo "  git checkout -b feat/your-feature"
     exit 1
+fi
+
+# Validate branch name pattern
+if ! echo "$CURRENT_BRANCH" | grep -qE "^(feat|fix|docs|chore|refactor|test)/"; then
+    echo -e "${YELLOW}⚠️  Warning: Branch name doesn't follow convention${NC}"
+    echo ""
+    echo "Recommended pattern: <type>/<description>"
+    echo "Types: feat, fix, docs, chore, refactor, test"
+    echo ""
 fi
 
 echo "  Branch: $CURRENT_BRANCH"
 
 # ==============================================================================
-# 3. PUSH BRANCH
+# 2. GENERATE PR TITLE
 # ==============================================================================
 
-echo ""
-echo "📤 Pushing branch..."
-
-if ! git push -u origin "$CURRENT_BRANCH" 2>&1; then
-    echo -e "${RED}❌ Error: Failed to push branch${NC}"
-    exit 1
-fi
-
-echo -e "${GREEN}✅ Branch pushed${NC}"
-
-# ==============================================================================
-# 4. GENERATE PR TITLE
-# ==============================================================================
-
-# Extract type and name from branch
 TYPE=$(echo "$CURRENT_BRANCH" | cut -d'/' -f1)
 NAME=$(echo "$CURRENT_BRANCH" | cut -d'/' -f2- | tr '-' ' ' | awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) tolower(substr($i,2))}1')
 
 PR_TITLE="$TYPE: $NAME"
 
-echo ""
-echo "  Title: $PR_TITLE"
-
 # ==============================================================================
-# 5. GENERATE PR BODY
+# 3. GET COMMIT MESSAGES
 # ==============================================================================
 
-# Get commit messages
 COMMITS=$(git log origin/main..HEAD --format="- %s" 2>/dev/null || git log HEAD~5..HEAD --format="- %s")
 
-# Get diff stats
-DIFF_STATS=$(git diff --stat origin/main..HEAD 2>/dev/null || git diff --stat HEAD~1..HEAD)
+# ==============================================================================
+# 4. GET DIFF STATS
+# ==============================================================================
 
-# Find latest evidence bundle
-LATEST_EVIDENCE=""
+DIFF_STATS=$(git diff --stat origin/main..HEAD 2>/dev/null || git diff --stat HEAD~1..HEAD)
+FILES_CHANGED=$(git diff --numstat origin/main..HEAD 2>/dev/null | wc -l || echo "?")
+
+# ==============================================================================
+# 5. FIND EVIDENCE BUNDLE
+# ==============================================================================
+
+EVIDENCE_INFO=""
 if [[ -d ".agent/artifacts/evidence" ]]; then
     LATEST_EVIDENCE=$(ls -t .agent/artifacts/evidence/*.json 2>/dev/null | head -1 || echo "")
+    if [[ -n "$LATEST_EVIDENCE" ]]; then
+        EVIDENCE_INFO="Evidence bundle: $(basename "$LATEST_EVIDENCE")"
+    fi
 fi
 
-# Build PR body
-PR_BODY=$(cat <<EOF
+# ==============================================================================
+# 6. OUTPUT PR INFORMATION
+# ==============================================================================
+
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo -e "${GREEN}📝 PR INFORMATION${NC}"
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo -e "${BLUE}Title:${NC} $PR_TITLE"
+echo ""
+echo -e "${BLUE}Branch:${NC} $CURRENT_BRANCH → main"
+echo ""
+echo -e "${BLUE}Files changed:${NC} $FILES_CHANGED"
+echo ""
+echo -e "${BLUE}Commits:${NC}"
+echo "$COMMITS"
+echo ""
+if [[ -n "$EVIDENCE_INFO" ]]; then
+    echo -e "${BLUE}Evidence:${NC} $EVIDENCE_INFO"
+    echo ""
+fi
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo -e "${YELLOW}📋 SUGGESTED PR DESCRIPTION:${NC}"
+echo ""
+cat << DESCRIPTION
 ## 📝 Description
 
-<!-- Describe your changes in detail -->
+<!-- Describe your changes -->
 
 ## 🎯 Type of Change
 
 - [$([[ "$TYPE" == "feat" ]] && echo "x" || echo " ")] feat: New feature
 - [$([[ "$TYPE" == "fix" ]] && echo "x" || echo " ")] fix: Bug fix
-- [$([[ "$TYPE" == "docs" ]] && echo "x" || echo " ")] docs: Documentation update
+- [$([[ "$TYPE" == "docs" ]] && echo "x" || echo " ")] docs: Documentation
 - [$([[ "$TYPE" == "chore" ]] && echo "x" || echo " ")] chore: Maintenance
-- [$([[ "$TYPE" == "refactor" ]] && echo "x" || echo " ")] refactor: Code refactoring
-- [$([[ "$TYPE" == "test" ]] && echo "x" || echo " ")] test: Test addition/update
+- [$([[ "$TYPE" == "refactor" ]] && echo "x" || echo " ")] refactor: Refactoring
+- [$([[ "$TYPE" == "test" ]] && echo "x" || echo " ")] test: Tests
 
 ## 📋 Changes
 
 $COMMITS
 
-## 🧪 Testing
-
-- [ ] Unit tests pass
-- [ ] Integration tests pass
-- [ ] Manual testing completed
-
-## 📊 Evidence Bundle
-
-### Git Diff Stats
+## 📊 Diff Stats
 
 \`\`\`
 $DIFF_STATS
 \`\`\`
 
-$(if [[ -n "$LATEST_EVIDENCE" ]]; then
-    echo "### Latest Evidence Bundle"
-    echo ""
-    echo "File: \`$(basename "$LATEST_EVIDENCE")\`"
-    echo ""
-    echo "<details>"
-    echo "<summary>View Evidence</summary>"
-    echo ""
-    echo "\`\`\`json"
-    cat "$LATEST_EVIDENCE"
-    echo "\`\`\`"
-    echo ""
-    echo "</details>"
-fi)
-
 ## ✅ Checklist
 
 - [ ] Code follows style guidelines
-- [ ] Types are correct
 - [ ] Tests added/updated
 - [ ] Documentation updated
-- [ ] No breaking changes (or documented)
 - [ ] Commits are signed
-- [ ] Evidence Bundle attached
-
----
-
-**Auto-generated by KAVEN AGENT CORE**
-EOF
-)
-
-# ==============================================================================
-# 6. CREATE PR
-# ==============================================================================
-
+DESCRIPTION
 echo ""
-echo "🔀 Creating Pull Request..."
-
-if ! gh pr create \
-    --title "$PR_TITLE" \
-    --body "$PR_BODY" \
-    --base main \
-    --head "$CURRENT_BRANCH" 2>&1; then
-    
-    echo -e "${RED}❌ Error: Failed to create PR${NC}"
-    exit 1
-fi
-
-# ==============================================================================
-# 7. SUCCESS
-# ==============================================================================
-
-PR_URL=$(gh pr view --json url -q .url 2>/dev/null || echo "")
-
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo -e "${GREEN}⚠️  MANUAL ACTION REQUIRED${NC}"
 echo ""
-echo -e "${GREEN}✅ PR created successfully!${NC}"
+echo "Create the PR manually at:"
+echo "  https://github.com/YOUR_ORG/YOUR_REPO/compare/main...$CURRENT_BRANCH"
 echo ""
-if [[ -n "$PR_URL" ]]; then
-    echo "  URL: $PR_URL"
-fi
+echo "Or use GitHub CLI manually:"
+echo "  gh pr create --title \"$PR_TITLE\" --body-file <(cat << 'BODY'"
+echo "... paste description above ..."
+echo "BODY"
+echo ")"
 echo ""
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
 exit 0
