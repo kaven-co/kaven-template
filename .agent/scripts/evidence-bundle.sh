@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # .agent/scripts/evidence-bundle.sh
-# KAVEN AGENT CORE - Evidence Bundle Generator
+# Agent Core - Evidence Bundle Generator
 # Version: 1.0.0
 # Purpose: Generate complete evidence bundle in JSON format
 

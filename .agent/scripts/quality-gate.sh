@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # .agent/scripts/quality-gate.sh
-# KAVEN AGENT CORE - Quality Gates Runner
+# Agent Core - Quality Gates Runner
 # Version: 1.0.0
 # Purpose: Run quality gates manually
 

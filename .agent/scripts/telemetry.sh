@@ -1,20 +1,42 @@
 #!/usr/bin/env bash
 # .agent/scripts/telemetry.sh
-# KAVEN AGENT CORE - Telemetry System
+# Agent Core - Telemetry System
 # Version: 1.0.0
-# Purpose: Emit telemetry events for tracking
+# Purpose: Emit telemetry events with per-project isolation
 
 set -euo pipefail
 
 # ==============================================================================
-# CONFIGURATION
+# CONFIGURATION (Per-Project Isolation)
 # ==============================================================================
 
-TELEMETRY_LOG="${KAVEN_TELEMETRY_LOG:-$HOME/.kaven/telemetry.log}"
-TELEMETRY_ENABLED="${KAVEN_TELEMETRY:-1}"
+# Get project name from current directory or git root
+get_project_name() {
+    local project_dir
+    project_dir=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+    basename "$project_dir"
+}
 
-# Create telemetry directory if it doesn't exist
-mkdir -p "$(dirname "$TELEMETRY_LOG")"
+# Initialize telemetry directory (lazy init - no bootstrap required)
+init_telemetry_dir() {
+    local project_name
+    project_name=$(get_project_name)
+    local telemetry_dir="$HOME/.agent-core/$project_name"
+    
+    if [[ ! -d "$telemetry_dir" ]]; then
+        mkdir -p "$telemetry_dir"
+    fi
+    
+    echo "$telemetry_dir"
+}
+
+# Get telemetry log path
+TELEMETRY_DIR=$(init_telemetry_dir)
+TELEMETRY_LOG="${AGENT_CORE_TELEMETRY_LOG:-$TELEMETRY_DIR/telemetry.log}"
+TELEMETRY_ENABLED="${AGENT_CORE_TELEMETRY:-1}"
+
+# Ensure log file exists
+touch "$TELEMETRY_LOG"
 
 # ==============================================================================
 # HELPER FUNCTIONS
@@ -32,23 +54,24 @@ generate_uuid() {
     fi
 }
 
-# Get session ID (or create new one)
+# Get session ID (or create new one) - per project
 get_session_id() {
-    SESSION_FILE="$HOME/.kaven/session_id"
+    local session_file="$TELEMETRY_DIR/session_id"
     
-    if [[ -f "$SESSION_FILE" ]]; then
-        cat "$SESSION_FILE"
+    if [[ -f "$session_file" ]]; then
+        cat "$session_file"
     else
-        NEW_SESSION=$(generate_uuid)
-        echo "$NEW_SESSION" > "$SESSION_FILE"
-        echo "$NEW_SESSION"
+        local new_session
+        new_session=$(generate_uuid)
+        echo "$new_session" > "$session_file"
+        echo "$new_session"
     fi
 }
 
 # Hash identifier for privacy (SHA-256)
 hash_identifier() {
     local id=$1
-    local salt="${KAVEN_TELEMETRY_SALT:-kaven-default-salt}"
+    local salt="${AGENT_CORE_TELEMETRY_SALT:-agent-core-default-salt}"
     
     if command -v sha256sum &> /dev/null; then
         echo -n "${id}${salt}" | sha256sum | awk '{print $1}'
@@ -77,30 +100,39 @@ emit_event() {
     local metadata=${4:-"{}"}
     
     # Generate event ID
-    local event_id=$(generate_uuid)
-    local timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-    local session_id=$(get_session_id)
+    local event_id
+    event_id=$(generate_uuid)
+    local timestamp
+    timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+    local session_id
+    session_id=$(get_session_id)
     
     # Get context
-    local repo_name=$(basename "$(git rev-parse --show-toplevel 2>/dev/null || pwd)")
-    local git_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
-    local git_commit=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
+    local project_name
+    project_name=$(get_project_name)
+    local git_branch
+    git_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
+    local git_commit
+    git_commit=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
     
     # Get environment
     local environment=${NODE_ENV:-development}
-    local platform=$(uname -s)
-    local node_version=$(node --version 2>/dev/null || echo "unknown")
-    local cli_version=$(cat package.json 2>/dev/null | grep -oP '"version":\s*"\K[^"]+' || echo "unknown")
+    local platform
+    platform=$(uname -s)
+    local node_version
+    node_version=$(node --version 2>/dev/null || echo "unknown")
     
     # Get user info (hashed for privacy)
     local user_id=""
-    local git_email=$(git config user.email 2>/dev/null || echo "")
+    local git_email
+    git_email=$(git config user.email 2>/dev/null || echo "")
     if [[ -n "$git_email" ]]; then
         user_id=$(hash_identifier "$git_email")
     fi
     
     # Build JSON event
-    local event_json=$(cat <<EOF
+    local event_json
+    event_json=$(cat <<EOF
 {
   "id": "$event_id",
   "timestamp": "$timestamp",
@@ -108,13 +140,12 @@ emit_event() {
   "type": "$event_type",
   "sessionId": "$session_id",
   "userId": "$user_id",
-  "repo": "$repo_name",
+  "project": "$project_name",
   "branch": "$git_branch",
   "commit": "$git_commit",
   "environment": "$environment",
   "platform": "$platform",
   "nodeVersion": "$node_version",
-  "cliVersion": "$cli_version",
   "success": $success,
   "duration": $duration,
   "metadata": $metadata
@@ -159,26 +190,46 @@ emit_git_operation() {
     emit_event "git.$operation.end" "$success" "$duration" "{}"
 }
 
+emit_workflow_start() {
+    local workflow=$1
+    emit_event "workflow.start" "true" "0" "{\"workflow\": \"$workflow\"}"
+}
+
+emit_workflow_end() {
+    local workflow=$1
+    local success=$2
+    local duration=$3
+    emit_event "workflow.end" "$success" "$duration" "{\"workflow\": \"$workflow\"}"
+}
+
+emit_evidence_bundle() {
+    local bundle_id=$1
+    local files_changed=$2
+    emit_event "evidence.bundle" "true" "0" "{\"bundleId\": \"$bundle_id\", \"filesChanged\": $files_changed}"
+}
+
 # ==============================================================================
-# MAIN FUNCTION (for testing)
+# MAIN FUNCTION (for testing and direct usage)
 # ==============================================================================
 
 if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
     # Script is being run directly (not sourced)
     
     if [[ $# -eq 0 ]]; then
+        echo "Agent Core Telemetry v1.0.0"
+        echo ""
         echo "Usage: $0 <event_type> [success] [duration] [metadata]"
+        echo ""
+        echo "Telemetry location: $TELEMETRY_LOG"
+        echo "Project: $(get_project_name)"
         echo ""
         echo "Examples:"
         echo "  $0 cli.command.start true 0 '{\"command\": \"init\"}'"
         echo "  $0 quality.lint.end true 1500 '{\"errorsFound\": 0}'"
         echo ""
-        echo "Convenience functions (when sourced):"
-        echo "  emit_cli_command_start <command>"
-        echo "  emit_cli_command_end <command> <success> <duration>"
-        echo "  emit_quality_gate <gate> <success> <duration> [errors]"
-        echo "  emit_git_operation <operation> <success> <duration>"
-        exit 1
+        echo "Disable telemetry:"
+        echo "  export AGENT_CORE_TELEMETRY=0"
+        exit 0
     fi
     
     emit_event "$@"

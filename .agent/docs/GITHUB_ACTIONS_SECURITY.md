@@ -1,4 +1,4 @@
-# KAVEN AGENT CORE - GitHub Actions Security Guide
+# Agent Core AGENT CORE - GitHub Actions Security Guide
 
 **Version:** 1.0.0  
 **Last Updated:** January 24, 2026
@@ -173,7 +173,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: production
-      url: https://kaven.site
+      url: https://agent-core.site
     steps:
       - uses: actions/checkout@v4
         with:

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # .agent/scripts/bootstrap.sh
-# KAVEN AGENT CORE - Bootstrap Script
+# Agent Core - Bootstrap Script
 # Version: 1.0.0
-# Purpose: Initial setup for KAVEN AGENT CORE
+# Purpose: Initial setup for Agent Core
 
 set -euo pipefail
 
@@ -14,7 +14,12 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 echo ""
-echo "🚀 Bootstrapping KAVEN AGENT CORE..."
+echo "🚀 Bootstrapping Agent Core..."
+echo ""
+
+# Get project name
+PROJECT_NAME=$(basename "$(git rev-parse --show-toplevel 2>/dev/null || pwd)")
+echo "  Project: $PROJECT_NAME"
 echo ""
 
 # ==============================================================================
@@ -67,7 +72,6 @@ if [[ -f "package.json" ]]; then
     echo ""
     echo "📦 Installing node dependencies..."
     
-    # Check if pnpm is installed
     if command -v pnpm &> /dev/null; then
         pnpm install
         echo -e "${GREEN}✅ Dependencies installed (pnpm)${NC}"
@@ -80,7 +84,7 @@ if [[ -f "package.json" ]]; then
 fi
 
 # ==============================================================================
-# 3. CONFIGURE GIT SIGNING
+# 4. CONFIGURE GIT SIGNING
 # ==============================================================================
 
 echo ""
@@ -121,7 +125,7 @@ else
 fi
 
 # ==============================================================================
-# 4. CREATE ARTIFACTS DIRECTORIES
+# 5. CREATE ARTIFACTS DIRECTORIES
 # ==============================================================================
 
 echo ""
@@ -134,26 +138,33 @@ mkdir -p .agent/artifacts/logs
 echo -e "${GREEN}✅ Directories created${NC}"
 
 # ==============================================================================
-# 5. INITIALIZE TELEMETRY
+# 6. INITIALIZE TELEMETRY (Per-Project)
 # ==============================================================================
 
 echo ""
 echo "📊 Initializing telemetry..."
 
-mkdir -p ~/.kaven
-touch ~/.kaven/telemetry.log
+TELEMETRY_DIR="$HOME/.agent-core/$PROJECT_NAME"
+mkdir -p "$TELEMETRY_DIR"
+touch "$TELEMETRY_DIR/telemetry.log"
 
 # Check if telemetry is disabled
-if [[ "${KAVEN_TELEMETRY:-1}" == "0" ]]; then
-    echo -e "${YELLOW}⚠️  Telemetry disabled (KAVEN_TELEMETRY=0)${NC}"
+if [[ "${AGENT_CORE_TELEMETRY:-1}" == "0" ]]; then
+    echo -e "${YELLOW}⚠️  Telemetry disabled (AGENT_CORE_TELEMETRY=0)${NC}"
 else
     echo -e "${GREEN}✅ Telemetry initialized${NC}"
-    echo "   Log: ~/.kaven/telemetry.log"
-    echo "   Disable with: export KAVEN_TELEMETRY=0"
+    echo "   Log: $TELEMETRY_DIR/telemetry.log"
+    echo "   Disable with: export AGENT_CORE_TELEMETRY=0"
+fi
+
+# Emit bootstrap event
+if [[ -f ".agent/scripts/telemetry.sh" ]]; then
+    source .agent/scripts/telemetry.sh
+    emit_event "system.bootstrap" "true" "0" "{\"project\": \"$PROJECT_NAME\"}"
 fi
 
 # ==============================================================================
-# 6. VERIFY SETUP
+# 7. VERIFY SETUP
 # ==============================================================================
 
 echo ""
@@ -192,8 +203,16 @@ else
     ERRORS=$((ERRORS + 1))
 fi
 
+# Check telemetry
+if [[ -f "$TELEMETRY_DIR/telemetry.log" ]]; then
+    echo -e "${GREEN}✅${NC} Telemetry initialized at $TELEMETRY_DIR"
+else
+    echo -e "${RED}❌${NC} Telemetry NOT initialized"
+    ERRORS=$((ERRORS + 1))
+fi
+
 # ==============================================================================
-# 7. FINAL MESSAGE
+# 8. FINAL MESSAGE
 # ==============================================================================
 
 echo ""
@@ -201,11 +220,14 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo ""
 
 if [[ $ERRORS -eq 0 ]]; then
-    echo -e "${GREEN}✅ KAVEN AGENT CORE bootstrapped successfully!${NC}"
+    echo -e "${GREEN}✅ Agent Core bootstrapped successfully!${NC}"
+    echo ""
+    echo "Project: $PROJECT_NAME"
+    echo "Telemetry: $TELEMETRY_DIR/telemetry.log"
     echo ""
     echo "Next steps:"
     echo "  1. Verify commit signing: git config --get user.signingkey"
-    echo "  2. Run preflight check: /preflight (in Claude)"
+    echo "  2. Run quality gates: ./.agent/scripts/quality-gate.sh"
     echo "  3. Start development!"
 else
     echo -e "${RED}❌ Bootstrap completed with $ERRORS error(s)${NC}"

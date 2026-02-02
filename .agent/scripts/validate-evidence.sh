@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # .agent/scripts/validate-evidence.sh
-# KAVEN AGENT CORE - Evidence Bundle Validator
+# Agent Core - Evidence Bundle Validator
 # Version: 1.0.0
 # Purpose: Validate evidence bundle JSON files
 

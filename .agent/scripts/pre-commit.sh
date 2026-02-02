@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # .agent/scripts/pre-commit.sh
-# KAVEN AGENT CORE - Pre-Commit Hook
+# Agent Core - Pre-Commit Hook
 # Version: 1.0.0
 # Purpose: Run quality gates before commit
 

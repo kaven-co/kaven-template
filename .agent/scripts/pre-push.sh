@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # .agent/scripts/pre-push.sh
-# KAVEN AGENT CORE - Pre-Push Hook
+# Agent Core - Pre-Push Hook
 # Version: 1.0.0
 # Purpose: Validate before pushing to remote
 
