@@ -1,0 +1,1158 @@
+{
+  "Common": {
+    "dashboard": "Dashboard",
+    "actions": "Actions",
+    "users": "Users",
+    "export": "Export",
+    "exporting": "Exporting...",
+    "exportError": "Error exporting data",
+    "business": "Business",
+    "comingSoon": "Coming soon for {name}",
+    "cancel": "Cancel",
+    "menu": {
+      "profile": "Profile",
+      "settings": "Settings",
+      "logout": "Logout"
+    },
+    "phoneInput": {
+      "placeholder": "Enter phone number",
+      "search": "Search...",
+      "noCountries": "No countries found",
+      "invalid": "Invalid phone number"
+    },
+    "addressInput": {
+      "placeholder": "Enter address",
+      "loading": "Loading..."
+    },
+    "passwordValidator": {
+      "strength": "Password Strength",
+      "requirements": "Requirements",
+      "levels": {
+        "veryWeak": "Very Weak",
+        "weak": "Weak",
+        "fair": "Fair",
+        "good": "Good",
+        "strong": "Strong"
+      },
+      "checklist": {
+        "length": "At least 8 characters",
+        "lowercase": "One lowercase letter",
+        "uppercase": "One uppercase letter",
+        "number": "One number",
+        "special": "One special character"
+      },
+      "errors": {
+        "required": "Password is required",
+        "invalid": "Password must contain at least: 1 lowercase letter, 1 uppercase letter, 1 number and 1 special character"
+      }
+    },
+    "errors": {
+      "notFoundTitle": "Page Not Found (404)",
+      "notFoundDescription": "Oops! The page you are looking for does not exist or has been moved. Check the URL or go back home.",
+      "notFoundBack": "Back to Dashboard",
+      "errorTitle": "Something went wrong! (500)",
+      "errorDescription": "We encountered an unexpected error while processing your request. Our engineers have been notified.",
+      "errorRetry": "Try again"
+    },
+    "saved": "Saved successfully"
+  },
+  "Dashboard": {
+    "title": "{name} Dashboard",
+    "welcome": "Welcome back to your workspace!",
+    "cards": {
+      "totalUsers": "Total Active Users",
+      "newSignups": "New Signups",
+      "activationRate": "Activation Rate",
+      "totalRevenue": "Total Revenue",
+      "totalInvoices": "Total Invoices"
+    },
+    "metrics": {
+      "last7Days": "last 7 days",
+      "vsPrevious7Days": "vs previous 7 days"
+    },
+    "charts": {
+      "currentActivity": "Current Activity",
+      "activityByType": "Activity by type",
+      "activityTrends": "Activity Trends",
+      "trendComparison": "(+43%) than last year"
+    },
+    "table": {
+      "title": "Active Users",
+      "columns": {
+        "user": "User",
+        "role": "Role",
+        "joined": "Joined",
+        "action": "Action"
+      }
+    }
+  },
+  "Policies": {
+    "title": "Access Policies",
+    "description": "Manage security and access rules for your workspace.",
+    "list": {
+      "name": "Policy Name",
+      "type": "Type",
+      "target": "Target",
+      "enforcement": "Enforcement",
+      "status": "Status",
+      "createdAt": "Created At",
+      "empty": "No policies found.",
+      "active": "Active",
+      "inactive": "Inactive",
+      "actions": {
+        "edit": "Edit",
+        "delete": "Delete"
+      },
+      "deleteConfirm": {
+        "title": "Delete Policy",
+        "description": "Are you sure you want to delete this policy? This action cannot be undone.",
+        "cancel": "Cancel",
+        "confirm": "Delete"
+      }
+    },
+    "form": {
+      "create": "Create Policy",
+      "edit": "Edit Policy",
+      "basicInfo": "Basic Information",
+      "conditions": "Conditions",
+      "namePlaceholder": "Ex: IP Whitelist for Office",
+      "typeLabel": "Policy Type",
+      "targetTypeLabel": "Target Type",
+      "targetIdLabel": "Target ID (Optional)",
+      "enforcementLabel": "Action on match",
+      "active": "Active",
+      "inactive": "Inactive",
+      "save": "Save Policy",
+      "cancel": "Cancel"
+    },
+    "types": {
+      "IP_WHITELIST": "IP Whitelist/Blacklist",
+      "DEVICE_TRUST": "Device Trust",
+      "TIME_BASED": "Time-based Access",
+      "GEO_RESTRICTION": "Geo Restriction"
+    },
+    "enforcements": {
+      "DENY": "Deny Access",
+      "ALLOW": "Allow Access",
+      "WARN": "Warn & Log",
+      "REQUIRE_MFA": "Require MFA"
+    },
+    "targets": {
+      "SPACE": "Space",
+      "ROLE": "Role",
+      "CAPABILITY": "Capability",
+      "USER": "User",
+      "GLOBAL": "Global"
+    },
+    "ipConfig": {
+      "allowedIps": "Allowed IPs / CIDR",
+      "blockedIps": "Blocked IPs / CIDR",
+      "placeholder": "Ex: 192.168.1.1 or 10.0.0.0/24",
+      "help": "Add one IP or CIDR per line"
+    },
+    "timeConfig": {
+      "allowedHours": "Allowed Hours (HH:mm-HH:mm)",
+      "allowedDays": "Allowed Days",
+      "hoursPlaceholder": "Ex: 09:00-18:00",
+      "days": {
+        "0": "Sunday",
+        "1": "Monday",
+        "2": "Tuesday",
+        "3": "Wednesday",
+        "4": "Thursday",
+        "5": "Friday",
+        "6": "Saturday"
+      }
+    },
+    "deviceConfig": {
+      "requireTrusted": "Require Trusted Device",
+      "requireTrustedHelp": "Access will only be allowed if the device is registered and validated.",
+      "minTrustLevel": "Minimum Trust Level",
+      "minTrustLevelHelp": "Trust level is based on device hardware validation and MFA.",
+      "trustLevels": {
+        "1": "Basic (Registered)",
+        "2": "Secure (Verified)",
+        "3": "Critical (MFA Hardened)"
+      }
+    },
+    "geoConfig": {
+      "allowedCountries": "Allowed Countries",
+      "blockedCountries": "Blocked Countries",
+      "placeholder": "Ex: US, UK, CA",
+      "help": "Use 2-letter ISO codes, separated by comma"
+    }
+  },
+  "Security": {
+    "masking": {
+      "title": "Data Masking",
+      "description": "View which fields are protected and which permissions are required for viewing.",
+      "errorLoading": "An error occurred while loading the masking configurations.",
+      "table": {
+        "entity": "Entity",
+        "field": "Field",
+        "type": "Mask Type",
+        "capability": "Required Capability"
+      },
+      "types": {
+        "EMAIL": "Email",
+        "PHONE": "Phone",
+        "NAME": "Name",
+        "TOKEN": "Token/Secret",
+        "ADDRESS": "Address",
+        "GENERIC": "Generic"
+      }
+    },
+    "impersonation": {
+      "banner_title": "Support Mode",
+      "viewing_as": "You are viewing as",
+      "exit": "Exit Session",
+      "confirm_start": "Do you want to start a support session as {name}?",
+      "justification_default": "Administrative support",
+      "action": "Access as User"
+    },
+    "TwoFactorReset": {
+      "title": "Account Recovery (2FA Reset)",
+      "description": "Management of requests for resetting two-factor authentication.",
+      "requestDialog": {
+        "title": "Request 2FA Reset",
+        "description": "This action will be audited and requires superior approval to be executed.",
+        "email": "User Email",
+        "justification": "Justification",
+        "justificationPlaceholder": "Reason for the reset request..."
+      }
+    }
+  },
+  "Sidebar": {
+    "groups": {
+      "overview": "Overview",
+      "management": "Management",
+      "finance": "Finance",
+      "monetization": "Monetization",
+      "support": "Support",
+      "marketing": "Marketing",
+      "devops": "DevOps",
+      "configuration": "Configuration"
+    },
+    "items": {
+      "home": "Home",
+      "dashboard": "Dashboard",
+      "analytics": "Analytics",
+      "platform settings": "Platform Settings",
+      "users": "Users",
+      "tenant": "Tenant",
+      "revenue": "Revenue",
+      "orders": "Orders",
+      "invoices": "Invoices",
+      "payments": "Payments",
+      "billing": "Billing",
+      "plans": "Plans",
+      "products": "Products",
+      "features": "Features",
+      "subscriptions": "Subscriptions",
+      "tickets": "Tickets",
+      "impersonation": "Impersonation",
+      "2fa reset": "2FA Reset",
+      "crm": "CRM",
+      "campaigns": "Campaigns",
+      "goals": "Goals",
+      "monitoring": "Monitoring",
+      "servers": "Servers",
+      "databases": "Databases",
+      "logs": "Logs",
+      "system health": "System Health",
+      "audit logs": "Audit Logs"
+    }
+  },
+  "Auth": {
+    "login": {
+      "title": "Sign in to your account",
+      "subtitle": "Don't have an account?",
+      "getStarted": "Get started",
+      "emailLabel": "Email address",
+      "passwordLabel": "Password",
+      "forgotPassword": "Forgot password?",
+      "submit": "Sign In",
+      "or": "OR",
+      "success": "Login successful!"
+    },
+    "signup": {
+      "title": "Complete Your Signup",
+      "subtitle": "Join {tenant} on Kaven",
+      "emailLabel": "Email",
+      "firstNameLabel": "First Name",
+      "lastNameLabel": "Last Name",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "Create a strong password",
+      "firstNamePlaceholder": "John",
+      "lastNamePlaceholder": "Doe",
+      "submit": "Create Account",
+      "submitting": "Creating Account...",
+      "success": "Account created! Redirecting to login...",
+      "invalidLink": "Invalid Link",
+      "invalidLinkDesc": "No invite token provided.",
+      "expiredLink": "Invalid or Expired Invite",
+      "expiredLinkDesc": "Please ask for a new invitation.",
+      "validating": "Validating invite...",
+      "validationError": "Failed to validate invite"
+    },
+    "register": {
+      "title": "Get started absolutely free",
+      "subtitle": "Already have an account?",
+      "signIn": "Sign in",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "emailLabel": "Email address",
+      "passwordLabel": "Password",
+      "terms": "I agree to Terms of Service and Privacy Policy",
+      "submit": "Create account",
+      "or": "OR",
+      "success": "Account created! Please check your email to verify.",
+      "passwordStrength": [
+        "Weak",
+        "Fair",
+        "Good",
+        "Strong"
+      ]
+    },
+    "forgotPassword": {
+      "title": "Forgot your password?",
+      "description": "Please enter the email address associated with your account and we'll email you a link to reset your password.",
+      "emailLabel": "Email address",
+      "submit": "Send Request",
+      "backToSignIn": "Return to sign in",
+      "successTitle": "Request sent successfully!",
+      "successDescription": "We've sent a confirmation email to {email}. Please check your email.",
+      "returnToLogin": "Return to sign in",
+      "resetPassword": {
+        "title": "Reset your password",
+        "subtitle": "Enter your new password below",
+        "newPassword": "New Password",
+        "confirmPassword": "Confirm Password",
+        "passwordPlaceholder": "6+ characters",
+        "submit": "Reset Password",
+        "matchError": "Passwords do not match",
+        "tokenError": "Invalid reset token",
+        "success": "Password reset successfully!",
+        "failed": "Password reset failed"
+      }
+    }
+  },
+  "Users": {
+    "title": "All Users",
+    "inviteSuccess": "Invite sent successfully!",
+    "inviteError": "Failed to send invite",
+    "inviteUser": "Invite User",
+    "inviteDescription": "Send an invitation to a new team member.",
+    "emailLabel": "Email",
+    "roleLabel": "Role",
+    "roleMember": "Member",
+    "roleAdmin": "Admin",
+    "cancel": "Cancel",
+    "sending": "Sending...",
+    "sendInvite": "Send Invite",
+    "table": {
+      "name": "Name",
+      "phoneNumber": "Phone Number",
+      "tenant": "Tenant",
+      "role": "Role",
+      "status": "Status",
+      "selected": "selected",
+      "delete": "Delete",
+      "rowsPerPage": "Rows per page",
+      "loading": "Loading users...",
+      "error": "Error loading users",
+      "errorRetry": "Try again later",
+      "noUsers": "No users found",
+      "noUsersDesc": "Try adjusting your search filters",
+      "previousPage": "Go to previous page",
+      "nextPage": "Go to next page",
+      "ofLocal": "of"
+    },
+    "filters": {
+      "all": "All",
+      "active": "Active",
+      "pending": "Pending",
+      "banned": "Banned",
+      "rejected": "Rejected",
+      "search": "Search..."
+    }
+  },
+  "User": {
+    "validation": {
+      "nameMin": "Name must be at least 3 characters",
+      "emailInvalid": "Invalid email address",
+      "phoneInvalid": "Invalid phone number"
+    },
+    "table": {
+      "deleteSuccess": "User deleted successfully",
+      "deleteError": "Error deleting user",
+      "confirmDeleteTitle": "Confirm deletion?",
+      "confirmDeleteDesc": "Are you sure you want to delete user <bold>{name}</bold>? This action cannot be undone.",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "deleting": "Deleting...",
+      "edit": "Edit",
+      "search": "Search...",
+      "roleAll": "Role: All"
+    },
+    "edit": {
+      "title": "Edit User",
+      "notFound": "User not found",
+      "backToList": "Back to list",
+      "tabs": {
+        "overview": "Overview",
+        "security": "Security"
+      },
+      "buttons": {
+        "save": "Save Changes",
+        "saving": "Saving...",
+        "delete": "Delete User",
+        "deleting": "Deleting..."
+      },
+      "sections": {
+        "security": {
+          "title": "Security Settings",
+          "description": "Password reset and 2FA settings will be available here. For now, users must manage their own security settings."
+        }
+      },
+      "labels": {
+        "fullName": "Full Name",
+        "email": "Email Address",
+        "phoneNumber": "Phone Number",
+        "tenant": "Tenant",
+        "role": "Role",
+        "address": "Address",
+        "city": "City",
+        "state": "State/Region",
+        "country": "Country",
+        "zipcode": "Zip Code",
+        "company": "Company",
+        "banned": "Banned",
+        "emailVerified": "Email Verified"
+      },
+      "placeholders": {
+        "selectTenant": "Select tenant",
+        "searchAddress": "Start typing to search address...",
+        "fullName": "Enter full name",
+        "email": "Enter email address"
+      },
+      "hints": {
+        "disableAccount": "Apply disable account",
+        "emailVerification": "Disabling this will automatically send the user a verification email"
+      },
+      "roles": {
+        "USER": "User",
+        "TENANT_ADMIN": "Tenant Admin",
+        "SUPER_ADMIN": "Super Admin"
+      },
+      "messages": {
+        "deleteConfirm": "Are you sure you want to delete this user?",
+        "updateSuccess": "User updated successfully",
+        "avatarSuccess": "Avatar updated successfully",
+        "avatarError": "Avatar upload failed"
+      },
+      "statuses": {
+        "ACTIVE": "Active",
+        "PENDING": "Pending",
+        "BANNED": "Banned",
+        "REJECTED": "Rejected"
+      },
+      "validation": {
+        "nameMin": "Name must be at least 3 characters",
+        "emailInvalid": "Invalid email address",
+        "phoneInvalid": "Invalid phone number"
+      }
+    },
+    "create": {
+      "title": "Create a new user",
+      "breadcrumb": "Create",
+      "buttons": {
+        "create": "Create user",
+        "creating": "Creating...",
+        "cancel": "Cancel"
+      },
+      "validation": {
+        "fullName": "Please enter your full name (first and last name)",
+        "passwordMin": "Password must be at least 8 characters",
+        "tenantRequired": "Tenant is required"
+      },
+      "placeholders": {
+        "name": "John Doe",
+        "email": "john@example.com",
+        "password": "••••••••",
+        "address": "123 Main St",
+        "city": "San Francisco",
+        "state": "California",
+        "country": "United States",
+        "zipcode": "94102",
+        "company": "Acme Inc.",
+        "createTenant": "Create own tenant",
+        "noTenants": "No tenants available"
+      }
+    }
+  },
+  "Invites": {
+    "title": "Invite Management",
+    "description": "View and manage pending user invitations.",
+    "create": "New Invite",
+    "table": {
+      "headers": {
+        "email": "Email",
+        "role": "Role",
+        "tenant": "Tenant",
+        "invitedBy": "Invited By",
+        "expiresAt": "Expires At",
+        "actions": "Actions"
+      },
+      "empty": "No invites found.",
+      "copyLink": "Copy Link",
+      "cancelInvite": "Cancel Invite",
+      "linkCopied": "Invite link copied",
+      "cancelSuccess": "Invite cancelled",
+      "cancelError": "Failed to cancel invite"
+    }
+  },
+  "Tenants": {
+    "title": "Tenants",
+    "description": "Manage system organizations and workspaces.",
+    "create": "New Tenant",
+    "table": {
+      "headers": {
+        "name": "Name",
+        "domain": "Domain",
+        "users": "Users",
+        "status": "Status",
+        "created": "Created",
+        "actions": "Actions"
+      },
+      "empty": "No tenants found",
+      "selected": "selected",
+      "delete": "Delete",
+      "quickEdit": "Quick Edit",
+      "edit": "Edit",
+      "rowsPerPage": "Rows per page"
+    },
+    "batchDelete": {
+      "title": "Delete Tenants",
+      "message": "Are you sure you want to delete {count} tenant(s)? This action cannot be undone.",
+      "confirm": "Delete"
+    },
+    "filters": {
+      "all": "All",
+      "active": "Active",
+      "suspended": "Suspended",
+      "deleted": "Deleted",
+      "search": "Search tenants..."
+    },
+    "createPage": {
+      "title": "New Tenant",
+      "description": "Register a new organization in the system",
+      "back": "Back",
+      "form": {
+        "name": "Organization Name",
+        "namePlaceholder": "Ex: Acme Corporation",
+        "slug": "Slug (URL Identifier)",
+        "slugPlaceholder": "acme-corp",
+        "slugDescription": "Unique identifier used in URLs.",
+        "domain": "Custom Domain",
+        "domainPlaceholder": "app.acme.com",
+        "cancel": "Cancel",
+        "create": "Create Tenant",
+        "creating": "Creating...",
+        "success": "Tenant created successfully!",
+        "error": "Error creating tenant"
+      }
+    },
+    "detailsPage": {
+      "backToTenants": "Back to Tenants",
+      "save": "Save Changes",
+      "saving": "Saving...",
+      "tabs": {
+        "overview": "Overview",
+        "users": "Users",
+        "settings": "Settings"
+      },
+      "overview": {
+        "title": "Tenant Information",
+        "description": "Basic information about the tenant workspace."
+      },
+      "users": {
+        "title": "Users",
+        "description": "Manage users who have access to this tenant."
+      },
+      "dangerZone": {
+        "title": "Danger Zone",
+        "description": "Destructive actions for this tenant.",
+        "deleteTitle": "Delete Tenant",
+        "deleteDescription": "Permanently delete this tenant and all associated data. This action cannot be undone.",
+        "deleteButton": "Delete Tenant",
+        "confirmDelete": "Are you sure you want to delete this tenant? This action cannot be undone."
+      }
+    },
+    "addUserDialog": {
+      "trigger": "Add User",
+      "title": "Add User to Tenant",
+      "description": "Search for an existing user to add to this tenant workspace.",
+      "searchPlaceholder": "Search by name or email...",
+      "noUsers": "No users found.",
+      "searchTip": "Try a different search term.",
+      "status": {
+        "current": "Current"
+      },
+      "actions": {
+        "add": "Add",
+        "move": "Move"
+      }
+    }
+  },
+  "PlatformSettings": {
+    "title": "Platform Settings",
+    "general": {
+      "title": "General Settings",
+      "description": "Configure the general information for your platform.",
+      "companyName": "Company Name",
+      "seoDescription": "Description (SEO)",
+      "language": "Default Language",
+      "currency": "Default Currency",
+      "numberFormat": "Number Format",
+      "sections": {
+        "companyInfo": "Company Information",
+        "regional": "Regional Settings",
+        "dateTime": "Date and Time"
+      },
+      "dateFormats": {
+        "extended": "Extended"
+      }
+    },
+    "branding": {
+      "title": "Branding",
+      "description": "Customize the look and feel of your SaaS.",
+      "presets": "Color Presets",
+      "customColor": "Custom Color",
+      "faviconAndLogo": "Favicon & Logo",
+      "activeLogo": "Active Logo",
+      "logoUrl": "Logo URL",
+      "logoRecommended": "Recommended: PNG or SVG with transparent background.",
+      "activeFavicon": "Active Favicon",
+      "faviconUrl": "Favicon URL",
+      "upload": "Upload",
+      "recommended": "Recommended: 32x32px or 64x64px. Formats: .ico, .png, .svg.",
+      "maxSize": "(Max {size}MB)"
+    },
+    "seo": {
+      "title": "Public SEO Configuration",
+      "description": "Configure Global SEO settings for your public pages (OG Image, Twitter).",
+      "twitterHandle": "Twitter Handle",
+      "ogImage": "OpenGraph Image (Social Share)",
+      "preview": "Preview",
+      "ogImageUrl": "OG Image URL"
+    },
+    "actions": {
+      "discard": "Discard",
+      "save": "Save Changes",
+      "saving": "Saving..."
+    },
+    "tabs": {
+      "general": "General",
+      "branding": "Branding",
+      "seo": "SEO",
+      "integrations": "Integrations"
+    },
+    "validation": {
+      "companyNameRequired": "Company name is required",
+      "seoLimit": "SEO limit exceeded (max 160 characters)",
+      "invalidColor": "Invalid color code",
+      "fileTooLarge": "File too large. Max {size}MB.",
+      "fileTooLargeOg": "File too large. Max 2MB for OG images."
+    },
+    "placeholders": {
+      "companyName": "Ex: Kaven SaaS",
+      "seoDescription": "Platform description for search engines...",
+      "color": "#000000",
+      "url": "https://..."
+    },
+    "help": {
+      "colorDescription": "Select a preset or choose a custom color. This will be applied globally.",
+      "ogRecommended": "Recommended: 1200x630px (ratio 1.91:1). Max 2MB.",
+      "ogDefault": "1200x630\nRecommended",
+      "noFile": "None"
+    },
+    "integrations": {
+      "title": "Email Integrations",
+      "description": "Manage email providers and settings",
+      "addIntegration": "Add Integration",
+      "testConnection": "Test Connection",
+      "lastChecked": "Last checked",
+      "healthStatus": {
+        "healthy": "Healthy",
+        "unhealthy": "Unhealthy",
+        "unconfigured": "Unconfigured"
+      },
+      "automaticHealthCheck": {
+        "title": "Automatic Health Check",
+        "description": "Configure automatic validation of email integrations",
+        "enabled": "Enable automatic health check",
+        "frequency": "Frequency",
+        "lastRun": "Last run",
+        "nextRun": "Next run",
+        "runNow": "Run Now",
+        "frequencies": {
+          "15m": "Every 15 minutes",
+          "30m": "Every 30 minutes",
+          "1h": "Every hour",
+          "6h": "Every 6 hours",
+          "12h": "Every 12 hours",
+          "24h": "Daily"
+        }
+      },
+      "comingSoon": "Integrations coming soon...",
+      "emailIntegration": "Email Configuration (SMTP)",
+      "smtpHost": "SMTP Host",
+      "smtpPort": "SMTP Port",
+      "smtpSecure": "Secure Connection (TLS/SSL)",
+      "smtpSecureDescription": "Enable for encrypted connections",
+      "smtpUser": "SMTP User",
+      "smtpPassword": "SMTP Password",
+      "smtpPasswordDescription": "Stored securely encrypted",
+      "emailFrom": "Sender Email",
+      "emailFromDescription": "Name and email that will appear as sender",
+      "testEmailConfiguration": "Test Configuration",
+      "testing": "Testing...",
+      "testEmailHint": "Sends a test email to verify configuration",
+      "emailTestSuccess": "Test email sent successfully!",
+      "emailTestFailed": "Failed to send test email",
+      "emailTestError": "Error testing email configuration"
+    },
+    "timezone": {
+      "title": "Timezone and Formats",
+      "label": "Timezone",
+      "placeholder": "Select timezone",
+      "hint": "Supports daylight saving time automatically.",
+      "detected": "Detected"
+    },
+    "formats": {
+      "title": "Date and Time Formats",
+      "dateFormat": "Date Format",
+      "timeFormat": "Time Format"
+    }
+  },
+  "Settings": {
+    "title": "Settings",
+    "subtitle": "Manage system settings and personalize your experience",
+    "language": "Language",
+    "darkMode": "Dark Mode",
+    "lightMode": "Light Mode",
+    "tabs": {
+      "general": "General",
+      "theme": "Theme",
+      "security": "Security",
+      "notifications": "Notifications"
+    },
+    "general": {
+      "title": "General Settings",
+      "appName": "Application Name",
+      "language": "Language",
+      "timezone": "Timezone"
+    },
+    "security": {
+      "title": "Security",
+      "changePassword": "Change Password",
+      "currentPassword": "Current Password",
+      "newPassword": "New Password",
+      "confirmPassword": "Confirm New Password",
+      "2fa": "Two-Factor Authentication",
+      "2faDescription": "Add an extra layer of security to your account",
+      "enable2fa": "Enable 2FA"
+    },
+    "notifications": {
+      "title": "Notifications",
+      "description": "Manage how and when you receive notifications",
+      "email": "Email Notifications",
+      "newUsers": "New users",
+      "newUsersDesc": "Receive an email when a new user signs up",
+      "newOrders": "New orders",
+      "newOrdersDesc": "Receive an email when a new order is placed",
+      "systemUpdates": "System updates",
+      "systemUpdatesDesc": "Receive emails about updates and maintenance",
+      "push": "Push Notifications",
+      "realTime": "Real-time activity",
+      "realTimeDesc": "Receive notifications about important activity",
+      "reminders": "Reminders",
+      "remindersDesc": "Receive reminders about pending tasks"
+    },
+    "actions": {
+      "save": "Save Changes"
+    },
+    "theme": {
+      "title": "Theme Customization",
+      "description": "Customize the look and feel of your system"
+    }
+  },
+  "AuditLogs": {
+    "title": "Audit Logs",
+    "description": "Complete history of critical system actions",
+    "sectionTitle": "Audit Records",
+    "sectionDescription": "Tracking of all administrative actions and system changes",
+    "table": {
+      "columns": {
+        "dateTime": "Date/Time",
+        "action": "Action",
+        "actor": "Actor",
+        "entity": "Entity",
+        "details": "Details"
+      },
+      "empty": "No logs found",
+      "detailsModal": {
+        "title": "Log Details",
+        "idLabel": "ID"
+      }
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "pageOf": "Page {page} of {total}"
+    }
+  },
+  "Observability": {
+    "title": "Observability",
+    "description": "Advanced monitoring based on Prometheus/Grafana patterns",
+    "tabs": {
+      "metrics": "Metrics",
+      "hardware": "Hardware",
+      "infrastructure": "Infrastructure",
+      "external": "External APIs",
+      "alerts": "Alerts",
+      "protection": "Protection",
+      "diagnostics": "Diagnostics",
+      "email": "Email"
+    },
+    "goldenSignals": {
+      "title": "Golden Signals",
+      "description": "Essential system health metrics (Google SRE)",
+      "latency": "Latency (p95)",
+      "latencyTooltip": "Request response time. 95% of requests are answered in this time or less. Ideal: < 200ms",
+      "traffic": "Traffic",
+      "trafficTooltip": "Number of requests per second the system is processing. Indicates current load",
+      "errors": "Errors",
+      "errorsTooltip": "Percentage of failed requests. Ideal: < 1%. High values indicate problems",
+      "saturation": "Saturation",
+      "saturationTooltip": "Resource usage (CPU/Memory). High values (>80%) indicate system overload",
+      "totalRequests": "total requests",
+      "failedRequests": "failed requests"
+    },
+    "nodejsMetrics": {
+      "title": "Node.js Metrics",
+      "description": "Node.js runtime specific metrics",
+      "eventLoopLag": "Event Loop Lag",
+      "eventLoopLagDesc": "Event loop delay",
+      "eventLoopLagTooltip": "Delay in event processing. Ideal: < 10ms. High values indicate server slowness",
+      "memoryHeap": "Memory Heap",
+      "memoryHeapDesc": "of {total}MB total",
+      "memoryHeapTooltip": "Memory used by Node.js application. If close to limit, may cause slowness",
+      "activeHandles": "Active Handles",
+      "activeHandlesDesc": "File descriptors, sockets, etc",
+      "activeHandlesTooltip": "Open connections (files, sockets). Many handles may indicate resource leak",
+      "activeRequests": "Active Requests",
+      "activeRequestsDesc": "Requests in progress",
+      "activeRequestsTooltip": "Number of requests being processed now. Very high values indicate overload"
+    },
+    "hardware": {
+      "title": "Hardware Metrics",
+      "description": "Server CPU, memory, disk and network",
+      "cpu": "CPU",
+      "cpuTooltip": "Server processing. Ideal: < 70%. High values (>90%) indicate server overload",
+      "cores": "cores",
+      "memory": "RAM Memory",
+      "memoryTooltip": "Server memory. Ideal: < 80%. If full, system may slow down or crash",
+      "disk": "Disk",
+      "diskTooltip": "Disk space. Ideal: < 80%. If full, system stops working",
+      "uptime": "Uptime",
+      "uptimeTooltip": "How long the server has been running without restart. High values are good (indicates stability)",
+      "temperature": "Temperature",
+      "temperatureTooltip": "Processor temperature. Ideal: < 70°C. High temperatures (>85°C) may cause shutdown",
+      "cpuTemp": "CPU Temperature",
+      "swap": "Swap Memory",
+      "swapTooltip": "Virtual memory (disk used as RAM). Ideal: 0%. High usage indicates RAM shortage",
+      "diskIO": "Disk I/O",
+      "diskIOTooltip": "Disk read/write speed. High values are good",
+      "read": "Read",
+      "write": "Write"
+    },
+    "infrastructure": {
+      "title": "Infrastructure Services",
+      "description": "Database, Cache and internal services status",
+      "latency": "Latency",
+      "latencyTooltip": "Service response time. Ideal: < 50ms. High values indicate slowness",
+      "successRate": "Success Rate",
+      "successRateTooltip": "Percentage of successful operations. Ideal: > 99%. Low values indicate problems",
+      "healthy": "Healthy",
+      "degraded": "Degraded",
+      "unhealthy": "Unhealthy"
+    },
+    "externalAPIs": {
+      "title": "External APIs",
+      "description": "Third-party integrations status (Stripe, Google Maps, PagBit)",
+      "latency": "Latency",
+      "latencyTooltip": "External API response time. Depends on internet and service",
+      "successRate": "Success Rate",
+      "successRateTooltip": "Percentage of successful calls. Low values may indicate API or internet problems",
+      "notConfigured": "API key not configured",
+      "notConfiguredTooltip": "This API is not configured. Add the API key in environment variables"
+    },
+    "protection": {
+      "title": "Protection Systems",
+      "description": "Cache and Rate Limiting to protect the system",
+      "cacheHitRate": "Cache Hit Rate",
+      "cacheHitRateTooltip": "Percentage of data found in cache (without database query). Ideal: > 80%. High values = faster system",
+      "cacheMissRate": "Cache Miss Rate",
+      "cacheMissRateTooltip": "Percentage of data NOT found in cache. Ideal: < 20%. High values = slower system",
+      "rateLimitViolations": "Rate Limit Violations",
+      "rateLimitViolationsTooltip": "Number of requests blocked for excess. Protects against attacks and overload",
+      "cacheConfig": "Cache Configuration",
+      "status": "Status",
+      "ttl": "TTL (Time to Live)",
+      "ttlTooltip": "Time data stays in cache before expiring. Higher values = fewer database queries",
+      "strategy": "Strategy",
+      "strategyTooltip": "LRU = Removes least recently used items. Optimizes memory usage",
+      "totalRequests": "Total Requests",
+      "topViolators": "Top Violators",
+      "topViolatorsTooltip": "IPs that most violated rate limit. May indicate attack attempts"
+    },
+    "diagnostics": {
+      "title": "Diagnostic Tools",
+      "description": "Continuous monitoring and connectivity tests",
+      "activeSessions": "Active Sessions",
+      "activeSessionsTooltip": "Monitoring sessions in progress. Collect metrics at regular intervals",
+      "completedSessions": "Completed Sessions",
+      "completedSessionsTooltip": "Finished monitoring sessions. Data saved for analysis",
+      "avgDuration": "Average Duration",
+      "avgDurationTooltip": "Standard time for each monitoring session",
+      "continuousMonitoring": "Continuous Monitoring",
+      "continuousMonitoringDesc": "Start a session to collect metrics at regular intervals",
+      "durationLabel": "Duration (minutes)",
+      "durationTooltip": "How long monitoring will collect data. Minimum: 1min, Maximum: 60min",
+      "startMonitoring": "Start Monitoring",
+      "forceRefresh": "Force Refresh",
+      "forceRefreshTooltip": "Updates all metrics immediately, without waiting for automatic interval",
+      "connectivityStatus": "Connectivity Status",
+      "connectivityStatusDesc": "Tests connection to all services (database, cache, external APIs)",
+      "monitoringSessionsList": "Monitoring Sessions",
+      "session": "Session",
+      "snapshots": "snapshots",
+      "minutesShort": "min"
+    },
+    "alerts": {
+      "activeAlerts": "Active Alerts",
+      "activeAlertsDescription": "Alerts requiring immediate attention",
+      "active": "active",
+      "noActiveAlerts": "No active alerts. System is healthy!",
+      "thresholds": "Configured Thresholds",
+      "thresholdsDescription": "Alert thresholds for system metrics",
+      "thresholdsTooltip": "When a metric exceeds these limits, an alert is automatically generated",
+      "table": {
+        "name": "Name",
+        "metric": "Metric",
+        "threshold": "Threshold",
+        "severity": "Severity",
+        "status": "Status"
+      },
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "resolve": "Resolve",
+      "resolveTooltip": "Marks this alert as resolved. It will be removed from active alerts list",
+      "totalAlerts": "Total Alerts",
+      "resolved": "Resolved",
+      "critical": "Critical",
+      "resolveSuccess": "Alert resolved successfully",
+      "resolveError": "Error resolving alert"
+    },
+    "email": {
+      "title": "Email Metrics",
+      "description": "Monitoring sends, reputation, and delivery performance",
+      "sent": "Emails Sent",
+      "sentTooltip": "Total emails dispatched by the platform. Includes transactional and marketing",
+      "deliveryRate": "Delivery Rate",
+      "deliveryRateTooltip": "Percentage of emails accepted by destination providers. Ideal: > 98%",
+      "bounces": "Bounces",
+      "bouncesTooltip": "Emails that could not be delivered (non-existent address or full mailbox). Keep < 2%",
+      "complaints": "Spam Complaints",
+      "complaintsTooltip": "Users who marked the email as Spam. Severely impacts reputation. Keep < 0.1%",
+      "latency": "Delivery Latency",
+      "latencyTooltip": "Average time the provider takes to accept the send request. Ideal: < 2s",
+      "reputation": "Reputation",
+      "bounceRate": "Bounce Rate",
+      "complaintRate": "Spam Rate",
+      "byProvider": "By Provider"
+    }
+  },
+  "Maintenance": {
+    "title": "Under Maintenance",
+    "description": "We're currently performing scheduled maintenance to improve our services. We'll be back shortly.",
+    "estimatedTime": "Estimated time",
+    "backOnline": "Back online soon"
+  },
+  "ComingSoon": {
+    "badge": "Work in Progress",
+    "title": "Coming Soon",
+    "subtitle": "We're building something extraordinary. This feature will be available on your dashboard soon.",
+    "notify": {
+      "label": "Notify me at launch",
+      "placeholder": "your@email.com",
+      "button": "Notify",
+      "disclaimer": "* We promise not to spam. Only important product updates."
+    },
+    "countdown": {
+      "days": "Days",
+      "hours": "Hours",
+      "minutes": "Minutes",
+      "seconds": "Seconds"
+    }
+  },
+  "Currencies": {
+    "title": "Currencies"
+  },
+  "Plans": {
+    "title": "Plans"
+  },
+  "Products": {
+    "title": "Products"
+  },
+  "Help": {
+    "title": "Help Center"
+  },
+  "Pricing": {
+    "title": "Pricing"
+  },
+  "Features": {
+    "title": "Features"
+  },
+  "FAQ": {
+    "title": "FAQ"
+  },
+  "Contact": {
+    "title": "Contact"
+  },
+  "Docs": {
+    "title": "Documentation"
+  },
+  "EmailIntegrations": {
+    "title": "Email Integrations",
+    "description": "Manage email providers for your platform",
+    "addIntegration": "Add Integration",
+    "addIntegrationDescription": "Configure a new email provider",
+    "editIntegration": "Edit Integration",
+    "editIntegrationDescription": "Update provider settings",
+    "deleteConfirmTitle": "Delete Integration",
+    "deleteConfirm": "Are you sure you want to delete this integration? This action cannot be undone.",
+    "provider": "Provider",
+    "providerCannotChange": "Provider cannot be changed after creation",
+    "active": "Active",
+    "activeDescription": "Allow this integration to be used for sending emails",
+    "inactive": "Inactive",
+    "primary": "Primary",
+    "primaryDescription": "Set as default provider for sending",
+    "test": "Test",
+    "testing": "Testing...",
+    "edit": "Edit",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "save": "Save",
+    "create": "Create",
+    "emptyState": "No integrations configured",
+    "emptyStateDescription": "Add your first email integration to start sending",
+    "testSuccess": "Test email sent successfully!",
+    "testFailed": "Failed to send test email",
+    "testError": "Error testing integration",
+    "createSuccess": "Integration created successfully!",
+    "createFailed": "Failed to create integration",
+    "updateSuccess": "Integration updated successfully!",
+    "updateFailed": "Failed to update integration",
+    "deleteSuccess": "Integration deleted successfully!",
+    "deleteFailed": "Failed to delete integration",
+    "advanced": "Advanced Settings",
+    "advancedDescription": "Additional options for fine-grained control",
+    "sendingConfig": "Sending Configuration",
+    "transactionalDomain": "Transactional Domain",
+    "marketingDomain": "Marketing Domain",
+    "trackOpens": "Track Opens",
+    "trackOpensDescription": "Track when emails are opened",
+    "trackClicks": "Track Clicks",
+    "trackClicksDescription": "Track clicks on links",
+    "dailyLimit": "Daily Limit",
+    "dailyLimitDescription": "Max emails per day (0 = unlimited)",
+    "hourlyLimit": "Hourly Limit",
+    "hourlyLimitDescription": "Max emails per hour (0 = unlimited)",
+    "region": "AWS Region",
+    "regionDescription": "Region where SES is configured",
+    "messageStreams": "Message Streams",
+    "transactionalStream": "Transactional Stream",
+    "marketingStream": "Marketing Stream",
+    "streamPlaceholder": "default (outbound)",
+    "smtpHost": "SMTP Host",
+    "smtpPort": "SMTP Port",
+    "smtpSecure": "Secure Connection (TLS/SSL)",
+    "smtpSecureDescription": "Enable for encrypted connections",
+    "smtpUser": "SMTP User",
+    "smtpPassword": "SMTP Password",
+    "smtpPasswordDescription": "Stored securely encrypted",
+    "validation": {
+      "smtpHostRequired": "SMTP Host is required",
+      "smtpPortRequired": "SMTP Port is required",
+      "apiKeyRequired": "API Key is required",
+      "regionRequired": "Region is required for AWS SES"
+    },
+    "providers": {
+      "SMTP": "SMTP",
+      "RESEND": "Resend",
+      "POSTMARK": "Postmark",
+      "AWS_SES": "AWS SES"
+    }
+  },
+  "AccessRequests": {
+    "title": "My Access Requests",
+    "subtitle": "History and status of your permission requests.",
+    "newRequest": "New Request",
+    "empty": "No requests found.",
+    "table": {
+      "resource": "Resource / Space",
+      "level": "Level",
+      "justification": "Justification",
+      "duration": "Duration",
+      "status": "Status",
+      "date": "Date",
+      "levelWrite": "Read-Write",
+      "levelRead": "Read-Only"
+    },
+    "status": {
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "pending": "Pending",
+      "expired": "Expired"
+    },
+    "dialog": {
+      "title": "Request Access",
+      "description": "You are requesting temporary access for: <bold>{resource}</bold>. This request will require approval.",
+      "labels": {
+        "level": "Access Level",
+        "duration": "Duration (days)",
+        "justification": "Justification"
+      },
+      "hints": {
+        "level": "Select if you need only view or modify rights.",
+        "duration": "How long do you need this access?"
+      },
+      "placeholders": {
+        "level": "Select level",
+        "justification": "Explain why you need this access..."
+      },
+      "validation": {
+          "justificationMin": "Justification must have at least 10 characters."
+      },
+      "submit": "Send Request",
+      "submitting": "Sending...",
+      "cancel": "Cancel",
+      "success": "Request sent successfully!",
+      "error": "Error sending request."
+    }
+  }
+}

@@ -1,0 +1,85 @@
+---
+title: Button Group
+description: Grupos de botões relacionados
+---
+
+import { ButtonGroup } from '@kaven/ui-base';
+import { ComponentPreview } from '@/components/ComponentPreview';
+import { Button } from '@kaven/ui-base';
+
+# Button Group
+
+> Agrupa botões relacionados em um único componente.
+
+## Básico
+
+```tsx
+import { ButtonGroup } from '@kaven/ui-base';
+import { Button } from '@kaven/ui-base';
+
+<ButtonGroup>
+  <Button>Opção 1</Button>
+  <Button>Opção 2</Button>
+  <Button>Opção 3</Button>
+</ButtonGroup>;
+```
+
+## Variantes
+
+<ComponentPreview>
+<div className="flex w-full gap-4 flex-wrap justify-center items-center">
+<ButtonGroup variant="contained">
+  <Button>Contained</Button>
+  <Button>Buttons</Button>
+</ButtonGroup>
+
+<ButtonGroup variant="outlined">
+  <Button>Outlined</Button>
+  <Button>Buttons</Button>
+</ButtonGroup>
+</div>
+</ComponentPreview>
+
+```tsx
+<ButtonGroup variant="contained">
+  <Button>Contained</Button>
+  <Button>Buttons</Button>
+</ButtonGroup>
+
+<ButtonGroup variant="outlined">
+  <Button>Outlined</Button>
+  <Button>Buttons</Button>
+</ButtonGroup>
+```
+
+## Vertical
+
+<ComponentPreview>
+  <div className="flex w-full gap-4 flex-wrap justify-center items-center">
+    <ButtonGroup orientation="vertical">
+      <Button>Opção 1</Button>
+      <Button>Opção 2</Button>
+      <Button>Opção 3</Button>
+    </ButtonGroup>
+  </div>
+</ComponentPreview>
+
+```tsx
+<ButtonGroup orientation="vertical">
+  <Button>Opção 1</Button>
+  <Button>Opção 2</Button>
+  <Button>Opção 3</Button>
+</ButtonGroup>
+```
+
+## API
+
+| Prop          | Tipo                                  | Padrão         | Descrição         |
+| ------------- | ------------------------------------- | -------------- | ----------------- |
+| `variant`     | `'contained' \| 'outlined' \| 'text'` | `'outlined'`   | Estilo dos botões |
+| `orientation` | `'horizontal' \| 'vertical'`          | `'horizontal'` | Orientação        |
+
+## Relacionados
+
+- [Button](/design-system/components/button)
+- [Toggle Button](/design-system/components/toggle-button)

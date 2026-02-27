@@ -1,0 +1,372 @@
+'use client';
+
+import { Link, usePathname } from '@/i18n/routing';
+import { useTranslations } from 'next-intl';
+import { Logo } from '@/components/logo';
+import { Scrollbar } from '@/components/scrollbar/scrollbar';
+import { cn } from '@/lib/utils';
+
+import { useSpaces } from '@/hooks/use-spaces';
+import { MASTER_NAVIGATION } from '@/config/navigation';
+import {
+
+  ChevronDown,
+  ChevronRight,
+  ChevronLeft,
+  LucideIcon
+} from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { useSidebar } from '@/hooks/use-sidebar';
+import { useUIStore } from '@/stores/ui.store';
+import { useCapabilities } from '@/hooks/use-capabilities';
+
+interface NavigationChild {
+  name: string;
+  label: string;
+  href: string;
+  external?: boolean;
+  requiredCapability?: string;
+}
+
+interface NavigationItem {
+  name: string;
+  label: string;
+  href: string;
+  icon: LucideIcon;
+  children?: NavigationChild[];
+  external?: boolean;
+  requiredCapability?: string;
+}
+
+interface NavGroup {
+  title: string;
+  items: NavigationItem[];
+}
+
+
+
+export function Sidebar() {
+  const pathname = usePathname();
+  const t = useTranslations('Sidebar');
+
+  const { currentSpace } = useSpaces();
+  const { isCollapsed, toggle } = useSidebar();
+  const { sidebarOpen: isMobileOpen, setSidebarOpen } = useUIStore();
+  const { check, grants } = useCapabilities();
+  const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  const [expandedSections, setExpandedSections] = useState<string[]>([]);
+
+  // Helpers for translation
+  const getSectionTitle = (title: string) => {
+    const key = title.toLowerCase();
+    // Default to key if translation exists, else fallback to title
+    // Note: In a real app we might want strict type safety or a fallback map
+    return t.has(`groups.${key}`) ? t(`groups.${key}`) : title;
+  };
+
+  const getItemLabel = (label: string) => {
+    const key = label.toLowerCase();
+    return t.has(`items.${key}`) ? t(`items.${key}`) : label;
+  };
+
+  // Derive navigation sections based on actual capabilities, agnostic of Space code
+  const navSections = useMemo(() => {
+    if (!currentSpace) return [];
+
+    return MASTER_NAVIGATION.map((section) => {
+      // Filter items based on capability
+      const filteredItems = section.items.filter((item) => {
+        // 1. Check item permission
+        if (item.requiredCapability && !check(item.requiredCapability)) return false;
+        
+        // 2. Check children permissions (if any)
+        if (item.children) {
+             const visibleChildren = item.children.filter((child) => 
+                !child.requiredCapability || check(child.requiredCapability)
+             );
+             return visibleChildren.length > 0 || !item.children.length; 
+        }
+        
+        return true; 
+      }).map((item) => ({
+        ...item,
+        // Filter children here to be sure
+        children: item.children?.filter((child) => !child.requiredCapability || check(child.requiredCapability))
+      })).filter((item) => {
+        // Second pass: hide parent if all children were filtered out
+        if (item.children && item.children.length === 0) return false;
+        return true;
+      });
+
+      return {
+        title: section.title,
+        items: filteredItems.map((item) => ({
+          name: item.label,
+          label: item.label,
+          href: item.href,
+          icon: item.icon,
+          requiredCapability: item.requiredCapability,
+          children: item.children?.map((child) => ({
+            name: child.label,
+            label: child.label,
+            href: child.href,
+            external: child.external,
+            requiredCapability: child.requiredCapability
+          }))
+        }))
+      };
+    }).filter((section) => section.items.length > 0); // Hide empty sections
+  }, [currentSpace, check]); // Re-run when capabilities change
+
+  // Expand all sections when navSections changes (e.g. switching spaces)
+  useEffect(() => {
+    if (navSections.length > 0) {
+      setExpandedSections(navSections.map(section => section.title));
+    }
+  }, [navSections]);
+
+  // Save expanded sections to localStorage
+  useEffect(() => {
+    if (expandedSections.length > 0) {
+      localStorage.setItem('sidebar-expanded-sections', JSON.stringify(expandedSections));
+    }
+  }, [expandedSections]);
+
+  // Close mobile sidebar on path change
+  useEffect(() => {
+    if (isMobileOpen) {
+      setSidebarOpen(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
+
+  const toggleExpand = (name: string) => {
+    if (isCollapsed) return;
+    setExpandedItems((prev) =>
+      prev.includes(name) ? prev.filter((item) => item !== name) : [...prev, name]
+    );
+  };
+
+  const toggleSection = (sectionTitle: string) => {
+    if (isCollapsed) return;
+    setExpandedSections((prev) =>
+      prev.includes(sectionTitle)
+        ? prev.filter((title) => title !== sectionTitle)
+        : [...prev, sectionTitle]
+    );
+  };
+
+
+  const renderNavItem = (item: NavigationItem) => {
+    const isActive =
+      pathname === item.href ||
+      (item.href !== '/' && item.href !== '/dashboard' && pathname?.startsWith(`${item.href}/`)) ||
+      item.children?.some((child: NavigationChild) => pathname === child.href);
+    const isExpanded = expandedItems.includes(item.name);
+    const Icon = item.icon;
+
+    const itemGrant = item.requiredCapability 
+        ? grants.find(g => g.capabilityCode === item.requiredCapability)
+        : null;
+
+    if (item.children) {
+      return (
+        <div key={item.name}>
+          <button
+            onClick={() => toggleExpand(item.name)}
+            data-tooltip={isCollapsed ? getItemLabel(item.label) : undefined}
+            className={cn(
+              'w-full flex items-center justify-between px-3 py-2.5 text-sm rounded-[6px] transition-colors min-h-[44px]',
+              isActive || (isExpanded && !isCollapsed)
+                ? 'bg-[var(--accent-primary-subtle)] text-[var(--accent-primary)] font-semibold border-l-2 border-[var(--accent-primary)]'
+                : 'text-[var(--text-secondary)] hover:bg-[var(--surface-border)] hover:text-[var(--text-primary)] font-medium',
+              isCollapsed && 'justify-center px-2'
+            )}
+          >
+            <div className={cn("flex items-center gap-4 min-w-0", isCollapsed ? "gap-0" : "")}>
+              <Icon className="h-6 w-6 flex-shrink-0" />
+              {!isCollapsed && (
+                <div className="flex items-center gap-2 truncate">
+                  <span className="truncate">{getItemLabel(item.label)}</span>
+                  {itemGrant && (
+                    <span 
+                      className="px-1.5 py-0.5 text-[9px] font-bold bg-amber-500/20 text-amber-500 border border-amber-500/30 rounded uppercase tracking-tighter cursor-help"
+                      title={`Acesso temporário: ${itemGrant.justification}. Expira em: ${itemGrant.expiresAt ? new Date(itemGrant.expiresAt).toLocaleDateString() : 'N/A'}`}
+                    >
+                      TEMP
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+            {!isCollapsed && (
+              <ChevronDown
+                className={cn('h-4 w-4 transition-transform flex-shrink-0', isExpanded && 'rotate-180')}
+              />
+            )}
+          </button>
+          {isExpanded && !isCollapsed && (
+            <div className="mt-1 space-y-1">
+              {item.children.map((child: NavigationChild) => {
+                const isChildActive = pathname === child.href;
+                const childGrant = child.requiredCapability 
+                  ? grants.find(g => g.capabilityCode === child.requiredCapability)
+                  : null;
+
+                return (
+                    <Link
+                    key={child.href}
+                    href={child.href}
+                    target={child.external ? '_blank' : undefined}
+                    rel={child.external ? 'noopener noreferrer' : undefined}
+                    className={cn(
+                        'flex items-center gap-2 py-2 text-sm rounded-[6px] transition-colors relative min-h-[36px]',
+                        isChildActive
+                        ? 'text-[var(--accent-primary)] font-semibold'
+                        : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-medium'
+                    )}
+                    >
+                    <div className="w-[24px] flex justify-center flex-shrink-0">
+                       <span className={cn(
+                           "flex-shrink-0 rounded-full transition-all bg-current",
+                           isChildActive ? "w-2 h-2 scale-100 bg-[var(--accent-primary)]" : "w-1 h-1 bg-[var(--text-muted)]"
+                       )} />
+                    </div>
+                    <span className="truncate">{getItemLabel(child.label)}</span>
+                    {childGrant && (
+                      <span 
+                        className="ml-auto px-1 py-0.5 text-[8px] font-bold bg-amber-500/20 text-amber-500 border border-amber-500/30 rounded uppercase tracking-tighter"
+                        title={`Expira em: ${childGrant.expiresAt ? new Date(childGrant.expiresAt).toLocaleDateString() : 'N/A'}`}
+                      >
+                        TEMP
+                      </span>
+                    )}
+                    </Link>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <Link
+        key={item.name}
+        href={item.href}
+        data-tooltip={isCollapsed ? getItemLabel(item.label) : undefined}
+        className={cn(
+          'flex items-center gap-4 px-3 py-2.5 text-sm rounded-lg transition-colors min-h-[44px]',
+           isActive
+            ? 'bg-primary/10 text-primary font-semibold'
+            : 'text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground font-medium',
+           isCollapsed && 'justify-center px-2 gap-0'
+        )}
+      >
+        <Icon className="h-6 w-6 flex-shrink-0" />
+        {!isCollapsed && (
+          <div className="flex items-center gap-2 truncate">
+            <span className="truncate">{getItemLabel(item.label)}</span>
+            {itemGrant && (
+              <span 
+                className="px-1.5 py-0.5 text-[9px] font-bold bg-amber-500/20 text-amber-500 border border-amber-500/30 rounded uppercase tracking-tighter cursor-help"
+                title={`Acesso temporário: ${itemGrant.justification}. Expira em: ${itemGrant.expiresAt ? new Date(itemGrant.expiresAt).toLocaleDateString() : 'N/A'}`}
+              >
+                TEMP
+              </span>
+            )}
+          </div>
+        )}
+      </Link>
+    );
+  };
+
+  return (
+    <>
+      {/* Mobile Overlay */}
+      {isMobileOpen && (
+        <button
+          type="button"
+          className="fixed inset-0 bg-black/60 z-40 lg:hidden w-full h-full cursor-default focus:outline-none"
+          onClick={() => setSidebarOpen(false)}
+          aria-label="Close sidebar"
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        className={cn(
+          'fixed top-0 left-0 z-[200] h-screen bg-[var(--sidebar)] border-r border-[var(--sidebar-border)] transition-all duration-300',
+          'flex flex-col', // Flexbox container
+          isCollapsed ? 'w-[88px]' : 'w-[280px]',
+          isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        )}
+      >
+        {/* Toggle Button */}
+        <button
+            onClick={toggle}
+            className="hidden lg:flex absolute top-8 -right-3 w-6 h-6 bg-sidebar border border-border rounded-full items-center justify-center text-muted-foreground hover:text-foreground z-[201] cursor-pointer shadow-md transition-transform hover:scale-110"
+        >
+             {isCollapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
+        </button>
+
+        {/* Logo - Fixo no topo */}
+        <div className={cn("h-20 flex items-center px-6 min-h-[80px] shrink-0", isCollapsed ? "justify-center px-0" : "")}>
+          <Logo size={isCollapsed ? "small" : "medium"} />
+        </div>
+
+        {/* Scrollbar - Área scrollável com flex-1 */}
+        <div className="flex-1 min-h-0">
+          <Scrollbar>
+            <div className="flex flex-col">
+
+
+
+            {/* Navigation */}
+            <nav className={cn("px-4 pb-4 flex-1", isCollapsed ? "space-y-4" : "space-y-6")}>
+              {navSections.map((section: NavGroup) => {
+                const isSectionExpanded = expandedSections.includes(section.title);
+                
+                return (
+                  <div key={section.title}>
+                    {!isCollapsed && (
+                      <button
+                        onClick={() => toggleSection(section.title)}
+                        className={cn(
+                          "w-full flex items-center gap-2 px-3 mb-2",
+                          "text-[11px] font-bold text-muted-foreground uppercase tracking-wider",
+                          "hover:text-foreground transition-colors cursor-pointer"
+                        )}
+                      >
+                        <ChevronDown
+                          className={cn(
+                            "h-3 w-3 transition-transform duration-300",
+                            isSectionExpanded ? "rotate-0" : "-rotate-90"
+                          )}
+                        />
+                        <span>{getSectionTitle(section.title)}</span>
+                      </button>
+                    )}
+                    
+                    {/* Items da seção com transição suave */}
+                    <div
+                      className={cn(
+                        "space-y-1 overflow-hidden transition-all duration-300 ease-in-out",
+                        isSectionExpanded 
+                          ? "max-h-[1000px] opacity-100" 
+                          : "max-h-0 opacity-0"
+                      )}
+                    >
+                      {section.items.map((item: NavigationItem) => renderNavItem(item))}
+                    </div>
+                  </div>
+                );
+              })}
+            </nav>
+          </div>
+        </Scrollbar>
+        </div>
+      </aside>
+    </>
+  );
+}

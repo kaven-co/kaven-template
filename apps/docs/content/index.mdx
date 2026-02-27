@@ -1,0 +1,227 @@
+---
+title: Kaven Platform Home
+description: Documentação oficial da plataforma Kaven v2.0 - Multi-tenant SaaS Boilerplate
+date: 2026-01-11
+author: Kaven Team
+version: 2.0.0
+tags: [home, getting-started, overview, v2]
+---
+
+import { Callout } from 'nextra/components';
+
+# Kaven Boilerplate - Multi-tenant SaaS Platform
+
+> **Versão:** 2.0.0  
+> **Status:** ✅ Produção Ready
+
+## 🚀 Visão Geral
+
+**Kaven v2.0** é um boilerplate modular projetado para escala. Com uma CLI dedicada e arquitetura de banco de dados flexível, permite criar SaaS multi-tenant robustos com sistema de planos, produtos, pagamentos PIX e observabilidade integrada.
+
+<Callout type="info" emoji="✨">
+  A v2.0 introduz o **Sistema Modular** e a **Kaven CLI**, permitindo injeção e
+  remoção de features complexas como Pagamentos e Observabilidade sob demanda.
+</Callout>
+
+### Principais Funcionalidades (v2.0)
+
+- ✅ **Kaven CLI** - Gestão total do projeto via linha de comando
+- ✅ **Split-Schema** - Evolução segura do banco de dados (Prisma)
+- ✅ **Sistema Modular** - Adicione ou remova funcionalidades sob demanda
+- ✅ **Multi-tenancy** - Isolamento completo de dados por tenant
+- ✅ **Plans & Products** - Gestão flexível de monetização
+- ✅ **PIX Payments** - Integração nativa com PagueBit
+- ✅ **Observability** - Monitoramento completo com Prometheus/Grafana
+
+---
+
+## 📊 Stack Tecnológica
+
+### Ferramentas v2.0
+
+- **CLI:** TypeScript + Inquirer + Commander
+- **Database Engine:** Prisma Split-Schema Manager
+- **Module Engine:** Automatic Feature Injection
+
+### Frontend
+
+- **Framework:** Next.js 16 (App Router + Turbopack)
+- **UI:** shadcn/ui + Tailwind CSS v4
+- **Design System:** [62 componentes documentados](/design-system)
+- **Estado:** TanStack Query + Zustand
+- **i18n:** next-intl
+
+### Backend
+
+- **Framework:** Express.js / Fastify
+- **ORM:** Prisma
+- **Banco de Dados:** PostgreSQL
+- **Integrações:** PagueBit (PIX), BullMQ (Filas), Redis (Cache)
+
+---
+
+## 🏗️ Arquitetura e Módulos
+
+O Kaven v2.0 separa o que é **infraestrutura essencial** do que são **features de negócio**.
+
+### 🏛️ Core Platform (Incluso por padrão)
+
+- **Auth & Security:** JWT, RBAC, Anti-IDOR.
+- **Multi-tenancy:** Isolamento completo de dados.
+- **Design System:** [Componentes UI Base](/design-system).
+- **Billing Engine:** Lógica de planos e entitlements.
+
+### 📦 Módulos Opcionais
+
+<Callout type="warning">
+  Estes módulos podem ser instalados ou removidos a qualquer momento via CLI.
+</Callout>
+
+- **Payments:** Gateway PagueBit/Stripe.
+- **Observability:** Prometheus Metrics & Dashboard.
+- **AI Assistant:** Integração com LLMs (Em breve).
+- **Analytics:** Tracking avançado de eventos (Em breve).
+
+---
+
+## 🚀 Início Rápido
+
+### Instalação
+
+```bash
+# Clone e entre no projeto
+git clone https://github.com/your-org/kaven-boilerplate.git
+cd kaven-boilerplate
+
+# Instale as dependências
+pnpm install
+
+# Build da CLI (necessário na primeira execução)
+cd kaven-cli && pnpm run build && cd ..
+
+# Configure o projeto
+node kaven-cli/bin/kaven.js init
+```
+
+### Comandos Essenciais
+
+```bash
+# Gerar schema do banco (Merge Base + Extended)
+node kaven-cli/bin/kaven.js db generate
+
+# Listar módulos disponíveis
+node kaven-cli/bin/kaven.js module list
+
+# Iniciar ambiente de desenvolvimento
+pnpm dev
+```
+
+### Acessos Padrão
+
+| Aplicação           | URL                   |
+| :------------------ | :-------------------- |
+| **Admin Dashboard** | http://localhost:3000 |
+| **API Server**      | http://localhost:8000 |
+| **Docs**            | http://localhost:3002 |
+
+---
+
+## 📦 Documentação Detalhada
+
+Explore os guias detalhados para cada parte do sistema:
+
+- **[Design System](/design-system)**: Guia visual de componentes.
+- **[Plataforma](/platform)**: Guias de arquitetura, banco de dados e CLI.
+  - [Kaven CLI](/platform/cli)
+  - [Split-Schema Database](/platform/database)
+  - [Sistema Modular](/platform/modules)
+
+---
+
+### Deploy em Produção (VM Limpa)
+
+Se você acabou de criar uma VM (Google Cloud, AWS, Digital Ocean) rodando Ubuntu/Debian, aqui está o checklist essencial de pacotes para rodar o Kaven.
+
+#### 1. Dependências do Sistema
+
+```bash
+# Atualize os pacotes
+sudo apt update && sudo apt upgrade -y
+
+# Instale ferramentas essenciais
+sudo apt install -y curl wget git unzip build-essential
+```
+
+#### 2. Node.js (v20 LTS via nvm)
+
+Recomendamos usar o NVM (Node Version Manager) para gerenciar a versão do Node.
+
+```bash
+# Instalar NVM
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+
+# Recarregar shell
+source ~/.bashrc
+
+# Instalar Node v20
+nvm install 20
+nvm use 20
+nvm alias default 20
+```
+
+#### 3. Gerenciador de Pacotes (PNPM)
+
+O Kaven utiliza `pnpm` para gestão eficiente do monorepo.
+
+```bash
+# Instalar pnpm globalmente
+npm install -g pnpm@9.15.4
+
+# Verificar instalação
+pnpm -v
+```
+
+#### 4. Docker & Infrastructure (Recomendado)
+
+Para rodar o banco de dados e serviços auxiliares (Redis, etc) de forma isolada.
+
+```bash
+# Script oficial de instalação do Docker
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+
+# Adicionar usuário ao grupo docker (evitar sudo)
+sudo usermod -aG docker $USER
+newgrp docker
+```
+
+#### 5. Configuração Final do Projeto
+
+```bash
+# Clone seu fork (substitua URL)
+git clone https://github.com/your-org/kaven-boilerplate.git
+cd kaven-boilerplate
+
+# Instalar deps
+pnpm install
+
+# Copiar variáveis de ambiente
+cp .env.example .env
+
+# Subir infraestrutura (DB + Redis)
+pnpm docker:up
+
+# Gerar e migrar banco
+node kaven-cli/bin/kaven.js db generate
+pnpm db:migrate
+
+# Build da aplicação
+pnpm build
+
+# Start (Production Mode)
+pnpm start
+```
+
+---
+
+**Desenvolvido com ❤️ pela equipe Kaven**

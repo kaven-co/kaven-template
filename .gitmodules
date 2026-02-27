@@ -1,0 +1,3 @@
+[submodule "squads/mmos-squad"]
+	path = squads/mmos-squad
+	url = git@github.com:kaven-co/mmos-squad.git

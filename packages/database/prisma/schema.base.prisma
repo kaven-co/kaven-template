@@ -1,0 +1,2319 @@
+// ============================================
+// SCHEMA BASE - CORE IMUTÁVEL DA PLATAFORMA
+// ============================================
+//
+// ⚠️ ATENÇÃO: ESTE É O SCHEMA CORE (BASE) DA PLATAFORMA
+//
+// Este arquivo contém os modelos FUNDAMENTAIS e de SEGURANÇA do Kaven:
+// - Tenant, User, Subscription (Multi-tenancy)
+// - Authentication, Authorization, RBAC
+// - Spaces & Permissions (Sistema de Segurança)
+// - Audit Logs, Security
+// - Billing, Payments, Invoices
+// - Email Infrastructure
+// - Platform Configuration
+//
+// 🚫 NÃO ADICIONE FEATURES CUSTOMIZADAS AQUI
+// ✅ Use schema.extended.prisma para SUAS features
+//
+// REGRA DE OURO:
+// - Modelos de SEGURANÇA e CORE → schema.base.prisma (AQUI)
+// - Modelos de FEATURES CUSTOM → schema.extended.prisma
+//
+// Exemplos de O QUE VAI AQUI:
+// ✅ Capabilities, Grants, Policies (Segurança)
+// ✅ TenantInvite, Space, UserSpace (Core)
+// ✅ AuditLog, SecurityAuditLog (Auditoria)
+// ✅ EmailIntegration, EmailEvent (Infraestrutura)
+//
+// Exemplos de O QUE NÃO VAI AQUI:
+// ❌ Projects, Tasks (Features de demo)
+// ❌ Blog, Posts, Comments (Features custom)
+// ❌ Inventory, Products (Features de negócio)
+//
+// ============================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ===========================
+// ENUMS
+// ===========================
+
+enum TenantStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum Role {
+  SUPER_ADMIN
+  TENANT_ADMIN
+  USER
+}
+
+enum UserStatus {
+  ACTIVE
+  PENDING
+  BANNED
+  REJECTED
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  PAST_DUE
+  TRIALING
+  EXPIRED
+}
+
+enum InvoiceStatus {
+  DRAFT
+  PENDING
+  PAID
+  OVERDUE
+  CANCELED
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  CANCELED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  STRIPE
+  PIX
+  CREDIT_CARD
+  BOLETO
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum IconType {
+  TEXT
+  SVG
+}
+
+enum IconColorMode {
+  MONOCHROME  // Respeita theme (currentColor)
+  COLORED     // SVG colorido original
+}
+
+// ===========================
+// EMAIL INFRASTRUCTURE ENUMS
+// ===========================
+
+enum EmailProvider {
+  POSTMARK
+  RESEND
+  AWS_SES
+  SMTP
+}
+
+enum EmailType {
+  TRANSACTIONAL
+  MARKETING
+}
+
+enum EmailEventType {
+  SENT
+  DELIVERED
+  BOUNCE
+  COMPLAINT
+  OPEN
+  CLICK
+  UNSUBSCRIBE
+}
+
+enum BounceType {
+  HARD
+  SOFT
+  TRANSIENT
+}
+
+enum TemplateStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum EmailQueueStatus {
+  PENDING
+  PROCESSING
+  SENT
+  FAILED
+  RETRY
+}
+
+// ===========================
+// SPACES & PERMISSIONS ENUMS
+// ===========================
+
+enum CapabilitySensitivity {
+  NORMAL
+  SENSITIVE
+  HIGHLY_SENSITIVE
+  CRITICAL
+}
+
+enum CapabilityScope {
+  GLOBAL
+  TENANT
+  SPACE
+  SELF
+  ASSIGNED
+}
+
+enum GrantType {
+  ADD
+  DENY
+}
+
+enum AccessLevel {
+  READ_ONLY
+  READ_WRITE
+}
+
+enum GrantStatus {
+  ACTIVE
+  EXPIRED
+  REVOKED
+}
+
+enum GrantRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
+enum GrantApprovalLevel {
+  NORMAL
+  SENSITIVE
+  CRITICAL
+}
+
+enum PolicyType {
+  MFA_REQUIRED
+  IP_RESTRICTION
+  IP_WHITELIST              // Adicionado: suporta allowedIps e blockedIps
+  TIME_RESTRICTION
+  TIME_BASED                // Adicionado: alias para TIME_RESTRICTION
+  DEVICE_RESTRICTION
+  DEVICE_TRUST              // Adicionado: alias para DEVICE_RESTRICTION
+  APPROVAL_REQUIRED
+  RATE_LIMIT
+  JUSTIFICATION_REQUIRED
+  GEO_RESTRICTION           // Adicionado: restrição geográfica
+}
+
+enum PolicyTargetType {
+  SPACE
+  ROLE
+  CAPABILITY
+  USER
+  GLOBAL                    // Adicionado: políticas globais
+}
+
+enum PolicyEnforcement {
+  DENY
+  ALLOW                     // Adicionado: permite acesso
+  WARN
+  REQUIRE_MFA
+}
+
+enum ImpersonationStatus {
+  ACTIVE
+  ENDED
+  EXPIRED
+}
+
+enum SecurityRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  EXECUTED
+}
+
+// ===========================
+// CURRENCIES
+// ===========================
+
+model Currency {
+  id          String   @id @default(uuid())
+  /// @unique -- ISO 4217 currency code; ensures no duplicate currency definitions
+  code        String   @unique // BRL, USD, SATS
+  name        String   // Real Brasileiro, US Dollar, Bitcoin (sats)
+  symbol      String?  // R$, $, null (para sats que usa SVG)
+  
+  // Ícone (SVG ou texto)
+  iconType      IconType      @default(TEXT) // TEXT ou SVG
+  iconColorMode IconColorMode @default(MONOCHROME) // MONOCHROME ou COLORED
+  iconSvgPath   String?       @db.Text // Path do SVG (para sats)
+  iconSvgViewBox String?      @default("0 0 24 24") // ViewBox do SVG original
+  
+  // Formatação
+  decimals    Int      @default(2) // BRL=2, USD=2, SATS=0
+  
+  // Configurações
+  isActive    Boolean  @default(true)
+  isCrypto    Boolean  @default(false)
+  sortOrder   Int      @default(0)
+  
+  // Metadata (para configurações futuras)
+  metadata    Json?
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  @@index([code])
+  @@index([isActive])
+  @@index([isCrypto])
+  @@map("currencies")
+}
+
+// ===========================
+// PLATFORM CONFIGURATION
+// ===========================
+
+model PlatformConfig {
+  id           String  @id @default(uuid())
+
+  // Tenant que possui esta configuração (nullable para compatibilidade com config global)
+  tenantId     String?
+  tenant       Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  companyName  String  @default("Kaven SaaS")
+  description  String?
+  primaryColor String  @default("#00A76F")
+  logoUrl      String? // URL do logo principal (sidebar, auth, emails)
+  faviconUrl   String? // URL do favicon (ícone do navegador)
+
+  // Configurações Regionais
+  // NOTE: These defaults reflect the initial target market (Brazil).
+  // They are overridden at runtime when creating a new tenant/config:
+  //   - The Tenant App onboarding wizard sets locale based on user selection
+  //   - Admin Panel allows changing these per-tenant at any time
+  //   - For non-Brazilian deployments, override via seed script or API
+  // Accepted values for language: BCP-47 tags (e.g., "en-US", "pt-BR", "es-AR")
+  language     String @default("en-US")
+  // Accepted values for currency: ISO 4217 codes (e.g., "USD", "BRL", "EUR")
+  currency     String @default("USD")
+  // Number format pattern: "1,000.00" (US/intl) or "1.000,00" (BR/EU)
+  numberFormat String @default("1,000.00")
+  
+  // Configurações de Timezone e Formatos
+  timezone     String @default("UTC") // IANA timezone (GMT+0)
+  dateFormat   String @default("Y-m-d") // Y-m-d, d/m/Y, m/d/Y, j \\de F \\de Y
+  timeFormat   String @default("g:i A")   // H:i (24h) ou g:i A (12h)
+  
+  // SEO & Social
+  twitterHandle String?
+  ogImageUrl    String?
+
+  // Configurações de Email/SMTP
+  smtpHost     String? @default("localhost")
+  smtpPort     Int?    @default(1025)
+  smtpSecure   Boolean @default(false)
+  smtpUser     String?
+  /// @encrypted — SMTP password, encrypted at application layer before storage
+  smtpPassword String?
+  emailFrom    String? @default("Kaven <noreply@kaven.com>")
+
+  updatedAt DateTime @updatedAt
+}
+
+// ===========================
+// CORE MODELS
+// ===========================
+
+model Tenant {
+  id        String       @id @default(uuid())
+  name      String
+  /// @unique -- URL-safe tenant identifier used in routing and API scoping
+  slug      String       @unique
+  /// @unique -- Custom domain for subdomain-based tenant detection (e.g., acme.kaven.com)
+  domain    String?      @unique // Para subdomain-based detection
+  status    TenantStatus @default(ACTIVE)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  deletedAt DateTime? // Soft delete
+
+  // Relations
+  users         User[]
+  subscriptions Subscription[]
+  invoices      Invoice[]
+  orders        Order[]
+  auditLogs     AuditLog[]
+  files         File[]
+  Plan          Plan[]
+  Product       Product[]
+  Purchase      Purchase[]
+  UsageRecord   UsageRecord[]
+  invites       TenantInvite[] @relation("TenantInvites")
+  spaces        Space[]        @relation("TenantSpaces")
+  projects      Project[]
+  tasks         Task[]
+  grants        Grant[]        @relation("TenantGrants")
+  capabilities  Capability[]
+
+  // SPRINT 1: Multi-tenant permissions relations
+  policies              Policy[]
+  grantRequests         GrantRequest[]
+  securityAuditLogs     SecurityAuditLog[]
+  impersonationSessions ImpersonationSession[]
+
+  // Email Relations
+  emailEvents EmailEvent[]
+
+  // Platform Config (branding/theme per tenant)
+  platformConfigs PlatformConfig[]
+
+  @@index([slug])
+  @@index([domain])
+  @@index([status])
+}
+
+model User {
+  id               String     @id @default(uuid())
+  /// @unique -- Global unique email; used as primary login identifier across all tenants
+  email            String     @unique
+  /// @encrypted — Stored as bcrypt hash (12 salt rounds). See apps/api/src/lib/password.ts
+  password         String
+  name             String
+  phone            String?
+  avatar           String? // URL do avatar do usuário
+  emailVerified    Boolean    @default(false)
+  emailVerifiedAt  DateTime?
+  twoFactorEnabled Boolean    @default(false)
+  /// @encrypted — TOTP shared secret, encrypted at application layer before storage
+  twoFactorSecret  String?
+  /// @encrypted — JSON array of one-time backup codes, encrypted at application layer before storage
+  backupCodes      String?
+  role             Role       @default(USER)
+  status           UserStatus @default(ACTIVE)
+  tenantId         String?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+  deletedAt        DateTime? // Soft delete
+  lastLoginAt      DateTime?
+
+  // Security fields (Axisor Port)
+  loginAttempts      Int       @default(0)
+  lockedUntil        DateTime?
+  lastLoginIp        String?
+  lastLoginUserAgent String?
+  sessionExpiresAt   DateTime?
+
+  // Email Tracking Fields
+  emailBounced        Boolean    @default(false) @map("email_bounced")
+  emailBouncedAt      DateTime?  @map("email_bounced_at")
+  emailBounceType     BounceType? @map("email_bounce_type")
+  emailOptOut         Boolean    @default(false) @map("email_opt_out")
+  emailOptOutDate     DateTime?  @map("email_opt_out_date")
+  emailComplaintCount Int        @default(0) @map("email_complaint_count")
+  /// @unique -- One-click email unsubscribe token (LGPD/CAN-SPAM compliance)
+  unsubscribeToken    String?    @unique @map("unsubscribe_token")
+
+  /// Metadata JSON para permissões granulares e preferências do usuário
+  /// Estrutura: { internalRole?: string, permissions?: string[], preferences?: object }
+  /// Usado para sub-roles do Admin Tenant (ARCHITECT, FINANCE, SUPPORT, MARKETING, DEVOPS)
+  /// Exemplo: { "internalRole": "FINANCE", "permissions": ["view:invoices", "manage:refunds"] }
+  metadata Json?
+
+  // Relations
+  tenant                    Tenant?                    @relation(fields: [tenantId], references: [id])
+  refreshTokens             RefreshToken[]
+  auditLogs                 AuditLog[]
+  files                     File[]
+  verificationTokens        VerificationToken[]
+  passwordResetTokens       PasswordResetToken[]
+  designSystemCustomization DesignSystemCustomization?
+
+  // Security Relations
+  securityAuditLogs      SecurityAuditLog[]
+  securityConfigsUpdated SecurityConfig[]
+  Purchase               Purchase[]
+
+  // Notification Relations
+  inAppNotifications        InAppNotification[]
+  notificationPreferences   UserNotificationPreferences?
+  
+  sentInvites               TenantInvite[] @relation("SentInvites")
+  userSpaces                UserSpace[]    @relation("UserSpaces")
+
+  // Project & Task Relations (Demo Features)
+  createdProjects Project[] @relation("ProjectCreator")
+  createdTasks    Task[]    @relation("TaskCreator")
+  assignedTasks   Task[]    @relation("TaskAssignee")
+
+  // Email Relations
+  emailEvents EmailEvent[]
+
+  // Spaces & Permissions Relations
+  spaceRoles            UserSpaceRole[]          @relation("UserSpaceRoles")
+  grants                Grant[]                  @relation("UserGrants")
+  grantsGivenByMe       Grant[]                  @relation("GrantedBy")
+  grantsRevokedByMe     Grant[]                  @relation("RevokedBy")
+  grantRequests         GrantRequest[]           @relation("GrantRequests")
+  grantApprovalsGiven   GrantRequest[]           @relation("GrantApprovals")
+  grantRejectionsGiven  GrantRequest[]           @relation("GrantRejections")
+  devices               PolicyDeviceTracking[]   @relation("UserDevices")
+  spaceOwnerships       SpaceOwner[]             @relation("SpaceOwnerships")
+  capabilityAudits      CapabilityAuditEvent[]   @relation("UserCapabilityAudits")
+  grantAuditsPerformed  GrantAuditEvent[]        @relation("GrantAuditPerformedBy")
+  impersonatorSessions  ImpersonationSession[]   @relation("Impersonator")
+  impersonatedSessions  ImpersonationSession[]   @relation("Impersonated")
+  dataExports           DataExportLog[]          @relation("UserDataExports")
+  securityRequests      SecurityRequest[]        @relation("SecurityRequests")
+  securityTargetActions SecurityRequest[]        @relation("TargetUserSecurity")
+  securityApprovals     SecurityRequest[]        @relation("SecurityApprovals")
+  securityExecutions    SecurityRequest[]        @relation("SecurityExecutions")
+
+  @@index([email])
+  @@index([tenantId])
+  @@index([role])
+  @@index([status])
+  @@index([emailBounced])
+  @@index([emailOptOut])
+  @@index([unsubscribeToken])
+
+  // Composite indexes for multi-tenant query performance
+  @@index([tenantId, email])        // Tenant-scoped user lookup by email
+  @@index([tenantId, role])         // Tenant-scoped user listing by role
+  @@index([tenantId, status])       // Tenant-scoped user filtering by status
+  @@index([tenantId, deletedAt])    // Tenant-scoped soft delete filtering
+  @@index([tenantId, createdAt])    // Tenant-scoped user listing with date ordering
+  @@index([tenantId, lastLoginAt])  // Tenant-scoped inactive user detection
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  /// @unique -- JWT refresh token value; enables secure token rotation and revocation
+  token     String    @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+  revokedAt DateTime?
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  action    String // Ex: "user.created", "tenant.updated"
+  entity    String // Ex: "User", "Tenant"
+  entityId  String
+  userId    String?
+  tenantId  String?
+  metadata  Json? // Dados adicionais
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  // Soft delete + retention (LGPD/GDPR compliance)
+  deletedAt      DateTime? // Soft delete timestamp
+  retentionUntil DateTime  @default(dbgenerated("NOW() + INTERVAL '90 days'")) // Minimum retention period
+
+  // Relations
+  user   User?   @relation(fields: [userId], references: [id])
+  tenant Tenant? @relation(fields: [tenantId], references: [id])
+
+  @@index([userId])
+  @@index([tenantId])
+  @@index([action])
+  @@index([createdAt])
+  @@index([retentionUntil])
+
+  // Composite indexes for multi-tenant query performance
+  @@index([tenantId, createdAt])    // Tenant-scoped audit log timeline
+  @@index([entity, entityId])       // Entity-specific audit trail lookup
+  @@index([tenantId, action])       // Tenant-scoped action filtering
+  @@index([tenantId, userId])       // Tenant-scoped user activity lookup
+  @@index([tenantId, deletedAt])    // Tenant-scoped soft delete filtering (GDPR)
+  @@index([tenantId, entity, createdAt]) // Tenant-scoped entity audit timeline
+  @@index([tenantId, action, createdAt]) // Analytics: action frequency over time
+}
+
+// ===========================
+// SUBSCRIPTION & BILLING
+// ===========================
+
+model Subscription {
+  id String @id @default(uuid())
+
+  /// Associated tenant
+  /// @unique -- One active subscription per tenant (enforces single-plan billing)
+  tenantId String @unique @map("tenant_id")
+
+  /// Associated plan
+  planId String @map("plan_id")
+
+  /// Associated price (specific billing interval)
+  priceId String? @map("price_id")
+
+  /// Stripe Customer ID
+  /// @unique -- Maps 1:1 to Stripe customer; prevents duplicate billing accounts
+  stripeCustomerId String? @unique @map("stripe_customer_id")
+
+  /// Stripe Subscription ID
+  /// @unique -- Maps 1:1 to Stripe subscription; prevents duplicate subscription records
+  stripeSubscriptionId String? @unique @map("stripe_subscription_id")
+
+  /// Subscription status
+  status SubscriptionStatus @default(TRIALING)
+
+  /// Current billing period start
+  currentPeriodStart DateTime? @map("current_period_start")
+
+  /// Current billing period end
+  currentPeriodEnd DateTime? @map("current_period_end")
+
+  /// Whether to cancel at period end
+  cancelAtPeriodEnd Boolean @default(false) @map("cancel_at_period_end")
+
+  /// Cancellation timestamp
+  canceledAt DateTime? @map("canceled_at")
+
+  /// Cancellation reason
+  cancelReason String? @map("cancel_reason")
+
+  /// Trial end timestamp
+  trialEnd DateTime? @map("trial_end")
+
+  /// Discount/coupon code applied
+  discountCode String? @map("discount_code")
+
+  /// Discount percentage (0-100)
+  discountPercent Int? @map("discount_percent")
+
+  /// Additional metadata
+  metadata Json?
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  // Relations
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  plan     Plan      @relation(fields: [planId], references: [id], onDelete: Restrict)
+  price    Price?    @relation(fields: [priceId], references: [id], onDelete: SetNull)
+  invoices Invoice[]
+
+  @@index([tenantId])
+  @@index([planId])
+  @@index([status])
+  @@index([stripeSubscriptionId])
+  @@index([currentPeriodEnd])
+  @@map("subscriptions")
+}
+
+model Invoice {
+  id             String        @id @default(uuid())
+  tenantId       String
+  subscriptionId String?
+  /// @unique -- Human-readable invoice number (e.g., INV-2026-001); used in billing UI and fiscal documents
+  invoiceNumber  String        @unique
+  status         InvoiceStatus @default(PENDING)
+  amountDue      Decimal       @db.Decimal(10, 2)
+  amountPaid     Decimal       @default(0) @db.Decimal(10, 2)
+  currency       String        @default("BRL")
+  dueDate        DateTime
+  paidAt         DateTime?
+  metadata       Json?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  deletedAt      DateTime?
+
+  // Relations
+  tenant       Tenant        @relation(fields: [tenantId], references: [id])
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id])
+  payments     Payment[]
+
+  @@index([tenantId])
+  @@index([status])
+  @@index([invoiceNumber])
+  @@index([dueDate])
+
+  // Composite indexes for multi-tenant query performance
+  @@index([tenantId, status])       // Tenant-scoped invoice listing by status
+  @@index([tenantId, createdAt])    // Tenant-scoped invoice timeline
+  @@index([tenantId, dueDate])      // Tenant-scoped overdue invoice detection
+  @@index([tenantId, status, createdAt]) // Analytics: invoice status distribution over time
+}
+
+model Order {
+  id          String      @id @default(uuid())
+  tenantId    String
+  /// @unique -- Human-readable order number (e.g., ORD-2026-001); used in order tracking UI
+  orderNumber String      @unique
+  status      OrderStatus @default(PENDING)
+  totalAmount Decimal     @db.Decimal(10, 2)
+  currency    String      @default("BRL")
+  metadata    Json? // Items, customer info, etc.
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  deletedAt   DateTime?
+
+  // Relations
+  tenant   Tenant    @relation(fields: [tenantId], references: [id])
+  payments Payment[]
+
+  @@index([tenantId])
+  @@index([status])
+  @@index([orderNumber])
+
+  // Composite indexes for multi-tenant query performance
+  @@index([tenantId, status])       // Tenant-scoped order listing by status
+  @@index([tenantId, createdAt])    // Tenant-scoped order timeline
+  @@index([tenantId, status, createdAt]) // Analytics: order status distribution over time
+}
+
+model Payment {
+  id            String        @id @default(uuid())
+  invoiceId     String?
+  orderId       String?
+  amount        Decimal       @db.Decimal(10, 2)
+  currency      String        @default("BRL")
+  method        PaymentMethod
+  status        PaymentStatus @default(PENDING)
+  /// @unique -- External payment gateway transaction ID (Stripe charge, Pix e2eId); prevents duplicate payment processing
+  transactionId String?       @unique // Stripe/Pix transaction ID
+  pixQrCode     String? // For Pix payments
+  pixQrCodeUrl  String?
+  metadata      Json?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  confirmedAt   DateTime?
+
+  // Relations
+  invoice Invoice? @relation(fields: [invoiceId], references: [id])
+  order   Order?   @relation(fields: [orderId], references: [id])
+
+  @@index([invoiceId])
+  @@index([orderId])
+  @@index([status])
+  @@index([transactionId])
+}
+
+// ===========================
+// FILE MANAGEMENT
+// ===========================
+
+model File {
+  id           String    @id @default(uuid())
+  filename     String // Nome gerado (único)
+  originalName String // Nome original do arquivo
+  mimeType     String // ex: image/jpeg, application/pdf
+  size         Int // Tamanho em bytes
+  path         String // Caminho no filesystem ou S3
+  url          String? // URL pública (se aplicável)
+  userId       String
+  tenantId     String?
+  createdAt    DateTime  @default(now())
+  deletedAt    DateTime? // Soft delete
+
+  // Relations
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tenantId])
+  @@index([createdAt])
+}
+
+model VerificationToken {
+  id        String   @id @default(uuid())
+  /// @unique -- Secure random token sent via email for email address verification
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  /// @unique -- Secure random token sent via email for password reset flow
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+}
+
+// ===========================
+// DESIGN SYSTEM CUSTOMIZATION
+// ===========================
+
+enum DesignSystemType {
+  MUI
+  HIG
+  FLUENT
+  SHADCN
+}
+
+model DesignSystemCustomization {
+  id           String           @id @default(uuid())
+  /// @unique -- One design system customization per user (user-level theme preferences)
+  userId       String           @unique
+  designSystem DesignSystemType @default(MUI)
+  mode         String           @default("light") // "light" or "dark"
+
+  // Color customizations (JSON)
+  colorPrimary   String?
+  colorSecondary String?
+  colorSuccess   String?
+  colorWarning   String?
+  colorError     String?
+  colorInfo      String?
+
+  // Typography customizations
+  fontFamily    String?
+  fontSizeScale Float?  @default(1.0)
+
+  // Spacing customizations
+  spacingScale Float? @default(1.0)
+
+  // Radius customizations
+  radiusScale Float? @default(1.0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([designSystem])
+}
+
+// ===========================
+// SECURITY MODELS (Axisor Port)
+// ===========================
+
+model SecurityConfig {
+  id          String   @id @default(uuid())
+  /// @unique -- Configuration key identifier (e.g., "max_login_attempts", "session_timeout")
+  key         String   @unique
+  value       String
+  description String?
+  category    String   @default("authentication")
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  updatedBy   String?
+
+  // Relations
+  updatedByUser User? @relation(fields: [updatedBy], references: [id])
+
+  @@index([key])
+  @@index([isActive])
+}
+
+model SecurityAuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+
+  // SPRINT 1: Multi-tenant isolation
+  tenantId  String   @map("tenant_id")
+
+  action    String
+  resource  String?
+  ipAddress String?
+  userAgent String?
+  success   Boolean  @default(true)
+  details   Json?
+  createdAt DateTime @default(now())
+
+  // Relations
+  user   User?   @relation(fields: [userId], references: [id])
+  tenant Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tenantId])
+  @@index([action])
+  @@index([createdAt])
+
+  // Composite indexes for multi-tenant query performance
+  @@index([tenantId, createdAt])    // Tenant-scoped security audit timeline
+  @@index([tenantId, action])       // Tenant-scoped security action filtering
+  @@index([tenantId, userId])       // Tenant-scoped user security activity
+  @@index([tenantId, action, createdAt]) // Analytics: security action frequency over time
+  @@index([tenantId, success, createdAt]) // Analytics: security success/failure rate over time
+}
+
+// ============================================
+// PLANS & PRODUCTS SYSTEM
+// ============================================
+
+/// Feature definitions (catalog of all possible features)
+/// GLOBAL ENTITY: Features have NO tenantId — they are framework-defined capabilities
+/// shared across all tenants. The catalog of available features is managed by the platform
+/// (SUPER_ADMIN only). Tenants consume features via PlanFeature assignments, not by creating them.
+model Feature {
+  id String @id @default(uuid())
+
+  /// Unique feature code (e.g., "USERS", "STORAGE_MB", "API_ACCESS")
+  /// @unique -- Global feature identifier used in requireFeature() middleware and plan comparisons
+  code String @unique
+
+  /// Display name
+  name String
+
+  /// Description for admin/docs
+  description String?
+
+  /// Feature type
+  type FeatureType @default(BOOLEAN)
+
+  /// Default value for features not explicitly set
+  defaultValue String? @map("default_value")
+
+  /// Unit for quota features (e.g., "users", "MB", "calls")
+  unit String?
+
+  /// Category for grouping in UI
+  category String?
+
+  /// Sort order in UI
+  sortOrder Int @default(0) @map("sort_order")
+
+  /// Whether feature is active
+  isActive Boolean @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  planFeatures   PlanFeature[]
+  productEffects ProductEffect[]
+  usageRecords   UsageRecord[]
+
+  @@index([code])
+  @@index([category])
+  @@index([isActive])
+  @@map("features")
+}
+
+/// Plan definitions (subscription tiers)
+/// MULTI-TENANT SCOPING: tenantId is nullable with specific business rules:
+///   - tenantId = NULL: Global/platform plans created by SUPER_ADMIN (framework defaults like "free", "starter", "pro")
+///   - tenantId = <uuid>: Tenant-specific plans created by TENANT_ADMIN (custom plans for their organization)
+/// Global plans are visible to all tenants. Tenant plans are scoped to their owning tenant.
+/// Uniqueness is enforced per-tenant via @@unique([tenantId, code]).
+model Plan {
+  id String @id @default(uuid())
+
+  /// Tenant that owns this plan (null = global/platform plan, created by SUPER_ADMIN only)
+  tenantId String? @map("tenant_id")
+
+  /// Unique plan code (e.g., "free", "basic", "pro", "enterprise")
+  code String
+
+  /// Display name
+  name String
+
+  /// Description (supports markdown)
+  description String?
+
+  /// Plan type
+  type PlanType @default(SUBSCRIPTION)
+
+  /// Trial period in days (0 = no trial)
+  trialDays Int @default(0) @map("trial_days")
+
+  /// Whether this is the default plan for new tenants
+  isDefault Boolean @default(false) @map("is_default")
+
+  /// Whether plan is visible in pricing page
+  isPublic Boolean @default(true) @map("is_public")
+
+  /// Whether plan is currently available for purchase
+  isActive Boolean @default(true) @map("is_active")
+
+  /// Sort order in pricing page
+  sortOrder Int @default(0) @map("sort_order")
+
+  /// Badge/label (e.g., "Popular", "Best Value")
+  badge String?
+
+  /// Stripe Product ID (for Stripe sync)
+  /// @unique -- Maps 1:1 to Stripe product; prevents duplicate plan sync
+  stripeProductId String? @unique @map("stripe_product_id")
+
+  /// Additional metadata
+  metadata Json?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  tenant        Tenant?        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  prices        Price[]
+  features      PlanFeature[]
+  subscriptions Subscription[]
+  products      Product[]
+
+  /// @@unique -- Plan code is unique per tenant (allows same code across different tenants)
+  @@unique([tenantId, code])
+  @@index([tenantId])
+  @@index([isActive])
+  @@index([isPublic])
+  @@index([sortOrder])
+  @@map("plans")
+}
+
+/// Price variations for plans (monthly, yearly, etc.)
+model Price {
+  id String @id @default(uuid())
+
+  /// Associated plan
+  planId String @map("plan_id")
+
+  /// Price identifier/code
+  code String?
+
+  /// Billing interval
+  interval BillingInterval @default(MONTHLY)
+
+  /// Number of intervals (e.g., 3 for quarterly)
+  intervalCount Int @default(1) @map("interval_count")
+
+  /// Price amount (in smallest unit, e.g., cents)
+  amount Decimal @db.Decimal(10, 2)
+
+  /// Currency code (ISO 4217)
+  currency String @default("BRL")
+
+  /// Original price (for showing discounts)
+  originalAmount Decimal? @map("original_amount") @db.Decimal(10, 2)
+
+  /// Whether price is currently active
+  isActive Boolean @default(true) @map("is_active")
+
+  /// Stripe Price ID
+  /// @unique -- Maps 1:1 to Stripe price; prevents duplicate price sync
+  stripePriceId String? @unique @map("stripe_price_id")
+
+  /// PagueBit Price ID (for future use)
+  pagueBitPriceId String? @map("paguebit_price_id")
+
+  /// Additional metadata
+  metadata Json?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  plan          Plan           @relation(fields: [planId], references: [id], onDelete: Cascade)
+  subscriptions Subscription[]
+
+  /// @@unique -- One price per plan+interval+currency combination (prevents duplicate pricing)
+  @@unique([planId, interval, currency])
+  @@index([planId])
+  @@index([isActive])
+  @@index([currency])
+  @@map("prices")
+}
+
+/// Features assigned to plans with limits/values
+model PlanFeature {
+  id String @id @default(uuid())
+
+  /// Associated plan
+  planId String @map("plan_id")
+
+  /// Associated feature
+  featureId String @map("feature_id")
+
+  /// Whether feature is enabled (for BOOLEAN features)
+  enabled Boolean @default(true)
+
+  /// Limit value (for QUOTA features, -1 = unlimited)
+  limitValue Int? @map("limit_value")
+
+  /// Custom value (for CUSTOM features)
+  customValue String? @map("custom_value")
+
+  /// Override default in UI display
+  displayOverride String? @map("display_override")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  plan    Plan    @relation(fields: [planId], references: [id], onDelete: Cascade)
+  feature Feature @relation(fields: [featureId], references: [id], onDelete: Cascade)
+
+  /// @@unique -- Each feature can only be assigned once per plan
+  @@unique([planId, featureId])
+  @@index([planId])
+  @@index([featureId])
+  @@map("plan_features")
+}
+
+/// Products for one-time purchases
+/// MULTI-TENANT SCOPING: Same pattern as Plan — tenantId is nullable:
+///   - tenantId = NULL: Global/platform products created by SUPER_ADMIN (e.g., "extra-storage", "api-boost")
+///   - tenantId = <uuid>: Tenant-specific products created by TENANT_ADMIN
+/// Global products are available to all tenants. Tenant products are scoped to their owning tenant.
+/// Uniqueness is enforced per-tenant via @@unique([tenantId, code]).
+model Product {
+  id String @id @default(uuid())
+
+  /// Tenant that owns this product (null = global/platform product, created by SUPER_ADMIN only)
+  tenantId String? @map("tenant_id")
+
+  /// Unique product code
+  code String
+
+  /// Display name
+  name String
+
+  /// Description (supports markdown)
+  description String?
+
+  /// Product type
+  type ProductType @default(ONE_TIME)
+
+  /// Price amount
+  price Decimal @db.Decimal(10, 2)
+
+  /// Currency code
+  currency String @default("BRL")
+
+  /// Original price (for showing discounts)
+  originalPrice Decimal? @map("original_price") @db.Decimal(10, 2)
+
+  /// Whether product is currently available
+  isActive Boolean @default(true) @map("is_active")
+
+  /// Whether product is visible publicly
+  isPublic Boolean @default(true) @map("is_public")
+
+  /// Sort order
+  sortOrder Int @default(0) @map("sort_order")
+
+  /// Stock quantity (-1 = unlimited)
+  stock Int @default(-1)
+
+  /// Maximum purchases per tenant (-1 = unlimited)
+  maxPerTenant Int @default(-1) @map("max_per_tenant")
+
+  /// Stripe Product ID
+  /// @unique -- Maps 1:1 to Stripe product; prevents duplicate product sync
+  stripeProductId String? @unique @map("stripe_product_id")
+
+  /// Stripe Price ID
+  /// @unique -- Maps 1:1 to Stripe price for this product; prevents duplicate price sync
+  stripePriceId String? @unique @map("stripe_price_id")
+
+  /// Image URL
+  imageUrl String? @map("image_url")
+
+  /// Additional metadata
+  metadata Json?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  /// Optional plan association (for plan-bundled products)
+  planId String? @map("plan_id")
+
+  // Relations
+  tenant    Tenant?         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  plan      Plan?           @relation(fields: [planId], references: [id], onDelete: SetNull)
+  effects   ProductEffect[]
+  purchases Purchase[]
+
+  /// @@unique -- Product code is unique per tenant (allows same code across different tenants)
+  @@unique([tenantId, code])
+  @@index([tenantId])
+  @@index([isActive])
+  @@index([type])
+  @@index([planId])
+  @@map("products")
+}
+
+/// Effects that products have on features/quotas
+model ProductEffect {
+  id String @id @default(uuid())
+
+  /// Associated product
+  productId String @map("product_id")
+
+  /// Associated feature
+  featureId String @map("feature_id")
+
+  /// Effect type
+  effectType EffectType @default(ADD) @map("effect_type")
+
+  /// Value to add/set
+  value Int?
+
+  /// Whether effect is permanent (survives subscription changes)
+  isPermanent Boolean @default(false) @map("is_permanent")
+
+  /// Duration in days (null = permanent, 0 = until period end)
+  durationDays Int? @map("duration_days")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  feature Feature @relation(fields: [featureId], references: [id], onDelete: Cascade)
+
+  /// @@unique -- Each feature can only have one effect per product
+  @@unique([productId, featureId])
+  @@index([productId])
+  @@index([featureId])
+  @@map("product_effects")
+}
+
+/// Purchase records for one-time products
+model Purchase {
+  id String @id @default(uuid())
+
+  /// Associated tenant
+  tenantId String @map("tenant_id")
+
+  /// Associated product
+  productId String? @map("product_id")
+
+  /// User who made the purchase
+  userId String? @map("user_id")
+
+  /// Purchase status
+  status PurchaseStatus @default(PENDING)
+
+  /// Amount paid
+  amount Decimal @db.Decimal(10, 2)
+
+  /// Currency
+  currency String @default("BRL")
+
+  /// Payment method used
+  paymentMethod PaymentMethod @default(PIX) @map("payment_method")
+
+  /// External payment ID (Stripe, PagueBit, etc.)
+  /// @unique — Prevents duplicate payment records from the same external transaction
+  externalPaymentId String? @unique @map("external_payment_id")
+
+  /// When effects expire (null = never)
+  expiresAt DateTime? @map("expires_at")
+
+  /// Additional metadata
+  metadata Json?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  tenant  Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id], onDelete: Restrict)
+  user    User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([productId])
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("purchases")
+}
+
+/// Usage tracking for quota features
+model UsageRecord {
+  id String @id @default(uuid())
+
+  /// Associated tenant
+  tenantId String @map("tenant_id")
+
+  /// Associated feature
+  featureId String @map("feature_id")
+
+  /// Current usage value
+  currentUsage Int @default(0) @map("current_usage")
+
+  /// Period start
+  periodStart DateTime @map("period_start")
+
+  /// Period end
+  periodEnd DateTime @map("period_end")
+
+  /// Last reset timestamp
+  lastReset DateTime @default(now()) @map("last_reset")
+
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  feature Feature @relation(fields: [featureId], references: [id], onDelete: Cascade)
+
+  /// @@unique -- One usage record per tenant+feature+period (prevents double-counting in billing)
+  @@unique([tenantId, featureId, periodStart])
+  @@index([tenantId])
+  @@index([featureId])
+  @@index([periodEnd])
+  @@map("usage_records")
+}
+
+// ============================================
+// ENUMS FOR PLANS & PRODUCTS
+// ============================================
+
+enum FeatureType {
+  BOOLEAN // Feature is on/off
+  QUOTA // Feature has a numeric limit
+  CUSTOM // Feature has a custom string value
+}
+
+enum PlanType {
+  SUBSCRIPTION // Recurring billing
+  LIFETIME // One-time payment, lifetime access
+}
+
+enum BillingInterval {
+  DAILY
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+  LIFETIME
+  FOREVER // Free tier
+}
+
+enum ProductType {
+  ONE_TIME // Single purchase
+  CONSUMABLE // Can be purchased multiple times
+  ADD_ON // Adds to subscription
+}
+
+enum EffectType {
+  ADD // Add value to current limit
+  SET // Set absolute value
+  MULTIPLY // Multiply current limit
+  ENABLE // Enable boolean feature
+}
+
+enum PurchaseStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+  EXPIRED
+}
+
+model WebhookEvent {
+  id String @id @default(uuid())
+
+  /// ID externo do evento (para idempotência)
+  /// @unique -- Webhook event idempotency key; prevents processing the same webhook twice
+  externalId String @unique @map("external_id")
+
+  /// Provider (PAGUEBIT, STRIPE, etc)
+  provider String
+
+  /// Tipo de evento
+  event String
+
+  /// Payload completo
+  payload Json
+
+  /// Quando foi processado
+  processedAt DateTime? @map("processed_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([provider])
+  @@index([event])
+  @@map("webhook_events")
+}
+
+// ===========================
+// IN-APP NOTIFICATIONS
+// ===========================
+
+model InAppNotification {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  type       String   // 'system' | 'user' | 'security' | 'automation' | 'payment'
+  priority   String   // 'low' | 'medium' | 'high' | 'critical'
+  title      String
+  message    String
+  metadata   Json?
+  read       Boolean  @default(false)
+  actionUrl  String?  @map("action_url")
+  actionText String?  @map("action_text")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+  @@index([priority])
+  @@index([read])
+  @@index([createdAt])
+
+  // Composite indexes for common query patterns
+  @@index([userId, read])           // Unread notification count/listing
+  @@index([userId, createdAt])      // User notification timeline
+  @@map("in_app_notifications")
+}
+
+model UserNotificationPreferences {
+  id            String   @id @default(uuid())
+  /// @unique -- One notification preferences record per user
+  userId        String   @unique @map("user_id")
+  inAppEnabled  Boolean  @default(true) @map("in_app_enabled")
+  emailEnabled  Boolean  @default(false) @map("email_enabled")
+  pushEnabled   Boolean  @default(false) @map("push_enabled")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_notification_preferences")
+}
+
+// ===========================
+// TENANT INVITES (CORE)
+// ===========================
+
+model TenantInvite {
+  id        String   @id @default(uuid())
+  email     String
+  role      Role     @default(USER)
+  /// @unique -- Secure random invite token sent via email; prevents invite reuse
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  
+  // OPTIONAL: tenantId is null for SUPER_ADMIN, required for ADMIN/MEMBER
+  tenant      Tenant?   @relation("TenantInvites", fields: [tenantId], references: [id])
+  tenantId    String?   @map("tenant_id")
+  
+  invitedBy   User      @relation("SentInvites", fields: [invitedById], references: [id])
+  invitedById String    @map("invited_by_id")
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  inviteSpaces InviteSpace[]
+  
+  @@index([email])
+  @@index([token])
+  @@index([tenantId])
+  @@map("tenant_invites")
+}
+
+// ===========================
+// SPACES SYSTEM (CORE)
+// ===========================
+
+/// Spaces configuráveis para organização de permissões
+/// Exemplos: Finance, Marketing, Support, DevOps
+model Space {
+  id          String   @id @default(uuid())
+  tenantId    String?  @map("tenant_id") // null = global space (platform-wide)
+  
+  /// Código único do space (ex: 'FINANCE', 'MARKETING')
+  code        String
+  
+  /// Nome para exibição
+  name        String
+  
+  /// Descrição do space
+  description String?
+  
+  /// Ícone Lucide (ex: 'DollarSign', 'TrendingUp')
+  icon        String   @default("Folder")
+  
+  /// Cor em hexadecimal (ex: '#10B981')
+  color       String   @default("#6B7280")
+  
+  /// Permissões padrão deste space
+  /// Exemplo: ["view:invoices", "manage:refunds"]
+  defaultPermissions String[] @map("default_permissions")
+  
+  /// Se o space está ativo
+  isActive    Boolean  @default(true) @map("is_active")
+  
+  /// Ordem de exibição
+  sortOrder   Int      @default(0) @map("sort_order")
+  
+  /// Configuração dinâmica da UI (navSections, dashboardCards, etc.)
+  config      Json?    @map("ui_config")
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  tenant       Tenant?       @relation("TenantSpaces", fields: [tenantId], references: [id], onDelete: Cascade)
+  userSpaces   UserSpace[]
+  inviteSpaces InviteSpace[]
+  
+  // Spaces & Permissions Relations
+  roles            SpaceRole[]            @relation
+  userRoles        UserSpaceRole[]        @relation("SpaceUserRoles")
+  grants           Grant[]                @relation("SpaceGrants")
+  grantRequests    GrantRequest[]         @relation("SpaceGrantRequests")
+  owners           SpaceOwner[]
+  capabilityAudits CapabilityAuditEvent[] @relation("SpaceCapabilityAudits")
+  projects         Project[]
+  
+  /// @@unique -- Space code is unique per tenant (e.g., only one "FINANCE" space per tenant)
+  @@unique([tenantId, code])
+  @@index([tenantId])
+  @@index([isActive])
+
+  // Composite indexes for multi-tenant query performance
+  @@index([tenantId, isActive])         // Tenant-scoped active space listing
+  @@index([tenantId, sortOrder])        // Tenant-scoped ordered space listing
+  @@index([tenantId, createdAt])        // Tenant-scoped space timeline ordering
+  @@map("spaces")
+}
+
+/// Relação entre User e Space (many-to-many)
+/// Define quais spaces um usuário pode acessar
+model UserSpace {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  spaceId   String   @map("space_id")
+  
+  /// Permissões customizadas para este usuário neste space
+  /// Sobrescreve defaultPermissions do Space se definido
+  /// Array vazio [] significa usar defaultPermissions do Space
+  customPermissions String[] @map("custom_permissions") @default([])
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  user  User  @relation("UserSpaces", fields: [userId], references: [id], onDelete: Cascade)
+  space Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  
+  /// @@unique -- A user can only be assigned to a space once (prevents duplicate memberships)
+  @@unique([userId, spaceId])
+  @@index([userId])
+  @@index([spaceId])
+  @@map("user_spaces")
+}
+
+/// Relação entre TenantInvite e Space (many-to-many)
+/// Define quais spaces serão atribuídos ao usuário quando aceitar o convite
+model InviteSpace {
+  id        String   @id @default(uuid())
+  inviteId  String   @map("invite_id")
+  spaceId   String   @map("space_id")
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  
+  // Relations
+  invite TenantInvite @relation(fields: [inviteId], references: [id], onDelete: Cascade)
+  space  Space        @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  
+  /// @@unique -- A space can only be assigned once per invite (prevents duplicate space grants)
+  @@unique([inviteId, spaceId])
+  @@index([inviteId])
+  @@index([spaceId])
+  @@map("invite_spaces")
+}
+
+// ============================================
+// EMAIL INFRASTRUCTURE MODELS (CORE)
+// ============================================
+
+/// Email Integration Configuration
+/// Stores provider credentials and settings (configurable via Admin Panel)
+model EmailIntegration {
+  id String @id @default(uuid())
+
+  // Provider Configuration
+  provider  EmailProvider @default(SMTP)
+  isActive  Boolean       @default(false) @map("is_active")
+  isPrimary Boolean       @default(false) @map("is_primary")
+
+  // Provider-specific credentials (encrypted in application layer)
+  /// @encrypted — API key for email provider (Postmark/Resend/AWS SES), encrypted at application layer
+  apiKey        String? @map("api_key")
+  /// @encrypted — API secret for AWS SES, encrypted at application layer
+  apiSecret     String? @map("api_secret")
+  /// @encrypted — Webhook signing secret for email event validation, encrypted at application layer
+  webhookSecret String? @map("webhook_secret")
+
+  // SMTP Configuration (fallback)
+  smtpHost     String?  @map("smtp_host")
+  smtpPort     Int?     @default(587) @map("smtp_port")
+  smtpSecure   Boolean? @default(false) @map("smtp_secure")
+  smtpUser     String?  @map("smtp_user")
+  /// @encrypted — SMTP password, encrypted at application layer
+  smtpPassword String?  @map("smtp_password")
+
+  // Domain Configuration
+  transactionalDomain String? @map("transactional_domain") // e.g., auth.kaven.site
+  marketingDomain     String? @map("marketing_domain") // e.g., mail.kaven.site
+  fromName            String? @default("Kaven Platform") @map("from_name")
+  fromEmail           String? @map("from_email") // e.g., noreply@auth.kaven.site
+  testEmail           String? @map("test_email") // Email para testes (usado principalmente para Resend)
+
+  // Message Streams (Postmark)
+  transactionalStream String? @default("outbound") @map("transactional_stream")
+  marketingStream     String? @default("broadcasts") @map("marketing_stream")
+
+  // Features
+  trackOpens  Boolean @default(true) @map("track_opens")
+  trackClicks Boolean @default(true) @map("track_clicks")
+  enableDkim  Boolean @default(true) @map("enable_dkim")
+  enableBimi  Boolean @default(false) @map("enable_bimi")
+
+  // Rate Limiting
+  dailyLimit  Int? @map("daily_limit") // Max emails per day
+  hourlyLimit Int? @map("hourly_limit") // Max emails per hour
+
+  // Metadata
+  metadata Json?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([provider])
+  @@index([isActive])
+  @@index([isPrimary])
+  @@map("email_integrations")
+}
+
+/// Email Events Tracking
+/// Tracks all email events (bounces, complaints, opens, clicks)
+model EmailEvent {
+  id String @id @default(uuid())
+
+  // User/Tenant Association
+  userId   String? @map("user_id")
+  tenantId String? @map("tenant_id")
+  email    String
+
+  // Event Details
+  eventType EmailEventType @map("event_type")
+  emailType EmailType      @default(TRANSACTIONAL) @map("email_type")
+  messageId String         @map("message_id") // Provider message ID
+  template  String? // Template name used
+
+  // Bounce/Complaint Details
+  bounceType            BounceType? @map("bounce_type")
+  bounceReason          String?     @map("bounce_reason")
+  complaintFeedbackType String?     @map("complaint_feedback_type")
+
+  // Tracking
+  userAgent   String? @map("user_agent")
+  ipAddress   String? @map("ip_address")
+  linkClicked String? @map("link_clicked") // URL clicked (for CLICK events)
+
+  // Provider Info
+  provider        EmailProvider? @map("provider")
+  providerEventId String?        @map("provider_event_id") // Original event ID from provider
+
+  // Metadata
+  metadata Json?
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([tenantId])
+  @@index([email])
+  @@index([messageId])
+  @@index([eventType])
+  @@index([createdAt])
+
+  // Composite indexes for analytics
+  @@index([tenantId, createdAt])         // Tenant-scoped email event timeline
+  @@index([tenantId, eventType, createdAt]) // Analytics: email event type frequency over time
+  @@map("email_events")
+}
+
+/// Email Templates
+/// Stores email templates with i18n support
+model EmailTemplate {
+  id          String         @id @default(uuid())
+  /// @unique -- Template identifier used in code (e.g., "welcome", "password-reset"); referenced by EmailQueue.templateCode
+  code        String         @unique // e.g., welcome, password-reset
+  name        String
+  description String?
+  type        EmailType      @default(TRANSACTIONAL)
+  status      TemplateStatus @default(ACTIVE)
+
+  // Content (supports i18n)
+  subjectPt     String  @map("subject_pt")
+  subjectEn     String? @map("subject_en")
+  htmlContentPt String  @map("html_content_pt") @db.Text
+  htmlContentEn String? @map("html_content_en") @db.Text
+  textContentPt String? @map("text_content_pt") @db.Text
+  textContentEn String? @map("text_content_en") @db.Text
+
+  // Template Variables
+  variables Json? // Array of required variables
+
+  // Provider-specific IDs
+  postmarkTemplateId String? @map("postmark_template_id")
+  resendTemplateId   String? @map("resend_template_id")
+
+  // Metadata
+  metadata Json?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([code])
+  @@index([type])
+  @@index([status])
+  @@map("email_templates")
+}
+
+/// Email Queue
+/// Async email queue with retry logic
+model EmailQueue {
+  id String @id @default(uuid())
+
+  // Recipient
+  to  String
+  cc  String[]
+  bcc String[]
+
+  // Content
+  subject      String
+  htmlBody     String? @map("html_body") @db.Text
+  textBody     String? @map("text_body") @db.Text
+  templateCode String? @map("template_code")
+  templateData Json?   @map("template_data")
+
+  // Configuration
+  emailType EmailType      @default(TRANSACTIONAL) @map("email_type")
+  provider  EmailProvider?
+  fromEmail String?        @map("from_email")
+  fromName  String?        @map("from_name")
+  replyTo   String?        @map("reply_to")
+
+  // Status
+  status      EmailQueueStatus @default(PENDING)
+  attempts    Int              @default(0)
+  maxAttempts Int              @default(3) @map("max_attempts")
+  lastError   String?          @map("last_error")
+
+  // Tracking
+  messageId String? @map("message_id") // Provider message ID after sending
+  userId    String? @map("user_id")
+  tenantId  String? @map("tenant_id")
+
+  // Idempotency
+  /// @unique -- Prevents sending the same email twice (e.g., "welcome-user-{userId}")
+  idempotencyKey String? @unique @map("idempotency_key")
+
+  // Scheduling
+  scheduledAt DateTime? @map("scheduled_at")
+  sentAt      DateTime? @map("sent_at")
+
+  // Metadata
+  metadata Json?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([scheduledAt])
+  @@index([userId])
+  @@index([tenantId])
+  @@index([idempotencyKey])
+  @@map("email_queue")
+}
+
+/// Email Metrics
+/// Aggregated email metrics for analytics
+model EmailMetrics {
+  id String @id @default(uuid())
+
+  // Time Period
+  date DateTime @db.Date
+  hour Int? // 0-23 for hourly metrics
+
+  // Segmentation
+  tenantId     String?        @map("tenant_id")
+  emailType    EmailType?     @map("email_type")
+  provider     EmailProvider?
+  templateCode String?        @map("template_code")
+
+  // Metrics
+  sentCount         Int @default(0) @map("sent_count")
+  deliveredCount    Int @default(0) @map("delivered_count")
+  bounceCount       Int @default(0) @map("bounce_count")
+  hardBounceCount   Int @default(0) @map("hard_bounce_count")
+  softBounceCount   Int @default(0) @map("soft_bounce_count")
+  complaintCount    Int @default(0) @map("complaint_count")
+  openCount         Int @default(0) @map("open_count")
+  uniqueOpenCount   Int @default(0) @map("unique_open_count")
+  clickCount        Int @default(0) @map("click_count")
+  uniqueClickCount  Int @default(0) @map("unique_click_count")
+  unsubscribeCount  Int @default(0) @map("unsubscribe_count")
+
+  // Calculated Rates
+  deliveryRate Decimal? @map("delivery_rate") @db.Decimal(5, 2) // %
+  bounceRate   Decimal? @map("bounce_rate") @db.Decimal(5, 2) // %
+  openRate     Decimal? @map("open_rate") @db.Decimal(5, 2) // %
+  clickRate    Decimal? @map("click_rate") @db.Decimal(5, 2) // %
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  /// @@unique -- One metrics row per time+tenant+type+provider+template combination (upsert-safe aggregation)
+  @@unique([date, hour, tenantId, emailType, provider, templateCode], name: "metrics_unique")
+  @@index([date])
+  @@index([tenantId])
+  @@map("email_metrics")
+}
+
+// ============================================
+// SPACES & PERMISSIONS MODELS (CORE)
+// ============================================
+
+/// Capability - Permissão atômica
+/// Representa uma ação específica que pode ser realizada
+model Capability {
+  id          String   @id @default(uuid())
+  /// @unique -- Dot-notation capability code (e.g., "tickets.read"); used in permission checks
+  code        String   @unique // 'tickets.read', 'billing.view'
+  resource    String   // 'tickets', 'billing'
+  action      String   // 'read', 'update', 'delete'
+  description String?
+  category    String   // 'Support', 'Finance', 'DevOps'
+  
+  // SPRINT 1: Multi-tenant isolation (nullable for global capabilities)
+  tenantId    String?  @map("tenant_id")
+  
+  sensitivity      CapabilitySensitivity @default(NORMAL)
+  scope            CapabilityScope       @default(SPACE)
+  requiresMFA      Boolean               @default(false)
+  requiresApproval Boolean               @default(false)
+  
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  tenant           Tenant?              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  roleCapabilities RoleCapability[]
+  grants           Grant[]
+  grantRequests    GrantRequest[]
+  policies         Policy[]
+  auditEvents      CapabilityAuditEvent[]
+  
+  @@index([code])
+  @@index([category])
+  @@index([sensitivity])
+  @@index([isActive])
+  @@index([tenantId])
+  @@map("capabilities")
+}
+
+/// SpaceRole - Roles específicas por Space
+/// Ex: SUPPORT_AGENT, SRE, FINANCE_ADMIN
+model SpaceRole {
+  id          String   @id @default(uuid())
+  spaceId     String   @map("space_id")
+  code        String   // 'SUPPORT_AGENT', 'SRE', 'FINANCE_ADMIN'
+  name        String
+  description String?
+  hierarchy   Int      @default(0)
+  
+  // Aprovações
+  canApproveGrants Boolean             @default(false)
+  canApproveLevel  GrantApprovalLevel?
+  
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  space            Space              @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  capabilities     RoleCapability[]
+  userAssignments  UserSpaceRole[]
+  
+  /// @@unique -- Role code is unique per space (e.g., only one "SUPPORT_AGENT" role per space)
+  @@unique([spaceId, code])
+  @@index([spaceId])
+  @@index([isActive])
+  @@map("space_roles")
+}
+
+/// RoleCapability - Mapeamento Role → Capabilities
+model RoleCapability {
+  id           String   @id @default(uuid())
+  roleId       String   @map("role_id")
+  capabilityId String   @map("capability_id")
+  
+  createdAt    DateTime @default(now()) @map("created_at")
+  
+  // Relations
+  role       SpaceRole  @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  capability Capability @relation(fields: [capabilityId], references: [id], onDelete: Cascade)
+  
+  /// @@unique -- Each capability can only be assigned once per role
+  @@unique([roleId, capabilityId])
+  @@index([roleId])
+  @@index([capabilityId])
+  @@map("role_capabilities")
+}
+
+/// UserSpaceRole - Atribuição de roles a usuários
+model UserSpaceRole {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  spaceId   String   @map("space_id")
+  roleId    String   @map("role_id")
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  user  User      @relation("UserSpaceRoles", fields: [userId], references: [id], onDelete: Cascade)
+  space Space     @relation("SpaceUserRoles", fields: [spaceId], references: [id], onDelete: Cascade)
+  role  SpaceRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  
+  /// @@unique -- A user can only hold a specific role once per space
+  @@unique([userId, spaceId, roleId])
+  @@index([userId])
+  @@index([spaceId])
+  @@index([roleId])
+  @@map("user_space_roles")
+}
+
+/// Grant - Exceções de acesso (Add/Deny/Temporary)
+model Grant {
+  id           String      @id @default(uuid())
+  userId       String      @map("user_id")
+  spaceId      String?     @map("space_id")
+  capabilityId String?     @map("capability_id")
+  tenantId     String      @map("tenant_id") @db.VarChar(191)
+
+  type         GrantType   @default(ADD)
+  accessLevel  AccessLevel @default(READ_ONLY)
+  scope        CapabilityScope @default(SPACE)
+
+  justification String
+
+  grantedBy    String      @map("granted_by")
+  grantedAt    DateTime    @default(now()) @map("granted_at")
+
+  expiresAt    DateTime?   @map("expires_at")
+
+  status       GrantStatus @default(ACTIVE)
+  revokedAt    DateTime?   @map("revoked_at")
+  revokedBy    String?     @map("revoked_by")
+  revokeReason String?     @map("revoke_reason")
+
+  // Rastreamento de origem
+  /// @unique -- Links grant to its originating request (1:1); ensures one grant per approved request
+  grantRequestId String?   @unique @map("grant_request_id")
+
+  metadata     Json?
+
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  user          User        @relation("UserGrants", fields: [userId], references: [id], onDelete: Cascade)
+  space         Space?      @relation("SpaceGrants", fields: [spaceId], references: [id], onDelete: Cascade)
+  capability    Capability? @relation(fields: [capabilityId], references: [id], onDelete: Cascade)
+  tenant        Tenant      @relation("TenantGrants", fields: [tenantId], references: [id], onDelete: Cascade)
+  grantedByUser User        @relation("GrantedBy", fields: [grantedBy], references: [id])
+  revokedByUser User?       @relation("RevokedBy", fields: [revokedBy], references: [id])
+  grantRequest  GrantRequest? @relation("GeneratedGrant", fields: [grantRequestId], references: [id])
+  auditEvents   GrantAuditEvent[]
+
+  @@index([userId])
+  @@index([spaceId])
+  @@index([capabilityId])
+  @@index([tenantId])
+  @@index([status])
+  @@index([expiresAt])
+  @@index([grantedBy])
+
+  // Composite indexes for multi-tenant query performance
+  @@index([tenantId, userId])           // Tenant-scoped grants for a user
+  @@index([tenantId, spaceId])          // Tenant-scoped grants for a space
+  @@index([tenantId, status])           // Tenant-scoped active/expired grant filtering
+  @@index([userId, status])             // User's active grants lookup
+  @@index([tenantId, userId, status])   // Tenant-scoped user active grants (permission checks)
+  @@index([expiresAt, status])          // Expired grant cleanup job
+  @@map("grants")
+}
+
+/// GrantRequest - Solicitações de acesso
+model GrantRequest {
+  id            String   @id @default(uuid())
+  requesterId   String   @map("requester_id")
+  spaceId       String?  @map("space_id")
+  capabilityId  String?  @map("capability_id")
+
+  // SPRINT 1: Multi-tenant isolation
+  tenantId      String   @map("tenant_id")
+
+  // Detalhes da solicitação
+  accessLevel   AccessLevel @default(READ_ONLY)
+  scope         CapabilityScope @default(SPACE)
+  justification String
+  requestedDuration Int  @default(7) // Dias
+
+  // Status
+  status        GrantRequestStatus @default(PENDING)
+
+  // Aprovação
+  approvedBy    String?   @map("approved_by")
+  approvedAt    DateTime? @map("approved_at")
+  rejectedBy    String?   @map("rejected_by")
+  rejectedAt    DateTime? @map("rejected_at")
+  rejectionReason String? @map("rejection_reason")
+
+  // Request tracking metadata
+  requestIp     String?   @map("request_ip")
+  requestDevice String?   @map("request_device")
+  requestUserAgent String? @map("request_user_agent")
+
+  /// Optional JSON metadata for additional request context (e.g., justification, approval notes)
+  metadata      Json?
+
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  tenant        Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  requester     User        @relation("GrantRequests", fields: [requesterId], references: [id])
+  space         Space?      @relation("SpaceGrantRequests", fields: [spaceId], references: [id])
+  capability    Capability? @relation(fields: [capabilityId], references: [id])
+  approver      User?       @relation("GrantApprovals", fields: [approvedBy], references: [id])
+  rejector      User?       @relation("GrantRejections", fields: [rejectedBy], references: [id])
+  grant         Grant?      @relation("GeneratedGrant")
+
+  @@index([requesterId])
+  @@index([spaceId])
+  @@index([capabilityId])
+  @@index([status])
+  @@index([tenantId])
+  @@index([createdAt])
+  @@map("grant_requests")
+}
+
+/// Policy - Regras condicionais
+model Policy {
+  id           String       @id @default(uuid())
+  name         String
+  description  String?
+
+  type         PolicyType
+  targetType   PolicyTargetType
+  targetId     String?      @map("target_id")
+
+  // SPRINT 1: Multi-tenant isolation
+  tenantId     String       @map("tenant_id")
+
+  // Condições (JSON)
+  conditions   Json
+
+  enforcement  PolicyEnforcement @default(DENY)
+
+  isActive     Boolean      @default(true)
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+
+  // Relations
+  tenant           Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  capability       Capability?            @relation(fields: [targetId], references: [id])
+  ipWhitelists     PolicyIpWhitelist[]
+  deviceTracking   PolicyDeviceTracking[]
+
+  @@index([type])
+  @@index([targetType])
+  @@index([targetId])
+  @@index([isActive])
+  @@index([tenantId])
+
+  // Composite indexes for multi-tenant query performance
+  @@index([tenantId, name])             // Tenant-scoped policy lookup by name
+  @@index([tenantId, isActive])         // Tenant-scoped active policy listing
+  @@index([tenantId, type])             // Tenant-scoped policy filtering by type
+  @@index([tenantId, createdAt])        // Tenant-scoped policy timeline ordering
+  @@index([tenantId, targetType, isActive]) // Tenant-scoped active policies by target type
+  @@map("policies")
+}
+
+/// PolicyIpWhitelist - IP Whitelist
+model PolicyIpWhitelist {
+  id        String   @id @default(uuid())
+  policyId  String   @map("policy_id")
+  ipAddress String   @map("ip_address") // Ex: '192.168.1.100' ou '10.0.0.0/24' (CIDR)
+  label     String?
+  
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  
+  // Relations
+  policy    Policy   @relation(fields: [policyId], references: [id], onDelete: Cascade)
+  
+  @@index([policyId])
+  @@index([ipAddress])
+  @@index([isActive])
+  @@map("policy_ip_whitelist")
+}
+
+/// PolicyDeviceTracking - Device Tracking
+model PolicyDeviceTracking {
+  id           String   @id @default(uuid())
+  policyId     String?  @map("policy_id")
+  userId       String   @map("user_id")
+  
+  /// @unique -- Device fingerprint hash; enables trusted device tracking and anomaly detection
+  deviceId     String   @unique @map("device_id") // Hash do UserAgent + IP + outros fatores
+  deviceName   String?  @map("device_name") // Ex: 'Chrome on MacOS'
+  deviceType   String?  @map("device_type") // 'desktop', 'mobile', 'tablet'
+  
+  firstSeenAt  DateTime @default(now()) @map("first_seen_at")
+  lastSeenAt   DateTime @default(now()) @map("last_seen_at")
+  
+  isTrusted    Boolean  @default(false) @map("is_trusted")
+  
+  metadata     Json?
+  
+  // Relations
+  policy       Policy?  @relation(fields: [policyId], references: [id])
+  user         User     @relation("UserDevices", fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([policyId])
+  @@index([userId])
+  @@index([deviceId])
+  @@index([isTrusted])
+  @@map("policy_device_tracking")
+}
+
+/// SpaceOwner - Ownership e delegação
+model SpaceOwner {
+  id        String   @id @default(uuid())
+  spaceId   String   @map("space_id")
+  userId    String   @map("user_id")
+  
+  canDelegate Boolean @default(false) @map("can_delegate")
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  
+  // Relations
+  space     Space    @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  user      User     @relation("SpaceOwnerships", fields: [userId], references: [id], onDelete: Cascade)
+  
+  /// @@unique -- A user can only be owner of a space once (prevents duplicate ownership records)
+  @@unique([spaceId, userId])
+  @@index([spaceId])
+  @@index([userId])
+  @@map("space_owners")
+}
+
+/// CapabilityAuditEvent - Auditoria de capabilities
+model CapabilityAuditEvent {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  capabilityId String   @map("capability_id")
+  spaceId      String?  @map("space_id")
+  
+  action       String   // 'check', 'granted', 'denied'
+  result       String   // 'allowed', 'denied'
+  reason       String?
+  
+  grantId      String?  @map("grant_id")
+  
+  // Rastreamento expandido
+  ipAddress    String?  @map("ip_address")
+  userAgent    String?  @map("user_agent")
+  deviceId     String?  @map("device_id")
+  deviceType   String?  @map("device_type")
+  origin       String?  // 'web', 'mobile', 'api'
+  
+  metadata     Json?
+  createdAt    DateTime @default(now()) @map("created_at")
+  
+  // Relations
+  user       User       @relation("UserCapabilityAudits", fields: [userId], references: [id])
+  capability Capability @relation(fields: [capabilityId], references: [id])
+  space      Space?     @relation("SpaceCapabilityAudits", fields: [spaceId], references: [id])
+  
+  @@index([userId])
+  @@index([capabilityId])
+  @@index([spaceId])
+  @@index([createdAt])
+  @@index([ipAddress])
+  @@index([deviceId])
+  @@index([action])
+  @@index([result])
+
+  // Composite indexes for analytics
+  @@index([capabilityId, action, createdAt]) // Analytics: capability usage over time
+  @@map("capability_audit_events")
+}
+
+/// GrantAuditEvent - Auditoria de grants
+model GrantAuditEvent {
+  id        String   @id @default(uuid())
+  grantId   String   @map("grant_id")
+  action    String   // 'created', 'extended', 'revoked', 'expired'
+  performedBy String? @map("performed_by")
+  reason    String?
+  
+  metadata  Json?
+  createdAt DateTime @default(now()) @map("created_at")
+  
+  // Relations
+  grant         Grant @relation(fields: [grantId], references: [id], onDelete: Cascade)
+  performedByUser User? @relation("GrantAuditPerformedBy", fields: [performedBy], references: [id])
+  
+  @@index([grantId])
+  @@index([performedBy])
+  @@index([action])
+  @@index([createdAt])
+  @@map("grant_audit_events")
+}
+
+/// ImpersonationSession - Sessões de Impersonation
+model ImpersonationSession {
+  id              String   @id @default(uuid())
+  impersonatorId  String   @map("impersonator_id")
+  impersonatedId  String   @map("impersonated_id")
+
+  // SPRINT 1: Multi-tenant isolation
+  tenantId        String   @map("tenant_id")
+
+  justification   String
+
+  startedAt       DateTime @default(now()) @map("started_at")
+  expiresAt       DateTime @map("expires_at") // 15-30 minutos
+  endedAt         DateTime? @map("ended_at")
+
+  // Rastreamento
+  ipAddress       String?  @map("ip_address")
+  userAgent       String?  @map("user_agent")
+
+  // Ações executadas durante impersonation
+  actionsLog      Json?    @map("actions_log")
+
+  // Bloqueios
+  blockedActions  String[] @map("blocked_actions")
+
+  status          ImpersonationStatus @default(ACTIVE)
+
+  // Relations
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  impersonator    User     @relation("Impersonator", fields: [impersonatorId], references: [id])
+  impersonated    User     @relation("Impersonated", fields: [impersonatedId], references: [id])
+
+  @@index([impersonatorId])
+  @@index([impersonatedId])
+  @@index([tenantId])
+  @@index([status])
+  @@index([startedAt])
+  @@index([expiresAt])
+  @@map("impersonation_sessions")
+}
+
+/// DataExportLog - Logs de Exportação
+model DataExportLog {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  
+  exportType  String   @map("export_type") // 'csv', 'json', 'pdf'
+  resource    String   // 'users', 'invoices', 'analytics'
+  
+  // Controle
+  recordCount Int      @map("record_count")
+  columns     String[] // Colunas exportadas
+  filters     Json?    // Filtros aplicados
+  
+  // Segurança
+  hasPII      Boolean  @default(false) @map("has_pii")
+  watermark   String?  // UUID único para rastreamento
+  
+  // Rastreamento
+  ipAddress   String?  @map("ip_address")
+  userAgent   String?  @map("user_agent")
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  
+  // Relations
+  user        User     @relation("UserDataExports", fields: [userId], references: [id])
+  
+  @@index([userId])
+  @@index([resource])
+  @@index([createdAt])
+  @@index([hasPII])
+  @@map("data_export_logs")
+}
+
+
+/// SecurityRequest - Solicitações de ações sensíveis (ex: 2FA Reset)
+model SecurityRequest {
+  id            String   @id @default(uuid())
+  type          String   // '2FA_RESET'
+  status        SecurityRequestStatus @default(PENDING)
+  
+  requesterId   String   @map("requester_id")
+  targetUserId  String   @map("target_user_id")
+  justification String
+  
+  approvedBy    String?  @map("approved_by")
+  approvedAt    DateTime? @map("approved_at")
+  
+  executedBy    String?  @map("executed_by")
+  executedAt    DateTime? @map("executed_at")
+  
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  requester     User     @relation("SecurityRequests", fields: [requesterId], references: [id])
+  targetUser    User     @relation("TargetUserSecurity", fields: [targetUserId], references: [id])
+  approver      User?    @relation("SecurityApprovals", fields: [approvedBy], references: [id])
+  executor      User?    @relation("SecurityExecutions", fields: [executedBy], references: [id])
+  
+  @@map("security_requests")
+  @@index([type])
+  @@index([status])
+  @@index([requesterId])
+  @@index([targetUserId])
+}

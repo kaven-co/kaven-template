@@ -1,0 +1,56 @@
+---
+title: Platform Health
+description: Monitoramento de integridade dos serviços e integrações do ecossistema.
+date: 2026-01-29
+author: Chris + Antigravity
+version: 1.0.0
+tags: [ops, monitoring, health]
+---
+
+# Platform Health
+
+O módulo de **Platform Health** fornece visibilidade sobre a saúde operacional do framework e de suas dependências externas.
+
+## Health Check de Integrações
+
+Atualmente focado em **Email Integrations**, o sistema permite validar se as credenciais de SMTP/API (Postmark, SendGrid, etc.) estão funcionando corretamente.
+
+### Funcionalidades
+
+- **Manual Trigger:** Administradores podem disparar um teste de envio imediato via `/api/settings/platform/health/check`.
+- **Persistência de Estados:** O resultado de cada check é armazenado, permitindo visualizar o histórico de _uptime_ das integrações.
+
+## Uso no Código
+
+O `EmailIntegrationHealthService` valida a conectividade disparando um ping ou email de teste real conforme configurado.
+
+```typescript
+// Exemplo de execução manual
+const status = await healthService.checkIntegration(integrationId);
+```
+
+## Monitoramento de Infraestrutura
+
+Além dos checks de aplicação, o framework possui uma stack de observabilidade completa (**PLG Stack**):
+
+- **Prometheus**: Coleta métricas de hardware, HTTP e métricas de negócio customizadas.
+- **Grafana**: Dashboards pré-configurados para visualização de saúde do sistema (Porta `3004`).
+- **Loki & Promtail**: Centralização e agregação de logs de todos os containers.
+- **MailHog**: Ferramenta de interceptação de e-mails para ambiente de desenvolvimento (Porta `8025`).
+
+### Status de Serviços
+
+Os seguintes serviços são monitorados continuamente:
+
+1. **PostgreSQL**: Uptime e latência de queries.
+2. **Redis**: Saúde do cache e persistência.
+3. **External APIs**: Status de provedores de pagamento e e-mail.
+
+## Dashboard de Saúde
+
+No **Admin Panel**, a aba de Observabilidade consolida esses dados em tempo real, integrando feeds do Prometheus e status de saúde do `InfrastructureMonitorService`.
+
+## Relacionados
+
+- [Observability](../observability)
+- [Email System](./email-system)

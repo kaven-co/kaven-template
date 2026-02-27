@@ -1,0 +1,721 @@
+import { prisma } from "../../../lib/prisma";
+import crypto from "node:crypto";
+import {
+  hashPassword,
+  comparePassword,
+  validatePasswordStrength,
+} from "../../../lib/password";
+import {
+  generateAccessToken,
+  generateRefreshToken,
+  getRefreshTokenExpiry,
+} from "../../../lib/jwt";
+import {
+  generate2FASecret,
+  verify2FACode,
+  generateBackupCodes,
+} from "../../../lib/2fa";
+import { emailServiceV2 } from "../../../lib/email";
+import { EmailType } from "../../../lib/email/types";
+import type { RegisterInput, LoginInput } from "../../../lib/validation";
+import { auditService } from "../../audit/services/audit.service";
+import { addHours } from "date-fns";
+
+export class AuthService {
+  /**
+   * POST /api/auth/register
+   * Registra um novo usuário
+   */
+  async register(data: RegisterInput) {
+    // Verificar se email já existe
+    const existingUser = await prisma.user.findUnique({
+      where: { email: data.email },
+    });
+
+    if (existingUser) {
+      throw new Error("Email já cadastrado");
+    }
+
+    // Verificar/criar tenant
+    let tenantId: string | undefined;
+    if (data.tenantSlug) {
+      // Se tenantSlug fornecido, associar a tenant existente
+      const tenant = await prisma.tenant.findUnique({
+        where: { slug: data.tenantSlug },
+      });
+      if (!tenant) {
+        throw new Error("Tenant não encontrado");
+      }
+      tenantId = tenant.id;
+    } else {
+      // Se não fornecido, criar tenant próprio (modo camaleão)
+      const baseSlug = data.name
+        .toLowerCase()
+        .normalize("NFD")
+        .replaceAll(/[\u0300-\u036f]/g, "")
+        .replaceAll(/[^a-z0-9]+/g, "-")
+        .replaceAll(/(^-+)|(-+$)/g, "");
+
+      // Garantir slug único
+      let slug = baseSlug;
+      let counter = 1;
+      while (await prisma.tenant.findUnique({ where: { slug } })) {
+        slug = `${baseSlug}-${counter}`;
+        counter++;
+      }
+
+      const tenant = await prisma.tenant.create({
+        data: {
+          name: data.name,
+          slug,
+          status: "ACTIVE",
+        },
+      });
+
+      tenantId = tenant.id;
+    }
+
+    // Validar força da senha
+    const passwordValidation = validatePasswordStrength(data.password);
+    if (!passwordValidation.isValid) {
+      throw new Error(passwordValidation.message || "Senha fraca");
+    }
+
+    // Hash da senha
+    const hashedPassword = await hashPassword(data.password);
+
+    // Criar usuário
+    const user = await prisma.user.create({
+      data: {
+        email: data.email,
+        password: hashedPassword,
+        name: data.name,
+        tenantId,
+        role: "USER",
+        emailVerified: false,
+        unsubscribeToken: crypto.randomBytes(24).toString("hex"), // Token de logout para conformidade
+      } as any,
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        tenantId: true,
+      },
+    });
+
+    // Gerar token de verificação
+    const verificationToken = crypto.randomBytes(32).toString("hex");
+    const hashedVerificationToken = crypto
+      .createHash("sha256")
+      .update(verificationToken)
+      .digest("hex");
+
+    await (prisma as any).verificationToken.create({
+      data: {
+        token: hashedVerificationToken,
+        userId: user.id,
+        expiresAt: addHours(new Date(), 24), // 24 horas de validade
+      },
+    });
+
+    // Enviar email de verificação (Substituindo Welcome direto pelo fluxo de segurança)
+    await emailServiceV2.send({
+      to: user.email,
+      subject: "Verifique seu e-mail",
+      template: "email-verify",
+      templateData: {
+        name: user.name,
+        verificationUrl: `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`,
+      },
+      type: EmailType.TRANSACTIONAL,
+      userId: user.id,
+      tenantId: user.tenantId || undefined,
+    });
+
+    // Log Audit
+    await auditService.log({
+      action: "auth.register",
+      entity: "User",
+      entityId: user.id,
+      actorId: user.id,
+      tenantId: user.tenantId || undefined,
+      metadata: { email: user.email, role: user.role },
+    });
+
+    return {
+      message: "Usuário criado com sucesso. Verifique seu email.",
+      user,
+    };
+  }
+
+  /**
+   * POST /api/auth/verify-email
+   * Verifica email do usuário
+   */
+  async verifyEmail(token: string) {
+    // Hash token to compare
+    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+    // Buscar token no banco
+    const verificationToken = await (
+      prisma as any
+    ).verificationToken.findUnique({
+      where: { token: hashedToken },
+    });
+
+    if (!verificationToken) {
+      throw new Error("Token inválido");
+    }
+
+    if (verificationToken.expiresAt < new Date()) {
+      throw new Error("Token expirado");
+    }
+
+    if (verificationToken.usedAt) {
+      throw new Error("Token já utilizado");
+    }
+
+    // Atualizar usuário
+    const updatedUser = await prisma.user.update({
+      where: { id: verificationToken.userId },
+      data: {
+        emailVerified: true,
+        emailVerifiedAt: new Date(),
+        status: "ACTIVE",
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        tenantId: true,
+      },
+    });
+
+    // Marcar token como usado ao invés de deletar (Forensic Audit)
+    await (prisma as any).verificationToken.update({
+      where: { id: verificationToken.id },
+      data: { usedAt: new Date() },
+    });
+
+    // Enviar email de boas-vindas após verificação bem-sucedida
+    await emailServiceV2.send({
+      to: updatedUser.email,
+      subject: "Bem-vindo ao Kaven!",
+      template: "welcome",
+      templateData: {
+        name: updatedUser.name,
+        dashboardUrl: `${process.env.FRONTEND_URL}/dashboard`,
+      },
+      type: EmailType.MARKETING, // Boas-vindas é onboarding/marketing
+      userId: updatedUser.id,
+      tenantId: updatedUser.tenantId || undefined,
+    });
+
+    return { message: "Email verificado com sucesso" };
+  }
+
+  /**
+   * POST /api/auth/resend-verification
+   * Reenvia email de verificação
+   */
+  async resendVerification(email: string) {
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      // Por segurança, sempre retornar sucesso (previne enumeração de emails)
+      return {
+        message: "Se o email existir, um novo link de verificação será enviado",
+      };
+    }
+
+    if (user.emailVerified) {
+      throw new Error("Email já verificado");
+    }
+
+    // Gerar novo token de verificação
+    const verificationToken = crypto.randomBytes(32).toString("hex");
+    const hashedVerificationToken = crypto
+      .createHash("sha256")
+      .update(verificationToken)
+      .digest("hex");
+
+    await (prisma as any).verificationToken.create({
+      data: {
+        token: hashedVerificationToken,
+        userId: user.id,
+        expiresAt: addHours(new Date(), 24),
+      },
+    });
+
+    // Enviar email de verificação usando V2
+    await emailServiceV2.send({
+      to: user.email,
+      subject: "Verifique seu e-mail",
+      template: "email-verify",
+      templateData: {
+        name: user.name,
+        verificationUrl: `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`,
+      },
+      type: EmailType.TRANSACTIONAL,
+      userId: user.id,
+      tenantId: user.tenantId || undefined,
+    });
+
+    return {
+      message: "Se o email existir, um novo link de verificação será enviado",
+    };
+  }
+
+  /**
+   * POST /api/auth/login
+   * Realiza login e retorna access token + refresh token
+   */
+  async login(data: LoginInput, ip?: string, userAgent?: string) {
+    // Buscar usuário
+    const user = await prisma.user.findUnique({
+      where: { email: data.email },
+    });
+
+    if (!user || user.deletedAt) {
+      // Log Security Audit (Tentativa em conta inexistente ou deletada)
+      // Mas aqui apenas lançamos erro genérico
+      throw new Error("Credenciais inválidas");
+    }
+
+    // [SECURITY] Verificar Bloqueio
+    if (user.lockedUntil && user.lockedUntil > new Date()) {
+      await prisma.securityAuditLog.create({
+        data: {
+          action: "auth.login.locked_attempt",
+          userId: user.id,
+          tenantId: user.tenantId || "",
+          ipAddress: ip,
+          userAgent: userAgent,
+          success: false,
+          details: { reason: "Account locked" },
+        },
+      });
+      throw new Error(
+        "Conta temporariamente bloqueada. Tente novamente em 15 minutos.",
+      );
+    }
+
+    // Verificar senha
+    const isPasswordValid = await comparePassword(data.password, user.password);
+
+    if (!isPasswordValid) {
+      // [SECURITY] Incrementar tentativas falhas
+      const newAttempts = (user.loginAttempts || 0) + 1;
+      let lockedUntil: Date | null = null;
+
+      // Bloquear após 5 tentativas (Hardcoded por enquanto, depois usar SecurityConfig)
+      if (newAttempts >= 5) {
+        lockedUntil = new Date();
+        lockedUntil.setMinutes(lockedUntil.getMinutes() + 15);
+      }
+
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          loginAttempts: newAttempts,
+          lockedUntil,
+        },
+      });
+
+      // Log Security Audit
+      await prisma.securityAuditLog.create({
+        data: {
+          action: "auth.login.failed",
+          userId: user.id,
+          tenantId: user.tenantId || "",
+          ipAddress: ip,
+          userAgent: userAgent,
+          success: false,
+          details: { attempt: newAttempts },
+        },
+      });
+
+      throw new Error("Credenciais inválidas");
+    }
+
+    // Se 2FA está habilitado, verificar código
+    if (user.twoFactorEnabled) {
+      if (!data.twoFactorCode) {
+        return {
+          requires2FA: true,
+          message: "Código 2FA necessário",
+        };
+      }
+
+      const isCodeValid = verify2FACode(
+        user.twoFactorSecret!,
+        data.twoFactorCode,
+      );
+      if (!isCodeValid) {
+        // [SECURITY] Também contar falha de 2FA como tentativa inválida
+        const newAttempts = (user.loginAttempts || 0) + 1;
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { loginAttempts: newAttempts },
+        });
+
+        throw new Error("Código 2FA inválido");
+      }
+    }
+
+    // [SECURITY] Resetar tentativas e atualizar info de login
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        lastLoginAt: new Date(),
+        loginAttempts: 0,
+        lockedUntil: null,
+        lastLoginIp: ip,
+        lastLoginUserAgent: userAgent,
+      },
+    });
+
+    // Gerar tokens
+    const accessToken = await generateAccessToken({
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+      tenantId: user.tenantId || undefined,
+    });
+
+    const refreshToken = generateRefreshToken();
+    const refreshTokenExpiry = getRefreshTokenExpiry();
+
+    // Salvar refresh token
+    await prisma.refreshToken.create({
+      data: {
+        token: refreshToken,
+        userId: user.id,
+        expiresAt: refreshTokenExpiry,
+      },
+    });
+
+    // Log Security Audit Success
+    await prisma.securityAuditLog.create({
+      data: {
+        action: "auth.login.success",
+        userId: user.id,
+        tenantId: user.tenantId || "",
+        ipAddress: ip,
+        userAgent: userAgent,
+        success: true,
+        details: { method: "password", has2FA: user.twoFactorEnabled },
+      },
+    });
+
+    // Log Business Audit (Manter compatibilidade com auditlog existente)
+    await auditService.log({
+      action: "auth.login.success",
+      entity: "User",
+      entityId: user.id,
+      actorId: user.id,
+      tenantId: user.tenantId || undefined,
+      metadata: { method: "password", has2FA: user.twoFactorEnabled },
+    });
+
+    return {
+      accessToken,
+      refreshToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        tenantId: user.tenantId,
+      },
+    };
+  }
+
+  /**
+   * POST /api/auth/refresh
+   * Renova access token usando refresh token
+   */
+  async refreshAccessToken(refreshToken: string) {
+    const tokenRecord = await prisma.refreshToken.findUnique({
+      where: { token: refreshToken },
+      include: { user: true },
+    });
+
+    if (
+      !tokenRecord ||
+      tokenRecord.revokedAt ||
+      tokenRecord.expiresAt < new Date()
+    ) {
+      throw new Error("Refresh token inválido ou expirado");
+    }
+
+    // Gerar novo access token
+    const accessToken = await generateAccessToken({
+      sub: tokenRecord.user.id,
+      email: tokenRecord.user.email,
+      role: tokenRecord.user.role,
+      tenantId: tokenRecord.user.tenantId || undefined,
+    });
+
+    return { accessToken };
+  }
+
+  /**
+   * POST /api/auth/logout
+   * Invalida refresh token
+   */
+  async logout(refreshToken: string) {
+    await prisma.refreshToken.update({
+      where: { token: refreshToken },
+      data: { revokedAt: new Date() },
+    });
+
+    // Note: Não temos fácil acesso ao user aqui sem buscar o token antes,
+    // mas a busca poderia ser custosa. Por hora, logamos apenas a revogação.
+    // Se necessário, poderiamos buscar o user do token.
+
+    return { message: "Logout realizado com sucesso" };
+  }
+
+  /**
+   * POST /api/auth/forgot-password
+   * Envia email de recuperação de senha
+   */
+  async forgotPassword(email: string) {
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      // Por segurança, sempre retornar sucesso
+      return {
+        message: "Se o email existir, um link de recuperação será enviado",
+      };
+    }
+
+    // Gerar token de recuperação (uuid)
+    const resetToken = crypto.randomUUID();
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 1); // 1 hora de validade
+
+    // Salvar token no banco
+    await prisma.passwordResetToken.create({
+      data: {
+        token: resetToken,
+        userId: user.id,
+        expiresAt,
+      },
+    });
+
+    // Enviar email de reset usando V2
+    await emailServiceV2.send({
+      to: user.email,
+      subject: "Redefinição de senha",
+      template: "password-reset",
+      templateData: {
+        name: user.name,
+        resetUrl: `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`,
+      },
+      type: EmailType.TRANSACTIONAL,
+      userId: user.id,
+      tenantId: user.tenantId || undefined,
+    });
+
+    return {
+      message: "Se o email existir, um link de recuperação será enviado",
+    };
+  }
+
+  /**
+   * POST /api/auth/reset-password
+   * Reseta senha usando token
+   */
+  async resetPassword(token: string, newPassword: string) {
+    // Buscar token de reset
+    const resetTokenRecord = await prisma.passwordResetToken.findUnique({
+      where: { token },
+    });
+
+    if (!resetTokenRecord) {
+      throw new Error("Token inválido");
+    }
+
+    if (resetTokenRecord.expiresAt < new Date()) {
+      throw new Error("Token expirado");
+    }
+
+    const passwordValidation = validatePasswordStrength(newPassword);
+    if (!passwordValidation.isValid) {
+      throw new Error(passwordValidation.message || "Senha fraca");
+    }
+
+    const hashedPassword = await hashPassword(newPassword);
+
+    // Atualizar senha do usuário
+    await prisma.user.update({
+      where: { id: resetTokenRecord.userId },
+      data: {
+        password: hashedPassword,
+        loginAttempts: 0, // Resetar tentativas ao trocar senha
+        lockedUntil: null,
+      },
+    });
+
+    // Marcar como usado
+    await (prisma as any).passwordResetToken.update({
+      where: { id: resetTokenRecord.id },
+      data: { usedAt: new Date() },
+    });
+
+    // Deletar outros tokens pendentes
+    await (prisma as any).passwordResetToken.updateMany({
+      where: {
+        userId: resetTokenRecord.userId,
+        usedAt: null,
+      },
+      data: { usedAt: new Date() },
+    });
+
+    // Log Audit
+    await auditService.log({
+      action: "auth.password_reset",
+      entity: "User",
+      entityId: resetTokenRecord.userId,
+      actorId: resetTokenRecord.userId,
+      metadata: { method: "token" },
+    });
+
+    return { message: "Senha resetada com sucesso" };
+  }
+
+  /**
+   * POST /api/auth/2fa/setup
+   * Configura 2FA para usuário
+   */
+  async setup2FA(userId: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new Error("Usuário não encontrado");
+    }
+
+    if (user.twoFactorEnabled) {
+      throw new Error("2FA já está habilitado");
+    }
+
+    // Gerar secret e QR code
+    const { secret, qrCodeUrl } = await generate2FASecret(user.email);
+
+    // Gerar backup codes
+    const backupCodes = generateBackupCodes();
+
+    // Salvar secret (mas não habilitar ainda)
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        twoFactorSecret: secret,
+        backupCodes: JSON.stringify(backupCodes),
+      },
+    });
+
+    // Log Audit
+    await auditService.log({
+      action: "auth.2fa.setup_initiated",
+      entity: "User",
+      entityId: userId,
+      actorId: userId,
+      tenantId: user.tenantId || undefined,
+    });
+
+    return {
+      secret,
+      qrCodeUrl,
+      backupCodes,
+      message:
+        "Escaneie o QR Code no seu app autenticador e verifique com um código",
+    };
+  }
+
+  /**
+   * POST /api/auth/2fa/verify
+   * Verifica código 2FA e habilita definitivamente
+   */
+  async verify2FA(userId: string, code: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user?.twoFactorSecret) {
+      throw new Error("2FA não foi configurado");
+    }
+
+    const isValid = verify2FACode(user.twoFactorSecret, code);
+    if (!isValid) {
+      throw new Error("Código inválido");
+    }
+
+    // Habilitar 2FA
+    await prisma.user.update({
+      where: { id: userId },
+      data: { twoFactorEnabled: true },
+    });
+
+    // Log Audit
+    await auditService.log({
+      action: "auth.2fa.enabled",
+      entity: "User",
+      entityId: userId,
+      actorId: userId,
+      tenantId: user.tenantId || undefined,
+    });
+
+    return { message: "2FA habilitado com sucesso" };
+  }
+
+  /**
+   * POST /api/auth/2fa/disable
+   * Desabilita 2FA
+   */
+  async disable2FA(userId: string, code: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user?.twoFactorEnabled) {
+      throw new Error("2FA não está habilitado");
+    }
+
+    const isValid = verify2FACode(user.twoFactorSecret!, code);
+    if (!isValid) {
+      throw new Error("Código inválido");
+    }
+
+    // Desabilitar 2FA
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        twoFactorEnabled: false,
+        twoFactorSecret: null,
+        backupCodes: null,
+      },
+    });
+
+    // Log Audit
+    await auditService.log({
+      action: "auth.2fa.disabled",
+      entity: "User",
+      entityId: userId,
+      actorId: userId,
+      tenantId: user?.tenantId || undefined,
+    });
+
+    return { message: "2FA desabilitado com sucesso" };
+  }
+}
+
+export const authService = new AuthService();

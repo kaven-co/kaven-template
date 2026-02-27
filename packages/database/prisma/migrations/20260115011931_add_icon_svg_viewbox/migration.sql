@@ -1,0 +1,9 @@
+-- This migration is intentionally empty.
+--
+-- Context: The iconSvgViewBox field was added to the Currency model in the Prisma schema,
+-- but this migration was generated before the column addition SQL was ready.
+-- The actual column creation was applied in the subsequent migration:
+-- 20260115013718_add_icon_svg_viewbox_fix
+--
+-- Keeping this migration to preserve the migration history chain integrity.
+-- Removing it would break Prisma's migration ordering and checksums.

@@ -1,0 +1,54 @@
+---
+title: Confirmation Modal
+description: Modal de confirmação para ações destrutivas ou importantes
+---
+
+import { ConfirmationModal } from '@kaven/ui-base';
+import { ComponentPreview } from '@/components/ComponentPreview';
+import { ConfirmationModalDemo } from '@/components/examples/ConfirmationModalDemo';
+
+# Confirmation Modal
+
+> Componente de modal pré-configurado para confirmações de usuário.
+
+## Example
+
+<ComponentPreview>
+  <ConfirmationModalDemo />
+</ComponentPreview>
+
+```tsx
+import { useState } from 'react';
+import { ConfirmationModal } from '@kaven/ui-base';
+
+export function Example() {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <>
+      <button onClick={() => setIsOpen(true)}>Open Modal</button>
+      <ConfirmationModal
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        onConfirm={() => console.log('Confirmed')}
+        title="Confirm Action"
+        message="Are you sure?"
+      />
+    </>
+  );
+}
+```
+
+## Props
+
+| Prop           | Type                              | Default       | Description                          |
+| -------------- | --------------------------------- | ------------- | ------------------------------------ |
+| `isOpen`       | `boolean`                         | -             | Controle de visibilidade             |
+| `onClose`      | `() => void`                      | -             | Callback ao fechar                   |
+| `onConfirm`    | `() => void`                      | -             | Callback ao confirmar                |
+| `title`        | `string`                          | -             | Título do modal                      |
+| `message`      | `string`                          | -             | Mensagem de corpo                    |
+| `confirmLabel` | `string`                          | `'Confirmar'` | Texto do botão de confirmação        |
+| `cancelLabel`  | `string`                          | `'Cancelar'`  | Texto do botão de cancelar           |
+| `variant`      | `'danger' \| 'warning' \| 'info'` | `'danger'`    | Estilo visual                        |
+| `isLoading`    | `boolean`                         | `false`       | Estado de loading no botão confirmar |

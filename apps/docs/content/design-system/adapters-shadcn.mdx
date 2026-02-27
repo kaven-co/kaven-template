@@ -1,0 +1,251 @@
+---
+title: Shadcn/UI Adapter
+description: Adapter que mapeia os tokens e componentes do Kaven Design System para o Shadcn/UI design language
+---
+
+import { Callout } from 'nextra/components';
+
+# Shadcn/UI Adapter
+
+O Shadcn/UI adapter traduz os tokens e componentes do Kaven Design System para a estetica clean e minimal do Shadcn/UI.
+
+<Callout type="info">
+  Referencia: [ui.shadcn.com](https://ui.shadcn.com/) --
+  Inter font, zinc palette, borders sutis, sombras leves, CSS variables nativas.
+  Essa abordagem e a mais proxima do token system do Kaven.
+</Callout>
+
+## Ativando o Adapter
+
+```tsx
+import { DesignSystemProvider } from '@/lib/design-system';
+import { DesignSystemType } from '@/lib/design-system/core/types';
+
+function App() {
+  return (
+    <DesignSystemProvider userId="user-1">
+      {/* Use setDesignSystem(DesignSystemType.SHADCN) para ativar */}
+    </DesignSystemProvider>
+  );
+}
+```
+
+Ou programaticamente:
+
+```tsx
+import { useDesignSystem } from '@/lib/design-system';
+import { DesignSystemType } from '@/lib/design-system/core/types';
+
+function ThemeSwitcher() {
+  const { setDesignSystem } = useDesignSystem();
+
+  return (
+    <button onClick={() => setDesignSystem(DesignSystemType.SHADCN)}>
+      Ativar Shadcn/UI
+    </button>
+  );
+}
+```
+
+## Design Tokens
+
+Quando o Shadcn adapter esta ativo, os tokens sao mapeados automaticamente:
+
+| Token Semantico | Valor Shadcn (Light) | Valor Shadcn (Dark) |
+|---|---|---|
+| `--color-primary` | `#18181b` (zinc-900) | `#fafafa` (zinc-50) |
+| `--color-text-primary` | `#09090b` (foreground) | `#fafafa` |
+| `--color-bg-default` | `#ffffff` (background) | `#09090b` |
+| `--color-border-default` | `#e4e4e7` (zinc-200) | `#27272a` (zinc-800) |
+| `--font-family` | Inter | Inter |
+| `--radius-lg` | `0.5rem` (Shadcn default) | `0.5rem` |
+
+## 6 Core Components
+
+O adapter inclui 6 componentes core com a estetica Shadcn:
+
+### ShadcnButton
+
+```tsx
+import { ShadcnButton } from '@/lib/design-system/adapters/shadcn';
+
+// Variantes: default, destructive, outline, secondary, ghost, link
+<ShadcnButton variant="default">Save changes</ShadcnButton>
+<ShadcnButton variant="outline">Cancel</ShadcnButton>
+<ShadcnButton variant="destructive">Delete</ShadcnButton>
+<ShadcnButton variant="ghost">Edit</ShadcnButton>
+<ShadcnButton variant="link">Learn more</ShadcnButton>
+<ShadcnButton loading>Saving...</ShadcnButton>
+```
+
+**Props:**
+
+| Prop | Tipo | Default | Descricao |
+|---|---|---|---|
+| `variant` | `'default' \| 'destructive' \| 'outline' \| 'secondary' \| 'ghost' \| 'link'` | `'default'` | Estilo visual |
+| `size` | `'sm' \| 'default' \| 'lg' \| 'icon'` | `'default'` | Tamanho |
+| `loading` | `boolean` | `false` | Estado de loading |
+| `fullWidth` | `boolean` | `false` | Largura total |
+
+### ShadcnInput
+
+```tsx
+import { ShadcnInput } from '@/lib/design-system/adapters/shadcn';
+
+<ShadcnInput label="Email" placeholder="m@example.com" type="email" />
+<ShadcnInput label="Password" type="password" description="Must be at least 8 characters." />
+<ShadcnInput
+  label="Username"
+  error
+  errorMessage="This username is already taken."
+/>
+```
+
+**Props:**
+
+| Prop | Tipo | Default | Descricao |
+|---|---|---|---|
+| `size` | `'sm' \| 'default' \| 'lg'` | `'default'` | Tamanho |
+| `label` | `string` | - | Label |
+| `error` | `boolean` | `false` | Estado de erro |
+| `errorMessage` | `string` | - | Mensagem de erro |
+| `description` | `string` | - | Texto de ajuda |
+
+### ShadcnSelect
+
+```tsx
+import { ShadcnSelect } from '@/lib/design-system/adapters/shadcn';
+
+<ShadcnSelect
+  label="Framework"
+  placeholder="Select a framework"
+  options={[
+    { value: 'next', label: 'Next.js' },
+    { value: 'remix', label: 'Remix' },
+    { value: 'astro', label: 'Astro' },
+    { value: 'nuxt', label: 'Nuxt' },
+  ]}
+  onChange={(value) => console.log(value)}
+/>
+```
+
+### ShadcnDialog
+
+```tsx
+import { ShadcnDialog, ShadcnButton } from '@/lib/design-system/adapters/shadcn';
+
+<ShadcnDialog
+  open={isOpen}
+  onOpenChange={setIsOpen}
+  title="Are you absolutely sure?"
+  description="This action cannot be undone. This will permanently delete your account."
+  footer={
+    <>
+      <ShadcnButton variant="outline" onClick={() => setIsOpen(false)}>
+        Cancel
+      </ShadcnButton>
+      <ShadcnButton variant="default" onClick={handleDelete}>
+        Continue
+      </ShadcnButton>
+    </>
+  }
+>
+  <p>All your data will be permanently removed from our servers.</p>
+</ShadcnDialog>
+```
+
+### ShadcnTable
+
+```tsx
+import {
+  ShadcnTable,
+  ShadcnTableHeader,
+  ShadcnTableBody,
+  ShadcnTableRow,
+  ShadcnTableHead,
+  ShadcnTableCell,
+  ShadcnTableCaption,
+} from '@/lib/design-system/adapters/shadcn';
+
+<ShadcnTable>
+  <ShadcnTableCaption>A list of your recent invoices.</ShadcnTableCaption>
+  <ShadcnTableHeader>
+    <ShadcnTableRow>
+      <ShadcnTableHead className="w-[100px]">Invoice</ShadcnTableHead>
+      <ShadcnTableHead>Status</ShadcnTableHead>
+      <ShadcnTableHead>Method</ShadcnTableHead>
+      <ShadcnTableHead className="text-right">Amount</ShadcnTableHead>
+    </ShadcnTableRow>
+  </ShadcnTableHeader>
+  <ShadcnTableBody>
+    <ShadcnTableRow>
+      <ShadcnTableCell className="font-medium">INV001</ShadcnTableCell>
+      <ShadcnTableCell>Paid</ShadcnTableCell>
+      <ShadcnTableCell>Credit Card</ShadcnTableCell>
+      <ShadcnTableCell className="text-right">$250.00</ShadcnTableCell>
+    </ShadcnTableRow>
+  </ShadcnTableBody>
+</ShadcnTable>
+```
+
+### ShadcnCard
+
+```tsx
+import {
+  ShadcnCard,
+  ShadcnCardHeader,
+  ShadcnCardTitle,
+  ShadcnCardDescription,
+  ShadcnCardContent,
+  ShadcnCardFooter,
+  ShadcnButton,
+} from '@/lib/design-system/adapters/shadcn';
+
+<ShadcnCard className="w-[350px]">
+  <ShadcnCardHeader>
+    <ShadcnCardTitle>Create project</ShadcnCardTitle>
+    <ShadcnCardDescription>Deploy your new project in one-click.</ShadcnCardDescription>
+  </ShadcnCardHeader>
+  <ShadcnCardContent>
+    <p>Configure your project settings here.</p>
+  </ShadcnCardContent>
+  <ShadcnCardFooter className="flex justify-between">
+    <ShadcnButton variant="outline">Cancel</ShadcnButton>
+    <ShadcnButton>Deploy</ShadcnButton>
+  </ShadcnCardFooter>
+</ShadcnCard>
+```
+
+## Diferencas Visuais vs MUI Default
+
+| Aspecto | MUI (Minimals) | Shadcn/UI |
+|---|---|---|
+| Font | Public Sans / DM Sans | Inter |
+| Radius | 8-16px (arredondado) | 6-8px (default `--radius`) |
+| Shadows | Coloridos, multi-layer | Minimos, `shadow-sm` |
+| Brand Color | `#00ab55` (green) | `#18181b` (dark slate) |
+| Palette | Grey scale personalizado | Zinc scale (Tailwind) |
+| Borders | Sutis | Presentes, finos |
+| Dark BG | `#141A21` (slate) | `#09090b` (quase preto) |
+| Overlay | `60%` opacidade | `80%` opacidade |
+
+## Customizacao
+
+O adapter aceita customizacoes via `updateCustomization()`:
+
+```tsx
+const { updateCustomization } = useDesignSystem();
+
+// Override a cor primaria mantendo o estilo Shadcn
+await updateCustomization({
+  colors: { primary: '#7c3aed' }, // violet-600
+});
+```
+
+## Por que Shadcn foi implementado primeiro
+
+O Shadcn/UI usa CSS custom properties (`--background`, `--foreground`, `--primary`, etc.)
+de forma nativa, o que e muito proximo ao sistema de tokens semanticos do Kaven.
+Isso torna o mapeamento mais direto comparado ao Fluent UI, que tem conceitos
+como acrylic materials e motion curves que nao tem equivalente direto nos
+`SemanticDesignTokens`.

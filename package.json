@@ -1,39 +1,57 @@
 {
-  "name": "kaven-project",
-  "version": "0.1.0-alpha.0",
-  "description": "Kaven project based on universal template",
-  "main": "dist/index.js",
-  "scripts": {
-    "build": "tsc",
-    "lint": "eslint 'src/**/*.{ts,tsx}' --max-warnings 0",
-    "lint:fix": "eslint 'src/**/*.{ts,tsx}' --fix",
-    "test": "vitest run",
-    "test:watch": "vitest watch",
-    "test:coverage": "vitest run --coverage",
-    "typecheck": "tsc --noEmit",
-    "quality": "pnpm run lint && pnpm run typecheck && pnpm run test",
-    "quality:gate": "./.agent/scripts/quality-gate.sh",
-    "bootstrap": "./.agent/scripts/bootstrap.sh",
-    "evidence": "./.agent/scripts/evidence-bundle.sh",
-    "validate:evidence": "./.agent/scripts/validate-evidence.sh",
-    "create:pr": "./.agent/scripts/create-pr.sh",
-    "telemetry:view": "tail -f ~/.kaven/telemetry.log",
-    "telemetry:clear": "rm -f ~/.kaven/telemetry.log && touch ~/.kaven/telemetry.log"
-  },
-  "keywords": [
-    "kaven"
+  "name": "{{PROJECT_NAME}}",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
   ],
-  "author": "Kaven",
-  "license": "Apache-2.0",
-  "devDependencies": {
-    "@types/node": "^20.0.0",
-    "@typescript-eslint/eslint-plugin": "^8.53.1",
-    "@typescript-eslint/parser": "^8.53.1",
-    "eslint": "^8.0.0",
-    "typescript": "^5.0.0",
-    "vitest": "^2.1.8"
+  "scripts": {
+    "predev": "bash scripts/cleanup-dev.sh",
+    "postinstall": "pnpm db:generate",
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "db:generate": "pnpm --filter @kaven/database db:generate",
+    "db:migrate": "pnpm --filter @kaven/database db:migrate",
+    "db:seed": "pnpm --filter @kaven/database db:seed",
+    "db:studio": "pnpm --filter @kaven/database db:studio",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f",
+    "docker:restart": "docker compose restart",
+    "docker:clean": "docker compose down -v",
+    "setup": "pnpm install && pnpm docker:up && sleep 5 && pnpm db:migrate && pnpm db:seed",
+    "quality": "pnpm lint && pnpm typecheck && pnpm test",
+    "test:coverage": "pnpm test --coverage",
+    "test:security": "jest apps/api/tests/security --coverage --coverageDirectory=coverage/security",
+    "test:gdpr": "jest apps/api/tests/compliance --coverage --coverageDirectory=coverage/gdpr",
+    "policy:design-system": "bash scripts/policies/check-design-system.sh",
+    "policy:design-system-docs": "bash scripts/policies/check-design-system-docs.sh",
+    "report:ui-imports": "bash scripts/migration/ui-import-report.sh",
+    "check:ui-migration-clean": "bash scripts/migration/check-ui-migration-clean.sh"
   },
-  "engines": {
-    "node": ">=20"
+  "devDependencies": {
+    "@types/node-cron": "^3.0.11",
+    "kill-port": "^2.0.1",
+    "prettier": "^3.4.2",
+    "prisma": "^5.22.0",
+    "turbo": "^2.8.9",
+    "typescript": "^5.7.2"
+  },
+  "packageManager": "pnpm@9.15.4",
+  "dependencies": {
+    "@prisma/client": "5.22.0",
+    "node-cron": "^3.0.3",
+    "systeminformation": "^5.31.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "preact": "^10.25.0",
+      "qs": "^6.14.0",
+      "inflight": "^1.0.6"
+    }
   }
 }

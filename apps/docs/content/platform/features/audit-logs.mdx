@@ -1,0 +1,56 @@
+---
+title: Audit Logs
+description: Rastreabilidade total de ações críticas no sistema para segurança e conformidade.
+date: 2026-01-29
+author: Chris + Antigravity
+version: 1.0.0
+tags: [security, compliance, audit]
+---
+
+# Audit Logs
+
+O **Audit Service** é o mecanismo central para registrar todas as atividades sensíveis realizadas pelos usuários e administradores dentro da plataforma.
+
+## Princípio de Funcionamento
+
+Diferente dos logs de erro, os registros de auditoria são **negócio-orientados**. Eles capturam QUEM fez O QUÊ, ONDE e QUANDO.
+
+### Estrutura de um Log
+
+| Campo       | Descrição                                                      |
+| :---------- | :------------------------------------------------------------- |
+| `action`    | Nome da ação (ex: `USER_LOGIN`, `ORDER_CREATED`).              |
+| `entity`    | Nome do recurso afetado (ex: `User`, `Tenant`).                |
+| `entityId`  | ID único do recurso afetado.                                   |
+| `actorId`   | ID do usuário que executou a ação.                             |
+| `ipAddress` | Endereço IP de origem.                                         |
+| `metadata`  | Payload JSON com detalhes adicionais do estado anterior/atual. |
+
+## Uso no Código
+
+O serviço foi desenhado para ser invocado de forma assíncrona, garantindo que o log não bloqueie a resposta da API ao usuário final.
+
+```typescript
+await auditService.log({
+  action: "MODULE_INSTALL",
+  entity: "Marketplace",
+  entityId: "payments-module",
+  actorId: user.id,
+  tenantId: user.tenantId,
+  metadata: { version: "1.0.2" },
+});
+```
+
+## Políticas de Retenção
+
+Os logs de auditoria são persistidos na tabela `audit_log`. Recomenda-se uma política de arquivamento para volumes frios após 365 dias para controle de custos de storage (DB).
+
+## Segurança dos Logs
+
+- **Imutabilidade:** O `AuditService` não permite edição ou remoção de logs via API padrão.
+- **Isolamento:** Logs de um Tenant não são visíveis para administradores de outros Tenants.
+
+## Relacionados
+
+- [Security Hardening](./security-hardening)
+- [Tenant Management](./TENANT_MANAGEMENT)

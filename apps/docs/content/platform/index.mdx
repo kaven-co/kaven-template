@@ -1,0 +1,94 @@
+---
+title: Plataforma Kaven
+description: Documentação completa da plataforma Kaven - CLI, Banco de Dados, Módulos e Arquitetura
+---
+
+import { Cards, Callout } from 'nextra/components';
+
+# Plataforma Kaven
+
+Plataforma SaaS multi-tenant completa com autenticação, RBAC, pagamentos e observabilidade, agora potencializada pela **Kaven CLI**.
+
+<Callout type="info">
+  Baseado em Next.js 16, React 19, Prisma e PostgreSQL com arquitetura modular e
+  escalável.
+</Callout>
+
+## 🚀 Início Rápido
+
+<Cards>
+  <Cards.Card title="Kaven CLI" href="/platform/cli" arrow />
+  <Cards.Card title="Sistema Modular" href="/platform/modules" arrow />
+  <Cards.Card title="Banco de Dados" href="/platform/database" arrow />
+  <Cards.Card
+    title="Arquitetura"
+    href="/platform/architecture/overview"
+    arrow
+  />
+</Cards>
+
+## 📦 Stack Tecnológica
+
+### Frontend
+
+- **Framework**: Next.js 16 (App Router)
+- **UI**: React 19 + Tailwind CSS 4
+- **Estado**: TanStack Query + Zustand
+- **Formulários**: React Hook Form + Zod
+- **i18n**: next-intl
+
+### Backend
+
+- **Runtime**: Node.js 20+
+- **Framework**: Express.js
+- **ORM**: Prisma
+- **Banco de Dados**: PostgreSQL
+- **Cache**: Redis
+- **Filas**: BullMQ
+
+### DevOps
+
+- **Containerização**: Docker + Docker Compose
+- **Monitoramento**: Prometheus + Grafana
+- **Logs**: Winston
+- **CI/CD**: GitHub Actions
+
+## 🏗️ Arquitetura
+
+```
+┌─────────────────┐
+│   Next.js App   │
+│   (Frontend)    │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│   Express API   │
+│   (Backend)     │
+└────────┬────────┘
+         │
+    ┌────┴────┐
+    ▼         ▼
+┌────────┐ ┌────────┐
+│ Prisma │ │ Redis  │
+│   +    │ │   +    │
+│  PG    │ │ BullMQ │
+└────────┘ └────────┘
+```
+
+## 🎯 Features Principais (v2.0)
+
+- ✅ **Kaven CLI** - Gestão completa via linha de comando
+- ✅ **Modularidade** - Adicione ou remova features sob demanda
+- ✅ **Split-Schema** - Evolução segura do banco de dados
+- ✅ **Multi-tenancy** - Isolamento completo de dados
+- ✅ **Authentication** - JWT + Refresh Tokens
+- ✅ **RBAC** - Controle de acesso baseado em roles
+- ✅ **Observability** - Métricas, logs e traces integrados
+
+## 📚 Explore
+
+- [Instalação](/platform/getting-started/installation) - Setup inicial
+- [Guia da CLI](/platform/cli) - Comandos e uso
+- [Banco de Dados](/platform/database) - Estrutura Split-Schema
+- [Sistema Modular](/platform/modules) - Features opcionais

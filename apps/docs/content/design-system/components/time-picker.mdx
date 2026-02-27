@@ -1,0 +1,56 @@
+---
+title: Time Picker
+description: Seletor de horário
+---
+
+import { TimePicker } from '@kaven/ui-base';
+import { ComponentPreview } from '@/components/ComponentPreview';
+
+# Time Picker
+
+> Componente para seleção de horário.
+
+## Básico
+
+```tsx
+import { TimePicker } from '@kaven/ui-base';
+
+<TimePicker
+  value={time}
+  onChange={setTime}
+  placeholder="Selecione um horário"
+/>;
+```
+
+## Formato 24h
+
+<ComponentPreview>
+  <TimePicker format="24h" />
+</ComponentPreview>
+
+```tsx
+<TimePicker format="24h" />
+```
+
+## Com Segundos
+
+<ComponentPreview>
+  <TimePicker showSeconds />
+</ComponentPreview>
+
+```tsx
+<TimePicker showSeconds />
+```
+
+## API
+
+| Prop          | Tipo                   | Padrão  | Descrição            |
+| ------------- | ---------------------- | ------- | -------------------- |
+| `value`       | `Date \| string`       | -       | Horário selecionado  |
+| `onChange`    | `(time: Date) => void` | -       | Callback quando muda |
+| `format`      | `'12h' \| '24h'`       | `'24h'` | Formato de hora      |
+| `showSeconds` | `boolean`              | `false` | Mostrar segundos     |
+
+## Relacionados
+
+- [Date Picker](/design-system/components/date-picker)

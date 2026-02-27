@@ -1,0 +1,201 @@
+---
+title: Problemas Conhecidos
+description: Lista de problemas conhecidos no projeto Kaven e seus workarounds
+date: 2026-01-10
+author: Kaven Team
+version: 1.0.0
+tags: [troubleshooting, known-issues, workarounds]
+---
+
+# Problemas Conhecidos
+
+> Lista de problemas conhecidos no projeto Kaven com workarounds documentados
+
+## React Hook Form + Zod Resolver
+
+### Problema
+
+Incompatibilidade de tipos entre `@hookform/resolvers/zod` e `react-hook-form` v7+, causando erro TypeScript:
+
+```
+Type 'Resolver<...>' is not assignable to type 'Resolver<...>'
+```
+
+### Causa
+
+O `zodResolver` retorna um tipo genérico que não corresponde exatamente ao tipo esperado pelo `useForm` devido a diferenças na inferência de tipos entre as versões.
+
+### Workaround
+
+Usar `as any` no `zodResolver`:
+
+```tsx
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+
+const schema = z.object({
+  name: z.string(),
+  type: z.enum(['OPTION_A', 'OPTION_B']),
+});
+
+type FormData = z.infer<typeof schema>;
+
+const form = useForm<FormData>({
+  // WORKAROUND: zodResolver type mismatch com react-hook-form v7+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  resolver: zodResolver(schema) as any,
+  defaultValues: {
+    name: '',
+    type: 'OPTION_A',
+  },
+});
+```
+
+### Arquivos Afetados
+
+- `apps/admin/components/features/feature-form.tsx`
+- `apps/admin/components/plans/plan-form.tsx`
+- `apps/admin/components/products/product-form.tsx`
+
+### Status
+
+**Permanente** - Este é um workaround conhecido e aceito pela comunidade. Não afeta a funcionalidade em runtime.
+
+### Referências
+
+- [React Hook Form Issue #8980](https://github.com/react-hook-form/react-hook-form/issues/8980)
+- [Zod Resolver Discussion](https://github.com/react-hook-form/resolvers/issues/271)
+
+---
+
+## React Compiler - form.watch()
+
+### Problema
+
+Warning do React Compiler sobre uso de `form.watch()`:
+
+```
+Compilation Skipped: Use of incompatible library
+
+This API returns functions which cannot be memoized without leading to stale UI.
+```
+
+### Causa
+
+O React Compiler não consegue memoizar componentes que usam `form.watch()` do React Hook Form, pois a função retorna valores que podem mudar entre renders.
+
+### Workaround
+
+**Nenhum workaround necessário** - Este é um warning informativo, não um erro. O React Compiler automaticamente pula a memoização desses componentes.
+
+### Impacto
+
+- ⚠️ **Performance**: Componentes com `form.watch()` não serão otimizados pelo React Compiler
+- ✅ **Funcionalidade**: Não há impacto na funcionalidade
+
+### Arquivos Afetados
+
+- `apps/admin/components/features/feature-form.tsx`
+- `apps/admin/components/plans/plan-form.tsx`
+- `apps/admin/components/products/product-form.tsx`
+- `apps/admin/sections/user/view/user-create-view.tsx`
+- `apps/admin/sections/user/view/user-edit-view.tsx`
+
+### Status
+
+**Esperado** - Comportamento normal do React Compiler com React Hook Form.
+
+---
+
+## Prisma $queryRaw vs ORM (Case Sensitivity)
+
+### Problema
+
+O uso de `prisma.$queryRaw` com identificadores sem aspas duplas falha no PostgreSQL, e mesmo com aspas duplas, é extremamente frágil e perde type safety:
+
+```tsx
+// ❌ FALHA: PG converte para "platformconfig" (lowercase) e não encontra a tabela
+const result = await prisma.$queryRaw`SELECT * FROM PlatformConfig`;
+
+// ⚠️ FRÁGIL: Funciona, mas perde type safety e mapeamento de campos do Prisma
+const result: any[] = await prisma.$queryRaw`SELECT * FROM "PlatformConfig"`;
+```
+
+### Causa
+
+O PostgreSQL trata identificadores sem aspas como lowercase. Como o Prisma gera modelos em PascalCase (ex: `PlatformConfig`), a query raw falha a menos que aspas duplas sejam usadas manualmente. Além disso, queries SQL raw ignoram o mapeamento de campos definido no `schema.prisma`.
+
+### Recomendação (Best Practice)
+
+**Sempre use o Prisma Client (ORM)** ao invés de raw queries. O Prisma lida automaticamente com o quoting correto e garante type safety total:
+
+```tsx
+// ✅ RECOMENDADO: Seguro, tipado e resiliente
+const config = await prisma.platformConfig.findFirst({
+  select: {
+    primaryColor: true,
+    faviconUrl: true,
+  },
+});
+```
+
+### Quando usar raw SQL?
+
+Apenas em casos extremos onde o Prisma não suporta uma funcionalidade específica do banco (ex: extensões complexas, analytics pesados). Para queries simples de busca, **nunca use SQL raw**.
+
+### Arquivos Corrigidos
+
+- `apps/admin/app/[locale]/layout.tsx`
+- `apps/admin/app/api/settings/platform/route.ts`
+
+### Status
+
+**Padronizado** - O projeto agora segue o padrão ORM para todas as consultas de configuração.
+
+---
+
+## Database Connection - Development
+
+### Problema
+
+Erro ao iniciar aplicação frontend:
+
+```
+PrismaClientInitializationError: Can't reach database server at `localhost:5432`
+```
+
+### Causa
+
+Containers Docker não estão rodando.
+
+### Solução
+
+Iniciar containers Docker:
+
+```bash
+docker compose up -d
+```
+
+Verificar status:
+
+```bash
+docker compose ps
+```
+
+### Arquivos Afetados
+
+- `apps/admin/app/[locale]/layout.tsx` (usa Prisma no Server Component)
+
+### Status
+
+**Resolvido** - Documentado para novos desenvolvedores.
+
+---
+
+## Relacionados
+
+- [TypeScript Type Errors](/platform/guides/troubleshooting/typescript-type-errors)
+- [Common Issues](/platform/guides/troubleshooting/COMMON_ISSUES)
+- [React Hook Form Documentation](https://react-hook-form.com/)
+- [Prisma Documentation](https://www.prisma.io/docs)

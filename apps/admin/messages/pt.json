@@ -1,0 +1,1194 @@
+{
+  "Common": {
+    "dashboard": "Dashboard",
+    "actions": "Ações",
+    "users": "Usuários",
+    "export": "Exportar",
+    "exporting": "Exportando...",
+    "exportError": "Erro ao exportar dados",
+    "business": "Negócios",
+    "comingSoon": "Em breve para {name}",
+    "cancel": "Cancelar",
+    "menu": {
+      "profile": "Perfil",
+      "settings": "Configurações",
+      "logout": "Sair"
+    },
+    "phoneInput": {
+      "placeholder": "Digite o número de telefone",
+      "search": "Buscar...",
+      "noCountries": "Nenhum país encontrado",
+      "invalid": "Número de telefone inválido"
+    },
+    "addressInput": {
+      "placeholder": "Digite o endereço",
+      "loading": "Carregando..."
+    },
+    "passwordValidator": {
+      "strength": "Força da Senha",
+      "requirements": "Requisitos",
+      "levels": {
+        "veryWeak": "Muito Fraca",
+        "weak": "Fraca",
+        "fair": "Regular",
+        "good": "Boa",
+        "strong": "Forte"
+      },
+      "checklist": {
+        "length": "Pelo menos 8 caracteres",
+        "lowercase": "Uma letra minúscula",
+        "uppercase": "Uma letra maiúscula",
+        "number": "Um número",
+        "special": "Um caractere especial"
+      },
+      "errors": {
+        "required": "A senha é obrigatória",
+        "invalid": "A senha deve conter pelo menos: 1 letra minúscula, 1 letra maiúscula, 1 número e 1 caractere especial"
+      }
+    },
+    "errors": {
+      "notFoundTitle": "Página não encontrada (404)",
+      "notFoundDescription": "Ops! A página que você está procurando não existe ou foi movida. Verifique a URL ou volte para o início.",
+      "notFoundBack": "Voltar ao Dashboard",
+      "errorTitle": "Algo deu errado! (500)",
+      "errorDescription": "Encontramos um erro inesperado ao processar sua solicitação. Nossos engenheiros já foram notificados.",
+      "errorRetry": "Tentar novamente"
+    },
+    "saved": "Salvo com sucesso"
+  },
+  "Dashboard": {
+    "title": "Dashboard {name}",
+    "welcome": "Bem-vindo de volta ao seu espaço de trabalho!",
+    "cards": {
+      "totalUsers": "Usuários Ativos",
+      "newSignups": "Novos Cadastros",
+      "activationRate": "Taxa de Ativação",
+      "totalRevenue": "Receita Total",
+      "totalInvoices": "Faturas Totais"
+    },
+    "metrics": {
+      "last7Days": "últimos 7 dias",
+      "vsPrevious7Days": "vs 7 dias anteriores"
+    },
+    "charts": {
+      "currentActivity": "Atividade Atual",
+      "activityByType": "Atividade por tipo",
+      "activityTrends": "Tendências de Atividade",
+      "trendComparison": "(+43%) que ano passado"
+    },
+    "table": {
+      "title": "Usuários Ativos",
+      "columns": {
+        "user": "Usuário",
+        "role": "Função",
+        "joined": "Entrou em",
+        "action": "Ação"
+      }
+    }
+  },
+  "Policies": {
+    "title": "Políticas de Acesso",
+    "description": "Gerencie regras de segurança e acesso para seu espaço de trabalho.",
+    "list": {
+      "name": "Nome da Política",
+      "type": "Tipo",
+      "target": "Alvo",
+      "enforcement": "Execução",
+      "status": "Status",
+      "createdAt": "Criado em",
+      "empty": "Nenhuma política encontrada.",
+      "active": "Ativo",
+      "inactive": "Inativo",
+      "actions": {
+        "edit": "Editar",
+        "delete": "Excluir"
+      },
+      "deleteConfirm": {
+        "title": "Excluir Política",
+        "description": "Tem certeza que deseja excluir esta política? Esta ação não pode ser desfeita.",
+        "cancel": "Cancelar",
+        "confirm": "Excluir"
+      }
+    },
+    "form": {
+      "create": "Criar Política",
+      "edit": "Editar Política",
+      "basicInfo": "Informações Básicas",
+      "conditions": "Condições",
+      "namePlaceholder": "Ex: Whitelist de IP do Escritório",
+      "typeLabel": "Tipo de Política",
+      "targetTypeLabel": "Tipo de Alvo",
+      "targetIdLabel": "ID do Alvo (Opcional)",
+      "enforcementLabel": "Ação ao corresponder",
+      "active": "Ativo",
+      "inactive": "Inativo",
+      "save": "Salvar Política",
+      "cancel": "Cancelar"
+    },
+    "types": {
+      "IP_WHITELIST": "Whitelist/Blacklist de IP",
+      "DEVICE_TRUST": "Confiança de Dispositivo",
+      "TIME_BASED": "Acesso Baseado em Tempo",
+      "GEO_RESTRICTION": "Restrição Geográfica"
+    },
+    "enforcements": {
+      "DENY": "Negar Acesso",
+      "ALLOW": "Permitir Acesso",
+      "WARN": "Avisar e Logar",
+      "REQUIRE_MFA": "Exigir MFA"
+    },
+    "targets": {
+      "SPACE": "Espaço",
+      "ROLE": "Cargo",
+      "CAPABILITY": "Capability",
+      "USER": "Usuário",
+      "GLOBAL": "Global"
+    },
+    "ipConfig": {
+      "allowedIps": "IPs / CIDR Permitidos",
+      "blockedIps": "IPs / CIDR Bloqueados",
+      "placeholder": "Ex: 192.168.1.1 ou 10.0.0.0/24",
+      "help": "Adicione um IP ou CIDR por linha"
+    },
+    "timeConfig": {
+      "allowedHours": "Horários Permitidos (HH:mm-HH:mm)",
+      "allowedDays": "Dias Permitidos",
+      "hoursPlaceholder": "Ex: 09:00-18:00",
+      "days": {
+        "0": "Domingo",
+        "1": "Segunda-feira",
+        "2": "Terça-feira",
+        "3": "Quarta-feira",
+        "4": "Quinta-feira",
+        "5": "Sexta-feira",
+        "6": "Sábado"
+      }
+    },
+    "deviceConfig": {
+      "requireTrusted": "Exigir Dispositivo Confiável",
+      "requireTrustedHelp": "O acesso será permitido apenas se o dispositivo estiver registrado e validado.",
+      "minTrustLevel": "Nível de Confiança Mínimo",
+      "minTrustLevelHelp": "O nível de confiança é baseado na validação de hardware e 2FA do dispositivo.",
+      "trustLevels": {
+        "1": "Básico (Registrado)",
+        "2": "Seguro (Verificado)",
+        "3": "Crítico (MFA Hardened)"
+      }
+    },
+    "geoConfig": {
+      "allowedCountries": "Países Permitidos",
+      "blockedCountries": "Países Bloqueados",
+      "placeholder": "Ex: BR, US, PT",
+      "help": "Use códigos ISO de 2 letras, separados por vírgula"
+    }
+  },
+  "Security": {
+    "masking": {
+      "title": "Mascaramento de Dados",
+      "description": "Veja quais campos estão protegidos e quais permissões são necessárias para visualização.",
+      "errorLoading": "Ocorreu um erro ao carregar as configurações de mascaramento.",
+      "table": {
+        "entity": "Entidade",
+        "field": "Campo",
+        "type": "Tipo de Máscara",
+        "capability": "Capability Requerida"
+      },
+      "types": {
+        "EMAIL": "E-mail",
+        "PHONE": "Telefone",
+        "NAME": "Nome",
+        "TOKEN": "Token/Segredo",
+        "ADDRESS": "Endereço",
+        "GENERIC": "Genérico"
+      }
+    },
+    "impersonation": {
+      "banner_title": "Modo de Suporte",
+      "viewing_as": "Você está visualizando como",
+      "exit": "Sair da Sessão",
+      "confirm_start": "Deseja iniciar uma sessão de suporte como {name}?",
+      "justification_default": "Suporte administrativo",
+      "action": "Acessar como Usuário"
+    },
+    "TwoFactorReset": {
+      "title": "Recuperação de Conta (2FA Reset)",
+      "description": "Gestão de solicitações para reset de autenticação de dois fatores.",
+      "requestDialog": {
+        "title": "Solicitar Reset de 2FA",
+        "description": "Esta ação será auditada e requer aprovação superior para ser executada.",
+        "email": "Email do Usuário",
+        "justification": "Justificativa",
+        "justificationPlaceholder": "Motivo da solicitação de reset..."
+      }
+    }
+  },
+  "Sidebar": {
+    "groups": {
+      "overview": "Visão Geral",
+      "management": "Gerenciamento",
+      "finance": "Finanças",
+      "monetization": "Monetização",
+      "support": "Suporte",
+      "marketing": "Marketing",
+      "devops": "DevOps",
+      "configuration": "Configuração"
+    },
+    "items": {
+      "home": "Início",
+      "dashboard": "Dashboard",
+      "analytics": "Análise",
+      "platform settings": "Config. da Plataforma",
+      "users": "Usuários",
+      "tenant": "Tenants",
+      "invites": "Convites",
+      "revenue": "Receita",
+      "orders": "Pedidos",
+      "invoices": "Faturas",
+      "payments": "Pagamentos",
+      "billing": "Cobrança",
+      "plans": "Planos",
+      "products": "Produtos",
+      "features": "Funcionalidades",
+      "subscriptions": "Assinaturas",
+      "tickets": "Chamados",
+      "impersonation": "Impersonificação",
+      "2fa reset": "Resetar 2FA",
+      "crm": "CRM",
+      "campaigns": "Campanhas",
+      "goals": "Metas",
+      "monitoring": "Monitoramento",
+      "servers": "Servidores",
+      "databases": "Banco de Dados",
+      "logs": "Logs",
+      "system health": "Saúde do Sistema",
+      "audit logs": "Logs de Auditoria"
+    }
+  },
+  "Auth": {
+    "login": {
+      "title": "Entre na sua conta",
+      "subtitle": "Não tem uma conta?",
+      "getStarted": "Comece agora",
+      "emailLabel": "Endereço de email",
+      "passwordLabel": "Senha",
+      "forgotPassword": "Esqueceu a senha?",
+      "submit": "Entrar",
+      "or": "OU",
+      "success": "Login realizado com sucesso!"
+    },
+    "signup": {
+      "title": "Complete seu cadastro",
+      "subtitle": "Junte-se a {tenant} no Kaven",
+      "emailLabel": "Email",
+      "firstNameLabel": "Nome",
+      "lastNameLabel": "Sobrenome",
+      "passwordLabel": "Senha",
+      "passwordPlaceholder": "Crie uma senha forte",
+      "firstNamePlaceholder": "João",
+      "lastNamePlaceholder": "Silva",
+      "submit": "Criar Conta",
+      "submitting": "Criando Conta...",
+      "success": "Conta criada! Redirecionando para o login...",
+      "invalidLink": "Link Inválido",
+      "invalidLinkDesc": "Nenhum token de convite fornecido.",
+      "expiredLink": "Convite Inválido ou Expirado",
+      "expiredLinkDesc": "Por favor, peça um novo convite.",
+      "validating": "Validando convite...",
+      "validationError": "Falha ao validar convite"
+    },
+    "register": {
+      "title": "Comece agora, é grátis",
+      "subtitle": "Já tem uma conta?",
+      "signIn": "Entrar",
+      "firstName": "Nome",
+      "lastName": "Sobrenome",
+      "emailLabel": "Endereço de email",
+      "passwordLabel": "Senha",
+      "terms": "Concordo com os Termos de Serviço e Política de Privacidade",
+      "submit": "Criar conta",
+      "or": "OU",
+      "success": "Conta criada! Verifique seu email.",
+      "passwordStrength": [
+        "Fraca",
+        "Razoável",
+        "Boa",
+        "Forte"
+      ]
+    },
+    "forgotPassword": {
+      "title": "Esqueceu sua senha?",
+      "description": "Digite o email associado à sua conta e enviaremos um link para redefinir sua senha.",
+      "emailLabel": "Endereço de email",
+      "submit": "Enviar Solicitação",
+      "backToSignIn": "Voltar para o login",
+      "successTitle": "Solicitação enviada!",
+      "successDescription": "Enviamos um email de confirmação para {email}. Por favor, verifique seu email.",
+      "returnToLogin": "Voltar para o login",
+      "resetPassword": {
+        "title": "Redefinir sua senha",
+        "subtitle": "Digite sua nova senha abaixo",
+        "newPassword": "Nova Senha",
+        "confirmPassword": "Confirmar Senha",
+        "passwordPlaceholder": "6+ caracteres",
+        "submit": "Redefinir Senha",
+        "matchError": "As senhas não coincidem",
+        "tokenError": "Token de redefinição inválido",
+        "success": "Senha redefinida com sucesso!",
+        "failed": "Falha ao redefinir a senha"
+      }
+    }
+  },
+  "Users": {
+    "title": "Todos os Usuários",
+    "inviteSuccess": "Convite enviado com sucesso!",
+    "inviteError": "Falha ao enviar convite",
+    "inviteUser": "Convidar Usuário",
+    "inviteDescription": "Envie um convite para um novo membro da equipe.",
+    "emailLabel": "Email",
+    "roleLabel": "Função",
+    "roleMember": "Membro",
+    "roleAdmin": "Admin",
+    "cancel": "Cancelar",
+    "sending": "Enviando...",
+    "sendInvite": "Enviar Convite",
+    "table": {
+      "name": "Nome",
+      "phoneNumber": "Telefone",
+      "tenant": "Tenant",
+      "role": "Função",
+      "status": "Status",
+      "selected": "selecionados",
+      "delete": "Excluir",
+      "rowsPerPage": "Linhas por página",
+      "loading": "Carregando usuários...",
+      "error": "Erro ao carregar usuários",
+      "errorRetry": "Tente novamente mais tarde",
+      "noUsers": "Nenhum usuário encontrado",
+      "noUsersDesc": "Tente ajustar os filtros de busca",
+      "previousPage": "Ir para página anterior",
+      "nextPage": "Ir para próxima página",
+      "ofLocal": "de"
+    },
+    "filters": {
+      "all": "Todos",
+      "active": "Ativos",
+      "pending": "Pendentes",
+      "banned": "Banidos",
+      "rejected": "Rejeitados",
+      "search": "Buscar..."
+    }
+  },
+  "User": {
+    "validation": {
+      "nameMin": "O nome deve ter pelo menos 3 caracteres",
+      "emailInvalid": "Endereço de e-mail inválido",
+      "phoneInvalid": "Número de telefone inválido"
+    },
+    "table": {
+      "deleteSuccess": "Usuário excluído com sucesso",
+      "deleteError": "Erro ao excluir usuário",
+      "confirmDeleteTitle": "Confirmar exclusão?",
+      "confirmDeleteDesc": "Tem certeza que deseja excluir o usuário <bold>{name}</bold>? Esta ação não pode ser desfeita.",
+      "cancel": "Cancelar",
+      "delete": "Excluir",
+      "deleting": "Excluindo...",
+      "edit": "Editar",
+      "search": "Buscar...",
+      "roleAll": "Função: Todas"
+    },
+    "edit": {
+      "title": "Editar Usuário",
+      "notFound": "Usuário não encontrado",
+      "backToList": "Voltar para a lista",
+      "tabs": {
+        "overview": "Visão Geral",
+        "security": "Segurança"
+      },
+      "buttons": {
+        "save": "Salvar Alterações",
+        "saving": "Salvando...",
+        "delete": "Excluir Usuário",
+        "deleting": "Excluindo..."
+      },
+      "sections": {
+        "security": {
+          "title": "Configurações de Segurança",
+          "description": "Redefinição de senha e configurações de 2FA estarão disponíveis aqui. Por enquanto, os usuários devem gerenciar suas próprias configurações de segurança."
+        }
+      },
+      "labels": {
+        "fullName": "Nome Completo",
+        "email": "Endereço de E-mail",
+        "phoneNumber": "Telefone",
+        "tenant": "Tenant",
+        "role": "Função",
+        "address": "Endereço",
+        "city": "Cidade",
+        "state": "Estado/Região",
+        "country": "País",
+        "zipcode": "CEP",
+        "company": "Empresa",
+        "banned": "Banido",
+        "emailVerified": "E-mail Verificado"
+      },
+      "placeholders": {
+        "selectTenant": "Selecionar tenant",
+        "searchAddress": "Comece a digitar para buscar endereço...",
+        "fullName": "Digite o nome completo",
+        "email": "Digite o endereço de e-mail"
+      },
+      "hints": {
+        "disableAccount": "Aplicar desativação de conta",
+        "emailVerification": "Desativar isso enviará automaticamente um e-mail de verificação para o usuário"
+      },
+      "roles": {
+        "USER": "Usuário",
+        "TENANT_ADMIN": "Admin do Tenant",
+        "SUPER_ADMIN": "Super Admin"
+      },
+      "messages": {
+        "deleteConfirm": "Tem certeza que deseja excluir este usuário?",
+        "updateSuccess": "Usuário atualizado com sucesso",
+        "avatarSuccess": "Avatar atualizado com sucesso",
+        "avatarError": "Falha no upload do avatar"
+      },
+      "statuses": {
+        "ACTIVE": "Ativo",
+        "PENDING": "Pendente",
+        "BANNED": "Banido",
+        "REJECTED": "Rejeitado"
+      },
+      "validation": {
+        "nameMin": "O nome deve ter pelo menos 3 caracteres",
+        "emailInvalid": "Endereço de e-mail inválido",
+        "phoneInvalid": "Número de telefone inválido"
+      }
+    },
+    "create": {
+      "title": "Criar novo usuário",
+      "breadcrumb": "Criar",
+      "buttons": {
+        "create": "Criar usuário",
+        "creating": "Criando...",
+        "cancel": "Cancelar"
+      },
+      "validation": {
+        "fullName": "Por favor, insira seu nome completo (nome e sobrenome)",
+        "passwordMin": "A senha deve ter pelo menos 8 caracteres",
+        "tenantRequired": "O Tenant é obrigatório"
+      },
+      "placeholders": {
+        "name": "João Silva",
+        "email": "joao@exemplo.com",
+        "password": "••••••••",
+        "address": "Rua Exemplo, 123",
+        "city": "São Paulo",
+        "state": "São Paulo",
+        "country": "Brasil",
+        "zipcode": "01234-567",
+        "company": "Minha Empresa Ltda.",
+        "createTenant": "Criar próprio tenant",
+        "noTenants": "Nenhum tenant disponível"
+      }
+    }
+  },
+  "PlatformSettings": {
+    "title": "Configurações da Plataforma",
+    "general": {
+      "title": "Configurações Gerais",
+      "description": "Configure as informações gerais da sua plataforma.",
+      "companyName": "Nome da Empresa",
+      "seoDescription": "Descrição (SEO)",
+      "language": "Idioma Padrão",
+      "currency": "Moeda Padrão",
+      "numberFormat": "Formato de Números",
+      "sections": {
+        "companyInfo": "Informações da Empresa",
+        "regional": "Configurações Regionais",
+        "dateTime": "Data e Hora"
+      },
+      "dateFormats": {
+        "extended": "Extenso"
+      }
+    },
+    "branding": {
+      "title": "Branding",
+      "description": "Personalize a aparência do seu SaaS.",
+      "presets": "Predefinições de Cor",
+      "customColor": "Cor Personalizada",
+      "faviconAndLogo": "Favicon e Logo",
+      "activeLogo": "Logo Ativo",
+      "logoUrl": "URL do Logo",
+      "logoRecommended": "Recomendado: PNG ou SVG com fundo transparente.",
+      "activeFavicon": "Favicon Ativo",
+      "faviconUrl": "URL do Favicon",
+      "upload": "Enviar",
+      "recommended": "Recomendado: 32x32px ou 64x64px. Formatos: .ico, .png, .svg.",
+      "maxSize": "(Máx {size}MB)"
+    },
+    "seo": {
+      "title": "Configuração Pública de SEO",
+      "description": "Configure as definições globais de SEO para páginas públicas (OG Image, Twitter).",
+      "twitterHandle": "Twitter Handle",
+      "ogImage": "Imagem OpenGraph (Compartilhamento Social)",
+      "preview": "Prévia",
+      "ogImageUrl": "URL da Imagem OG"
+    },
+    "actions": {
+      "discard": "Descartar",
+      "save": "Salvar Alterações",
+      "saving": "Salvando..."
+    },
+    "tabs": {
+      "general": "Geral",
+      "branding": "Branding",
+      "seo": "SEO",
+      "integrations": "Integrações"
+    },
+    "validation": {
+      "companyNameRequired": "Nome da empresa é obrigatório",
+      "seoLimit": "Limite de SEO excedido (máx 160 caracteres)",
+      "invalidColor": "Código de cor inválido",
+      "fileTooLarge": "Arquivo muito grande. Máx {size}MB.",
+      "fileTooLargeOg": "Arquivo muito grande. Máx 2MB para imagens OG."
+    },
+    "placeholders": {
+      "companyName": "Ex: Kaven SaaS",
+      "seoDescription": "Descrição da plataforma para mecanismos de busca...",
+      "color": "#000000",
+      "url": "https://..."
+    },
+    "help": {
+      "colorDescription": "Selecione uma predefinição ou escolha uma cor personalizada. Isso será aplicado globalmente.",
+      "ogRecommended": "Recomendado: 1200x630px (proporção 1.91:1). Máx 2MB.",
+      "ogDefault": "1200x630\nRecomendado",
+      "noFile": "Nenhum"
+    },
+    "integrations": {
+      "title": "Integrações de Email",
+      "description": "Gerencie provedores de email e configurações",
+      "addIntegration": "Adicionar Integração",
+      "testConnection": "Testar Conexão",
+      "lastChecked": "Última verificação",
+      "healthStatus": {
+        "healthy": "Saudável",
+        "unhealthy": "Com Problemas",
+        "unconfigured": "Não Configurado"
+      },
+      "automaticHealthCheck": {
+        "title": "Verificação Automática",
+        "description": "Configure a validação automática das integrações de email",
+        "enabled": "Habilitar verificação automática",
+        "frequency": "Frequência",
+        "lastRun": "Última execução",
+        "nextRun": "Próxima execução",
+        "runNow": "Executar Agora",
+        "frequencies": {
+          "15m": "A cada 15 minutos",
+          "30m": "A cada 30 minutos",
+          "1h": "A cada hora",
+          "6h": "A cada 6 horas",
+          "12h": "A cada 12 horas",
+          "24h": "Diariamente"
+        }
+      },
+      "comingSoon": "Integrações em breve...",
+      "emailIntegration": "Configuração de Email (SMTP)",
+      "smtpHost": "Servidor SMTP",
+      "smtpPort": "Porta SMTP",
+      "smtpSecure": "Conexão Segura (TLS/SSL)",
+      "smtpSecureDescription": "Ativar para conexões criptografadas",
+      "smtpUser": "Usuário SMTP",
+      "smtpPassword": "Senha SMTP",
+      "smtpPasswordDescription": "Será armazenada de forma criptografada",
+      "emailFrom": "Email Remetente",
+      "emailFromDescription": "Nome e email que aparecerão como remetente",
+      "testEmailConfiguration": "Testar Configuração",
+      "testing": "Testando...",
+      "testEmailHint": "Envia um email de teste para verificar a configuração",
+      "emailTestSuccess": "Email de teste enviado com sucesso!",
+      "emailTestFailed": "Falha ao enviar email de teste",
+      "emailTestError": "Erro ao testar configuração de email"
+    },
+    "timezone": {
+      "title": "Fuso Horário e Formatos",
+      "label": "Fuso Horário",
+      "placeholder": "Selecione o fuso horário",
+      "hint": "Suporta horário de verão automaticamente.",
+      "detected": "Detectado"
+    },
+    "formats": {
+      "title": "Formatos de Data e Hora",
+      "dateFormat": "Formato de Data",
+      "timeFormat": "Formato de Hora"
+    }
+  },
+  "Settings": {
+    "title": "Configurações",
+    "subtitle": "Gerencie as configurações do sistema e personalize sua experiência",
+    "language": "Idioma",
+    "darkMode": "Modo Escuro",
+    "lightMode": "Modo Claro",
+    "tabs": {
+      "general": "Geral",
+      "theme": "Tema",
+      "security": "Segurança",
+      "notifications": "Notificações"
+    },
+    "general": {
+      "title": "Configurações Gerais",
+      "appName": "Nome da Aplicação",
+      "language": "Idioma",
+      "timezone": "Fuso Horário"
+    },
+    "security": {
+      "title": "Segurança",
+      "changePassword": "Alterar Senha",
+      "currentPassword": "Senha Atual",
+      "newPassword": "Nova Senha",
+      "confirmPassword": "Confirmar Nova Senha",
+      "2fa": "Autenticação de Dois Fatores",
+      "2faDescription": "Adicione uma camada extra de segurança à sua conta",
+      "enable2fa": "Ativar 2FA"
+    },
+    "notifications": {
+      "title": "Notificações",
+      "description": "Gerencie como e quando você recebe notificações",
+      "email": "Notificações por Email",
+      "newUsers": "Novos usuários",
+      "newUsersDesc": "Receba um email quando um novo usuário se cadastrar",
+      "newOrders": "Novos pedidos",
+      "newOrdersDesc": "Receba um email quando um novo pedido for criado",
+      "systemUpdates": "Atualizações do sistema",
+      "systemUpdatesDesc": "Receba emails sobre atualizações e manutenções",
+      "push": "Notificações Push",
+      "realTime": "Atividade em tempo real",
+      "realTimeDesc": "Receba notificações sobre atividades importantes",
+      "reminders": "Lembretes",
+      "remindersDesc": "Receba lembretes sobre tarefas pendentes"
+    },
+    "actions": {
+      "save": "Salvar Alterações"
+    },
+    "theme": {
+      "title": "Personalização de Tema",
+      "description": "Personalize as cores e aparência do sistema"
+    }
+  },
+  "AuditLogs": {
+    "title": "Logs de Auditoria",
+    "description": "Histórico completo de ações críticas do sistema",
+    "sectionTitle": "Registros de Auditoria",
+    "sectionDescription": "Rastreamento de todas as ações administrativas e mudanças no sistema",
+    "table": {
+      "columns": {
+        "dateTime": "Data/Hora",
+        "action": "Ação",
+        "actor": "Ator",
+        "entity": "Entidade",
+        "details": "Detalhes"
+      },
+      "empty": "Nenhum log encontrado",
+      "detailsModal": {
+        "title": "Detalhes do Log",
+        "idLabel": "ID"
+      }
+    },
+    "pagination": {
+      "previous": "Anterior",
+      "next": "Próxima",
+      "pageOf": "Página {page} de {total}"
+    }
+  },
+  "Invites": {
+    "title": "Gerenciamento de Convites",
+    "description": "Visualize e gerencie convites pendentes de novos usuários.",
+    "list": "Lista de Convites",
+    "create": "Novo Convite",
+    "table": {
+      "headers": {
+        "email": "Email",
+        "role": "Função",
+        "tenant": "Tenant",
+        "status": "Status",
+        "createdAt": "Data de Envio",
+        "expiresAt": "Expira em",
+        "invitedBy": "Convidado Por",
+        "actions": "Ações"
+      },
+      "status": {
+        "PENDING": "Pendente",
+        "ACCEPTED": "Aceito",
+        "EXPIRED": "Expirado",
+        "REVOKED": "Revogado"
+      },
+      "empty": "Nenhum convite encontrado.",
+      "copyLink": "Copiar Link",
+      "cancelInvite": "Cancelar Convite",
+      "linkCopied": "Link do convite copiado",
+      "cancelSuccess": "Convite cancelado",
+      "cancelError": "Falha ao cancelar convite"
+    }
+  },
+  "Tenants": {
+    "title": "Tenants",
+    "description": "Gerencie as organizações e espaços de trabalho do sistema.",
+    "create": "Novo Tenant",
+    "table": {
+      "headers": {
+        "name": "Nome",
+        "domain": "Domínio",
+        "users": "Usuários",
+        "status": "Status",
+        "created": "Criado em",
+        "actions": "Ações"
+      },
+      "empty": "Nenhum tenant encontrado",
+      "selected": "selecionados",
+      "delete": "Excluir",
+      "quickEdit": "Edição Rápida",
+      "edit": "Editar",
+      "rowsPerPage": "Linhas por página"
+    },
+    "batchDelete": {
+      "title": "Excluir Tenants",
+      "message": "Tem certeza que deseja excluir {count} tenant(s)? Esta ação não pode ser desfeita.",
+      "confirm": "Excluir"
+    },
+    "filters": {
+      "all": "Todos",
+      "active": "Ativos",
+      "suspended": "Suspensos",
+      "deleted": "Excluídos",
+      "search": "Buscar tenants..."
+    },
+    "createPage": {
+      "title": "Novo Tenant",
+      "description": "Cadastre uma nova organização no sistema",
+      "back": "Voltar",
+      "form": {
+        "name": "Nome da Organização",
+        "namePlaceholder": "Ex: Acme Corporation",
+        "slug": "Slug (Identificador URL)",
+        "slugPlaceholder": "acme-corp",
+        "slugDescription": "Identificador único usado nas URLs.",
+        "domain": "Domínio Personalizado",
+        "domainPlaceholder": "app.acme.com",
+        "cancel": "Cancelar",
+        "create": "Criar Tenant",
+        "creating": "Criando...",
+        "success": "Tenant criado com sucesso!",
+        "error": "Erro ao criar tenant"
+      }
+    },
+    "detailsPage": {
+      "backToTenants": "Voltar para Tenants",
+      "save": "Salvar Alterações",
+      "saving": "Salvando...",
+      "tabs": {
+        "overview": "Visão Geral",
+        "users": "Usuários",
+        "settings": "Configurações"
+      },
+      "overview": {
+        "title": "Informações do Tenant",
+        "description": "Informações básicas sobre o espaço de trabalho."
+      },
+      "users": {
+        "title": "Usuários",
+        "description": "Gerencie os usuários que têm acesso a este tenant."
+      },
+      "dangerZone": {
+        "title": "Zona de Perigo",
+        "description": "Ações destrutivas para este tenant.",
+        "deleteTitle": "Excluir Tenant",
+        "deleteDescription": "Excluir permanentemente este tenant e todos os dados associados. Esta ação não pode ser desfeita.",
+        "deleteButton": "Excluir Tenant",
+        "confirmDelete": "Tem certeza que deseja excluir este tenant? Esta ação não pode ser desfeita."
+      }
+    },
+    "addUserDialog": {
+      "trigger": "Adicionar Usuário",
+      "title": "Adicionar Usuário ao Tenant",
+      "description": "Busque por um usuário existente para adicionar a este espaço de trabalho.",
+      "searchPlaceholder": "Busque por nome ou email...",
+      "noUsers": "Nenhum usuário encontrado.",
+      "searchTip": "Tente um termo de busca diferente.",
+      "status": {
+        "current": "Atual"
+      },
+      "actions": {
+        "add": "Adicionar",
+        "move": "Mover"
+      }
+    }
+  },
+  "Observability": {
+    "title": "Observabilidade",
+    "description": "Monitoramento avançado baseado em padrões Prometheus/Grafana",
+    "tabs": {
+      "metrics": "Métricas",
+      "hardware": "Hardware",
+      "infrastructure": "Infraestrutura",
+      "external": "APIs Externas",
+      "alerts": "Alertas",
+      "protection": "Proteção",
+      "diagnostics": "Diagnóstico",
+      "email": "E-mail"
+    },
+    "goldenSignals": {
+      "title": "Golden Signals",
+      "description": "Métricas essenciais de saúde do sistema (Google SRE)",
+      "latency": "Latência (p95)",
+      "latencyTooltip": "Tempo de resposta das requisições. 95% das requisições são respondidas neste tempo ou menos. Ideal: < 200ms",
+      "traffic": "Tráfego",
+      "trafficTooltip": "Número de requisições por segundo que o sistema está processando. Indica a carga atual",
+      "errors": "Erros",
+      "errorsTooltip": "Porcentagem de requisições que falharam. Ideal: < 1%. Valores altos indicam problemas",
+      "saturation": "Saturação",
+      "saturationTooltip": "Uso de recursos (CPU/Memória). Valores altos (>80%) indicam que o sistema está sobrecarregado",
+      "totalRequests": "requisições totais",
+      "failedRequests": "requisições falhadas"
+    },
+    "nodejsMetrics": {
+      "title": "Métricas Node.js",
+      "description": "Métricas específicas do runtime Node.js",
+      "eventLoopLag": "Event Loop Lag",
+      "eventLoopLagDesc": "Atraso do event loop",
+      "eventLoopLagTooltip": "Tempo de atraso no processamento de eventos. Ideal: < 10ms. Valores altos indicam que o servidor está lento",
+      "memoryHeap": "Heap de Memória",
+      "memoryHeapDesc": "de {total}MB total",
+      "memoryHeapTooltip": "Memória usada pela aplicação Node.js. Se estiver próximo do limite, pode causar lentidão",
+      "activeHandles": "Handles Ativos",
+      "activeHandlesDesc": "File descriptors, sockets, etc",
+      "activeHandlesTooltip": "Conexões abertas (arquivos, sockets). Muitos handles podem indicar vazamento de recursos",
+      "activeRequests": "Requisições Ativas",
+      "activeRequestsDesc": "Requisições em andamento",
+      "activeRequestsTooltip": "Número de requisições sendo processadas agora. Valores muito altos indicam sobrecarga"
+    },
+    "hardware": {
+      "title": "Métricas de Hardware",
+      "description": "CPU, memória, disco e rede do servidor",
+      "cpu": "CPU",
+      "cpuTooltip": "Processamento do servidor. Ideal: < 70%. Valores altos (>90%) indicam que o servidor está sobrecarregado",
+      "cores": "núcleos",
+      "memory": "Memória RAM",
+      "memoryTooltip": "Memória do servidor. Ideal: < 80%. Se estiver cheia, o sistema pode ficar lento ou travar",
+      "disk": "Disco",
+      "diskTooltip": "Espaço em disco. Ideal: < 80%. Se encher, o sistema para de funcionar",
+      "uptime": "Tempo Ativo",
+      "uptimeTooltip": "Há quanto tempo o servidor está ligado sem reiniciar. Valores altos são bons (indica estabilidade)",
+      "temperature": "Temperatura",
+      "temperatureTooltip": "Temperatura do processador. Ideal: < 70°C. Temperaturas altas (>85°C) podem causar desligamento",
+      "cpuTemp": "Temperatura da CPU",
+      "swap": "Memória Swap",
+      "swapTooltip": "Memória virtual (disco usado como RAM). Ideal: 0%. Uso alto indica falta de RAM",
+      "diskIO": "I/O do Disco",
+      "diskIOTooltip": "Velocidade de leitura/escrita no disco. Valores altos são bons",
+      "read": "Leitura",
+      "write": "Escrita"
+    },
+    "infrastructure": {
+      "title": "Serviços de Infraestrutura",
+      "description": "Status de Database, Cache e serviços internos",
+      "latency": "Latência",
+      "latencyTooltip": "Tempo de resposta do serviço. Ideal: < 50ms. Valores altos indicam lentidão",
+      "successRate": "Taxa de Sucesso",
+      "successRateTooltip": "Porcentagem de operações bem-sucedidas. Ideal: > 99%. Valores baixos indicam problemas",
+      "healthy": "Saudável",
+      "degraded": "Degradado",
+      "unhealthy": "Não Saudável"
+    },
+    "externalAPIs": {
+      "title": "APIs Externas",
+      "description": "Status de integrações com serviços de terceiros (Stripe, Google Maps, PagBit)",
+      "latency": "Latência",
+      "latencyTooltip": "Tempo de resposta da API externa. Depende da internet e do serviço",
+      "successRate": "Taxa de Sucesso",
+      "successRateTooltip": "Porcentagem de chamadas bem-sucedidas. Valores baixos podem indicar problemas na API ou na internet",
+      "notConfigured": "API key não configurada",
+      "notConfiguredTooltip": "Esta API não está configurada. Adicione a chave de API nas variáveis de ambiente"
+    },
+    "protection": {
+      "title": "Sistemas de Proteção",
+      "description": "Cache e Rate Limiting para proteger o sistema",
+      "cacheHitRate": "Taxa de Acertos do Cache",
+      "cacheHitRateTooltip": "Porcentagem de dados encontrados no cache (sem precisar buscar no banco). Ideal: > 80%. Valores altos = sistema mais rápido",
+      "cacheMissRate": "Taxa de Erros do Cache",
+      "cacheMissRateTooltip": "Porcentagem de dados NÃO encontrados no cache. Ideal: < 20%. Valores altos = sistema mais lento",
+      "rateLimitViolations": "Violações de Rate Limit",
+      "rateLimitViolationsTooltip": "Número de requisições bloqueadas por excesso. Protege contra ataques e sobrecarga",
+      "cacheConfig": "Configuração do Cache",
+      "status": "Status",
+      "ttl": "TTL (Tempo de Vida)",
+      "ttlTooltip": "Tempo que os dados ficam no cache antes de expirar. Valores maiores = menos consultas ao banco",
+      "strategy": "Estratégia",
+      "strategyTooltip": "LRU = Remove itens menos usados recentemente. Otimiza o uso de memória",
+      "totalRequests": "Total de Requisições",
+      "topViolators": "Top Violadores",
+      "topViolatorsTooltip": "IPs que mais violaram o rate limit. Pode indicar tentativas de ataque"
+    },
+    "diagnostics": {
+      "title": "Ferramentas de Diagnóstico",
+      "description": "Monitoramento contínuo e testes de conectividade",
+      "activeSessions": "Sessões Ativas",
+      "activeSessionsTooltip": "Sessões de monitoramento em andamento. Coletam métricas em intervalos regulares",
+      "completedSessions": "Sessões Completadas",
+      "completedSessionsTooltip": "Sessões de monitoramento finalizadas. Dados salvos para análise",
+      "avgDuration": "Duração Média",
+      "avgDurationTooltip": "Tempo padrão de cada sessão de monitoramento",
+      "continuousMonitoring": "Monitoramento Contínuo",
+      "continuousMonitoringDesc": "Inicie uma sessão para coletar métricas em intervalos regulares",
+      "durationLabel": "Duração (minutos)",
+      "durationTooltip": "Por quanto tempo o monitoramento vai coletar dados. Mínimo: 1min, Máximo: 60min",
+      "startMonitoring": "Iniciar Monitoramento",
+      "forceRefresh": "Forçar Atualização",
+      "forceRefreshTooltip": "Atualiza todas as métricas imediatamente, sem esperar o intervalo automático",
+      "connectivityStatus": "Status de Conectividade",
+      "connectivityStatusDesc": "Testa a conexão com todos os serviços (banco de dados, cache, APIs externas)",
+      "monitoringSessionsList": "Sessões de Monitoramento",
+      "session": "Sessão",
+      "snapshots": "snapshots",
+      "minutesShort": "min"
+    },
+    "alerts": {
+      "activeAlerts": "Alertas Ativos",
+      "activeAlertsDescription": "Alertas que requerem atenção imediata",
+      "active": "ativos",
+      "noActiveAlerts": "Nenhum alerta ativo. Sistema saudável!",
+      "thresholds": "Thresholds Configurados",
+      "thresholdsDescription": "Limites de alerta para métricas do sistema",
+      "thresholdsTooltip": "Quando uma métrica ultrapassa estes limites, um alerta é gerado automaticamente",
+      "table": {
+        "name": "Nome",
+        "metric": "Métrica",
+        "threshold": "Limite",
+        "severity": "Severidade",
+        "status": "Status"
+      },
+      "enabled": "Ativo",
+      "disabled": "Desativado",
+      "resolve": "Resolver",
+      "resolveTooltip": "Marca este alerta como resolvido. Ele será removido da lista de alertas ativos",
+      "totalAlerts": "Total de Alertas",
+      "resolved": "Resolvidos",
+      "critical": "Críticos",
+      "resolveSuccess": "Alerta resolvido com sucesso",
+      "resolveError": "Erro ao resolver alerta"
+    },
+    "email": {
+      "title": "Métricas de E-mail",
+      "description": "Monitoramento de envios, reputação e performance de entrega",
+      "sent": "E-mails Enviados",
+      "sentTooltip": "Total de e-mails disparados pela plataforma. Inclui transacionais e marketing",
+      "deliveryRate": "Taxa de Entrega",
+      "deliveryRateTooltip": "Porcentagem de e-mails aceitos pelos provedores de destino. Ideal: > 98%",
+      "bounces": "Bounces (Devoluções)",
+      "bouncesTooltip": "E-mails que não puderam ser entregues (endereço inexistente ou caixa cheia). Mantenha < 2%",
+      "complaints": "Reclamações de Spam",
+      "complaintsTooltip": "Usuários que marcaram o e-mail como Spam. Impacta severamente a reputação. Mantenha < 0.1%",
+      "latency": "Latência de Entrega",
+      "latencyTooltip": "Tempo médio que o provedor leva para aceitar a requisição de envio. Ideal: < 2s",
+      "reputation": "Reputação",
+      "bounceRate": "Taxa de Bounce",
+      "complaintRate": "Taxa de Spam",
+      "byProvider": "Por Provedor"
+    }
+  },
+  "Maintenance": {
+    "title": "Em Manutenção",
+    "description": "Estamos realizando uma manutenção programada para melhorar nossos serviços. Voltaremos em breve.",
+    "estimatedTime": "Tempo estimado",
+    "backOnline": "De volta em breve"
+  },
+  "ComingSoon": {
+    "badge": "Em Construção",
+    "title": "Em Breve",
+    "subtitle": "Estamos construindo algo extraordinário. Esta funcionalidade estará disponível em breve no seu dashboard.",
+    "notify": {
+      "label": "Notifique-me no lançamento",
+      "placeholder": "seu@email.com",
+      "button": "Notificar",
+      "disclaimer": "* Prometemos não enviar spam. Apenas atualizações importantes de produto."
+    },
+    "countdown": {
+      "days": "Dias",
+      "hours": "Horas",
+      "minutes": "Minutos",
+      "seconds": "Segundos"
+    }
+  },
+  "Currencies": {
+    "title": "Moedas"
+  },
+  "Plans": {
+    "title": "Planos"
+  },
+  "Products": {
+    "title": "Produtos"
+  },
+  "Help": {
+    "title": "Central de Ajuda"
+  },
+  "Pricing": {
+    "title": "Preços"
+  },
+  "Features": {
+    "title": "Funcionalidades"
+  },
+  "FAQ": {
+    "title": "Perguntas Frequentes"
+  },
+  "Contact": {
+    "title": "Contato"
+  },
+  "Docs": {
+    "title": "Documentação"
+  },
+  "EmailIntegrations": {
+    "title": "Integrações de Email",
+    "description": "Gerencie provedores de email para sua plataforma",
+    "addIntegration": "Adicionar Integração",
+    "addIntegrationDescription": "Configure um novo provedor de email",
+    "editIntegration": "Editar Integração",
+    "editIntegrationDescription": "Atualize as configurações do provedor",
+    "deleteConfirmTitle": "Deletar Integração",
+    "deleteConfirm": "Tem certeza que deseja deletar esta integração? Esta ação não pode ser desfeita.",
+    "provider": "Provedor",
+    "providerCannotChange": "O provedor não pode ser alterado após a criação",
+    "active": "Ativo",
+    "activeDescription": "Permite que esta integração seja usada para enviar emails",
+    "inactive": "Inativo",
+    "primary": "Principal",
+    "primaryDescription": "Define como provedor padrão para envios",
+    "test": "Testar",
+    "testing": "Testando...",
+    "edit": "Editar",
+    "delete": "Deletar",
+    "cancel": "Cancelar",
+    "save": "Salvar",
+    "create": "Criar",
+    "emptyState": "Nenhuma integração configurada",
+    "emptyStateDescription": "Adicione sua primeira integração de email para começar a enviar",
+    "testSuccess": "Email de teste enviado com sucesso!",
+    "testFailed": "Falha ao enviar email de teste",
+    "testError": "Erro ao testar integração",
+    "createSuccess": "Integração criada com sucesso!",
+    "createFailed": "Falha ao criar integração",
+    "updateSuccess": "Integração atualizada com sucesso!",
+    "updateFailed": "Falha ao atualizar integração",
+    "deleteSuccess": "Integração deletada com sucesso!",
+    "deleteFailed": "Falha ao deletar integração",
+    "advanced": "Configurações Avançadas",
+    "advancedDescription": "Opções adicionais para controle fino",
+    "sendingConfig": "Configurações de Envio",
+    "transactionalDomain": "Domínio Transacional",
+    "marketingDomain": "Domínio de Marketing",
+    "trackOpens": "Rastrear Aberturas",
+    "trackOpensDescription": "Rastreia quando emails são abertos",
+    "trackClicks": "Rastrear Cliques",
+    "trackClicksDescription": "Rastreia cliques em links",
+    "dailyLimit": "Limite Diário",
+    "dailyLimitDescription": "Máximo de emails por dia (0 = ilimitado)",
+    "hourlyLimit": "Limite por Hora",
+    "hourlyLimitDescription": "Máximo de emails por hora (0 = ilimitado)",
+    "region": "Região AWS",
+    "regionDescription": "Região onde o SES está configurado",
+    "messageStreams": "Message Streams",
+    "transactionalStream": "Stream Transacional",
+    "marketingStream": "Stream de Marketing",
+    "streamPlaceholder": "padrao (outbound)",
+    "smtpHost": "Servidor SMTP",
+    "smtpPort": "Porta SMTP",
+    "smtpSecure": "Conexão Segura (TLS/SSL)",
+    "smtpSecureDescription": "Ativar para conexões criptografadas",
+    "smtpUser": "Usuário SMTP",
+    "smtpPassword": "Senha SMTP",
+    "smtpPasswordDescription": "Será armazenada de forma criptografada",
+    "validation": {
+      "smtpHostRequired": "Host SMTP é obrigatório",
+      "smtpPortRequired": "Porta SMTP é obrigatória",
+      "apiKeyRequired": "API Key é obrigatória",
+      "regionRequired": "Região é obrigatória para AWS SES"
+    },
+    "providers": {
+      "SMTP": "SMTP",
+      "RESEND": "Resend",
+      "POSTMARK": "Postmark",
+      "AWS_SES": "AWS SES"
+    },
+    "healthCheckConfig": {
+      "title": "Health Check Automático",
+      "description": "Configure verificações automáticas de saúde das integrações de email",
+      "enabled": "Habilitar health check automático",
+      "enabledDescription": "Verifica automaticamente a saúde das integrações em intervalos regulares",
+      "frequency": "Frequência",
+      "frequencies": {
+        "15m": "A cada 15 minutos",
+        "30m": "A cada 30 minutos",
+        "1h": "A cada hora",
+        "6h": "A cada 6 horas",
+        "12h": "A cada 12 horas",
+        "24h": "Diariamente"
+      },
+      "lastRun": "Última execução",
+      "nextRun": "Próxima execução",
+      "never": "Nunca",
+      "notScheduled": "Não agendado",
+      "runNow": "Executar Agora",
+      "running": "Executando...",
+      "updateSuccess": "Configuração atualizada com sucesso",
+      "updateError": "Erro ao atualizar configuração",
+      "runNowSuccess": "Health check executado com sucesso",
+      "runNowError": "Erro ao executar health check"
+    }
+  },
+  "AccessRequests": {
+    "title": "Meus Pedidos de Acesso",
+    "subtitle": "Histórico e status das suas solicitações de permissão.",
+    "newRequest": "Nova Solicitação",
+    "empty": "Nenhuma solicitação encontrada.",
+    "table": {
+      "resource": "Recurso / Space",
+      "level": "Nível",
+      "justification": "Justificativa",
+      "duration": "Duração",
+      "status": "Status",
+      "date": "Data",
+      "levelWrite": "Escrita",
+      "levelRead": "Leitura"
+    },
+    "status": {
+      "approved": "Aprovado",
+      "rejected": "Rejeitado",
+      "pending": "Pendente",
+      "expired": "Expirado"
+    },
+    "dialog": {
+      "title": "Solicitar Acesso",
+      "description": "Você está solicitando acesso temporário para: <bold>{resource}</bold>. Esta solicitação passará por aprovação.",
+      "labels": {
+        "level": "Nível de Acesso",
+        "duration": "Duração (dias)",
+        "justification": "Justificativa"
+      },
+      "hints": {
+        "level": "Selecione se precisa apenas visualizar ou modificar dados.",
+        "duration": "Por quanto tempo você precisa deste acesso?"
+      },
+      "placeholders": {
+        "level": "Selecione o nível",
+        "justification": "Explique por que você precisa deste acesso..."
+      },
+      "validation": {
+          "justificationMin": "A justificativa deve ter pelo menos 10 caracteres."
+      },
+      "submit": "Enviar Solicitação",
+      "submitting": "Enviando...",
+      "cancel": "Cancelar",
+      "success": "Solicitação enviada com sucesso!",
+      "error": "Erro ao enviar solicitação."
+
+    }
+  }
+}
