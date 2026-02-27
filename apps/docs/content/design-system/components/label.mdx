@@ -1,0 +1,71 @@
+---
+title: Label
+description: Labels para campos de formulário
+---
+
+import { Label } from '@kaven/ui-base';
+import { Input } from '@kaven/ui-base';
+import { ComponentPreview } from '@/components/ComponentPreview';
+
+# Label
+
+> Componente de label para associar texto a campos de formulário.
+
+## Básico
+
+```tsx
+import { Label } from '@kaven/ui-base';
+
+<Label htmlFor="email">Email</Label>
+<Input id="email" type="email" />
+```
+
+## Obrigatório
+
+<ComponentPreview>
+  <div className="flex w-full gap-4 flex-wrap justify-center items-center">
+    <Label htmlFor="name">
+      Nome <span className="text-destructive">*</span>
+    </Label>
+    <Input id="name" required />
+  </div>
+</ComponentPreview>
+
+```tsx
+<Label htmlFor="name">
+  Nome <span className="text-destructive">*</span>
+</Label>
+<Input id="name" required />
+```
+
+## Com Helper Text
+
+<ComponentPreview>
+  <div className="flex w-full gap-4 flex-wrap justify-center items-center">
+    <div className="space-y-2">
+      <Label htmlFor="password">Senha</Label>
+      <Input id="password" type="password" />
+      <p className="text-sm text-muted-foreground">Mínimo 8 caracteres</p>
+    </div>
+  </div>
+</ComponentPreview>
+
+```tsx
+<div className="space-y-2">
+  <Label htmlFor="password">Senha</Label>
+  <Input id="password" type="password" />
+  <p className="text-sm text-muted-foreground">Mínimo 8 caracteres</p>
+</div>
+```
+
+## API
+
+| Prop       | Tipo        | Padrão | Descrição             |
+| ---------- | ----------- | ------ | --------------------- |
+| `htmlFor`  | `string`    | -      | ID do campo associado |
+| `children` | `ReactNode` | -      | Texto do label        |
+
+## Relacionados
+
+- [Input](/design-system/components/input)
+- [TextField](/design-system/components/text-field)

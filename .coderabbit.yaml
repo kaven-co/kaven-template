@@ -1,0 +1,36 @@
+language: pt-BR
+reviews:
+  profile: chill
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: false
+  auto_review:
+    enabled: true
+    drafts: false
+  path_instructions:
+    - path: "apps/api/**"
+      instructions: |
+        Backend Fastify API. Check for:
+        - Tenant isolation (tenantId in all queries)
+        - RLS middleware usage
+        - Proper error handling with standardized responses
+        - Input validation and sanitization
+    - path: "packages/ui/**"
+      instructions: |
+        Design system components using CVA + Tailwind + React.forwardRef.
+        Check for accessibility (WCAG AA), proper TypeScript types, and barrel exports.
+    - path: "apps/tenant/**"
+      instructions: |
+        Next.js App Router tenant application. Check for proper server/client
+        component separation and tenant-scoped data fetching.
+    - path: "apps/admin/**"
+      instructions: |
+        Admin panel. Check for SUPER_ADMIN authorization on sensitive operations.
+    - path: "packages/database/**"
+      instructions: |
+        Prisma schema and migrations. Check for proper indexes, soft delete
+        support (deletedAt), and tenant isolation fields.
+chat:
+  auto_reply: true

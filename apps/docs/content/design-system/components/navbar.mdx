@@ -1,0 +1,162 @@
+---
+title: Navbar
+description: Barra de navegação principal da aplicação
+---
+
+import { Navbar } from '@kaven/ui-base';
+import { Button } from '@kaven/ui-base';
+import { Avatar } from '@kaven/ui-base';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@kaven/ui-base';
+import { Menu } from 'lucide-react';
+import Link from 'next/link';
+import { ComponentPreview } from '@/components/ComponentPreview';
+
+export const Logo = () => <span className="font-bold text-xl">Kaven</span>;
+export const user = {
+  name: 'João Silva',
+  avatar: 'https://github.com/shadcn.png',
+};
+
+# Navbar
+
+> Barra de navegação superior para navegação principal e ações globais.
+
+## Básico
+
+```tsx
+import { Navbar } from '@kaven/ui-base';
+
+<Navbar>
+  <div className="flex items-center gap-4">
+    <Logo />
+    <nav className="flex gap-4">
+      <Link href="/dashboard">Dashboard</Link>
+      <Link href="/users">Usuários</Link>
+      <Link href="/settings">Configurações</Link>
+    </nav>
+  </div>
+  <div className="flex items-center gap-2">
+    <Button variant="outlined">Login</Button>
+  </div>
+</Navbar>;
+```
+
+## Com Menu Mobile
+
+<ComponentPreview>
+<div className="flex w-full gap-4 flex-wrap justify-center items-center">
+<Navbar>
+  <div className="flex items-center justify-between w-full">
+    <Logo />
+
+    {/* Desktop Menu */}
+    <nav className="hidden md:flex gap-4">
+      <Link href="/dashboard">Dashboard</Link>
+      <Link href="/users">Usuários</Link>
+    </nav>
+
+    {/* Mobile Menu Button */}
+    <Button className="md:hidden" variant="text" size="icon">
+      <Menu className="h-5 w-5" />
+    </Button>
+
+  </div>
+</Navbar>
+</div>
+</ComponentPreview>
+
+```tsx
+<Navbar>
+  <div className="flex items-center justify-between w-full">
+    <Logo />
+
+    {/* Desktop Menu */}
+    <nav className="hidden md:flex gap-4">
+      <Link href="/dashboard">Dashboard</Link>
+      <Link href="/users">Usuários</Link>
+    </nav>
+
+    {/* Mobile Menu Button */}
+    <Button className="md:hidden" variant="text" size="icon">
+      <Menu className="h-5 w-5" />
+    </Button>
+  </div>
+</Navbar>
+```
+
+## Com Avatar e Dropdown
+
+<ComponentPreview>
+  <div className="flex w-full gap-4 flex-wrap justify-center items-center">
+    <Navbar>
+      <Logo />
+      <nav className="flex-1 flex justify-center gap-6">
+        <Link href="/dashboard">Dashboard</Link>
+        <Link href="/users">Usuários</Link>
+      </nav>
+      <DropdownMenu>
+        <DropdownMenuTrigger>
+          <Avatar src={user.avatar} alt={user.name} />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuItem>Perfil</DropdownMenuItem>
+          <DropdownMenuItem>Configurações</DropdownMenuItem>
+          <DropdownMenuItem>Sair</DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </Navbar>
+  </div>
+</ComponentPreview>
+
+```tsx
+<Navbar>
+  <Logo />
+  <nav className="flex-1 flex justify-center gap-6">
+    <Link href="/dashboard">Dashboard</Link>
+    <Link href="/users">Usuários</Link>
+  </nav>
+  <DropdownMenu>
+    <DropdownMenuTrigger>
+      <Avatar src={user.avatar} alt={user.name} />
+    </DropdownMenuTrigger>
+    <DropdownMenuContent>
+      <DropdownMenuItem>Perfil</DropdownMenuItem>
+      <DropdownMenuItem>Configurações</DropdownMenuItem>
+      <DropdownMenuItem>Sair</DropdownMenuItem>
+    </DropdownMenuContent>
+  </DropdownMenu>
+</Navbar>
+```
+
+## Sticky
+
+<ComponentPreview>
+  <div className="flex w-full gap-4 flex-wrap justify-center items-center">
+    <Navbar className="sticky top-0 z-50 bg-background/95 backdrop-blur">
+      {/* Conteúdo */}
+    </Navbar>
+  </div>
+</ComponentPreview>
+
+```tsx
+<Navbar className="sticky top-0 z-50 bg-background/95 backdrop-blur">
+  {/* Conteúdo */}
+</Navbar>
+```
+
+## API
+
+| Prop        | Tipo        | Padrão | Descrição              |
+| ----------- | ----------- | ------ | ---------------------- |
+| `className` | `string`    | -      | Classes CSS adicionais |
+| `children`  | `ReactNode` | -      | Conteúdo da navbar     |
+
+## Relacionados
+
+- [Drawer](/design-system/components/drawer) - Menu lateral
+- [Breadcrumbs](/design-system/components/breadcrumbs) - Navegação hierárquica

@@ -1,0 +1,224 @@
+'use client';
+
+import { useState } from 'react';
+import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { MoreVertical, Pencil, ShieldCheck, Trash2 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@kaven/ui-base';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@kaven/ui-base';
+import { Avatar, AvatarFallback, AvatarImage } from '@kaven/ui-base';
+import { Badge } from '@kaven/ui-base';
+import { Checkbox } from '@kaven/ui-base';
+import { TableCell, TableRow } from '@kaven/ui-base';
+import { Button } from '@kaven/ui-base';
+import { cn } from '@/lib/utils';
+import { TooltipContent, TooltipRoot, TooltipTrigger } from '@kaven/ui-base';
+import { useDeleteUser } from '@/hooks/use-users';
+import { useImpersonation } from '@/hooks/use-impersonation';
+import { toast } from 'sonner';
+import { CONFIG } from '@/lib/config';
+
+// User type from API
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string | null;
+  avatar?: string | null;
+  role: string;
+  status?: string;
+  tenant?: {
+    name: string;
+  };
+}
+
+type UserTableRowProps = {
+  row: User;
+  selected: boolean;
+  onSelectRow: () => void;
+};
+
+export function UserTableRow({ row, selected, onSelectRow }: UserTableRowProps) {
+  const t = useTranslations('User.table');
+  const tUser = useTranslations('User.edit');
+  const tSec = useTranslations('Security.impersonation');
+  const { name, email, role, status, phone, tenant } = row;
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const { mutate: deleteUser, isPending } = useDeleteUser();
+  const { startImpersonation } = useImpersonation();
+  
+  // Generate initials for avatar
+  const initials = name
+    .split(' ')
+    .map(n => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+
+  const handleDelete = () => {
+    deleteUser(row.id, {
+      onSuccess: () => {
+        toast.success(t('deleteSuccess'));
+        setShowDeleteDialog(false);
+      },
+      onError: (error: unknown) => {
+        const message = error instanceof Error ? error.message : t('deleteError');
+        toast.error(message);
+      },
+    });
+  };
+
+  return (
+    <>
+      <TableRow data-state={selected ? 'selected' : undefined} aria-checked={selected} className="hover:bg-transparent">
+      <TableCell className="w-[40px] pl-4 py-4">
+        <Checkbox checked={selected} onCheckedChange={onSelectRow} />
+      </TableCell>
+
+      <TableCell className="flex items-center gap-3 py-4 px-4">
+        <Link href={`/users/${row.id}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+          <Avatar>
+            {row.avatar ? (
+              <AvatarImage 
+                src={row.avatar.startsWith('http') ? row.avatar : `${CONFIG.serverUrl}${row.avatar}`} 
+                alt={name} 
+              />
+            ) : null}
+            <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+              {initials}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex flex-col">
+            <span className="text-sm font-semibold text-foreground">{name}</span>
+            <span className="text-xs text-muted-foreground">{email}</span>
+          </div>
+        </Link>
+      </TableCell>
+
+      <TableCell className="whitespace-nowrap py-4 px-4 text-sm font-medium">
+        {phone || '-'}
+      </TableCell>
+
+      <TableCell className="whitespace-nowrap py-4 px-4 text-sm font-medium">
+        {tenant?.name || '-'}
+      </TableCell>
+
+      <TableCell className="whitespace-nowrap py-4 px-4 text-sm font-medium">
+        {tUser('roles.' + role)}
+      </TableCell>
+
+      <TableCell className="py-4 px-4">
+        <Badge
+          variant="secondary"
+          className={cn(
+             "rounded-[6px] font-bold capitalize",
+             status?.toLowerCase() === 'active'
+              ? 'bg-emerald-500/15 text-emerald-500 hover:bg-emerald-500/25'
+              : status?.toLowerCase() === 'pending'
+              ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 hover:bg-amber-500/25'
+              : status?.toLowerCase() === 'banned'
+              ? 'bg-red-500/15 text-red-600 dark:text-red-400 hover:bg-red-500/25'
+              : 'bg-slate-500/15 text-slate-600 dark:text-slate-400 hover:bg-slate-500/25'
+          )}
+        >
+          {status ? tUser('statuses.' + status.toUpperCase()) : 'unknown'}
+        </Badge>
+      </TableCell>
+
+      <TableCell align="right" className="py-4 px-4 pr-4">
+        <div className="flex items-center justify-end gap-1">
+            <TooltipRoot delayDuration={0}>
+              <TooltipTrigger asChild>
+                <Link href={`/users/${row.id}`} tabIndex={-1}>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" aria-label={t('edit')}>
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="min-w-0 w-auto px-2 py-1 text-xs">
+                {t('edit')}
+              </TooltipContent>
+            </TooltipRoot>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" aria-label="More options">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem 
+                  onSelect={(e) => {
+                    e.preventDefault();
+                    if (confirm(tSec('confirm_start', { name }))) {
+                      startImpersonation.mutate({ 
+                        targetUserId: row.id,
+                        justification: tSec('justification_default')
+                      });
+                    }
+                  }}
+                  disabled={startImpersonation.isPending}
+                >
+                  <ShieldCheck className="mr-2 h-4 w-4" />
+                  {tSec('action')}
+                </DropdownMenuItem>
+
+                <DropdownMenuItem 
+                  className="text-destructive"
+                  onSelect={(e) => {
+                    e.preventDefault();
+                    setShowDeleteDialog(true);
+                  }}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  {t('delete')}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+        </div>
+      </TableCell>
+      </TableRow>
+
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('confirmDeleteTitle')}</DialogTitle>
+            <DialogDescription>
+              {t.rich('confirmDeleteDesc', {
+                name: name,
+                bold: (chunks) => <strong>{chunks}</strong>
+              })}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteDialog(false)}
+              disabled={isPending}
+            >
+              {t('cancel')}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={isPending}
+            >
+              {isPending ? t('deleting') : t('delete')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}

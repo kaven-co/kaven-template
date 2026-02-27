@@ -1,0 +1,81 @@
+---
+title: Transitions
+description: Utilitários de animação para entrada e saída de elementos.
+---
+
+import { Fade, Grow, Slide, Zoom, Collapse } from '@kaven/ui-base';
+import { Button } from '@kaven/ui-base';
+import { Paper } from '@kaven/ui-base';
+import { FormControlLabel } from '@kaven/ui-base';
+import { Switch } from '@kaven/ui-base';
+import { ComponentPreview } from '@/components/ComponentPreview';
+import { TransitionsFadeDemo } from '@/components/examples/TransitionsFadeDemo';
+import { TransitionsZoomGrowDemo } from '@/components/examples/TransitionsZoomGrowDemo';
+import { TransitionsSlideDemo } from '@/components/examples/TransitionsSlideDemo';
+import { TransitionsCollapseDemo } from '@/components/examples/TransitionsCollapseDemo';
+
+# Transitions
+
+> Conjunto de componentes para animar a montagem e desmontagem de elementos.
+
+## Fade
+
+<ComponentPreview>
+  <TransitionsFadeDemo />
+</ComponentPreview>
+
+```tsx
+const [checked, setChecked] = React.useState(true);
+
+<Fade in={checked}>
+  <Paper>Fade Transition</Paper>
+</Fade>;
+```
+
+## Zoom vs Grow
+
+<ComponentPreview>
+  <TransitionsZoomGrowDemo />
+</ComponentPreview>
+
+## Slide
+
+<ComponentPreview>
+  <TransitionsSlideDemo />
+</ComponentPreview>
+
+```tsx
+<Slide in={checked} direction="up">
+  <Paper>Slide Up</Paper>
+</Slide>
+```
+
+## Collapse
+
+Útil para expandir/colapsar seções de conteúdo verticalmente.
+
+<ComponentPreview>
+  <TransitionsCollapseDemo />
+</ComponentPreview>
+
+```tsx
+<Collapse in={checked}>
+  <div className="p-4 mb-2">Conteúdo colapsável...</div>
+</Collapse>
+```
+
+## API
+
+Todas as transições aceitam as seguintes props:
+
+| Prop            | Tipo      | Padrão  | Descrição                                         |
+| --------------- | --------- | ------- | ------------------------------------------------- |
+| `in`            | `boolean` | -       | Se `true`, o componente transiciona para entrada. |
+| `timeout`       | `number`  | `300`   | Duração da animação em ms.                        |
+| `unmountOnExit` | `boolean` | `false` | Se `true`, desmonta o filho ao sair.              |
+
+### Slide Props
+
+| Prop        | Tipo                                  | Padrão   | Descrição           |
+| ----------- | ------------------------------------- | -------- | ------------------- |
+| `direction` | `'up' \| 'down' \| 'left' \| 'right'` | `'down'` | Direção da entrada. |

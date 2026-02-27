@@ -1,0 +1,77 @@
+---
+title: List
+description: Listas para exibir coleções de itens
+---
+
+import { List, ListItem } from '@kaven/ui-base';
+import { Home, Users, Settings } from 'lucide-react';
+import { ComponentPreview } from '@/components/ComponentPreview';
+
+# List
+
+> Componente para exibir listas de itens com suporte a ícones e ações.
+
+## Básico
+
+```tsx
+import { List, ListItem } from '@kaven/ui-base';
+
+<List>
+  <ListItem>Item 1</ListItem>
+  <ListItem>Item 2</ListItem>
+  <ListItem>Item 3</ListItem>
+</List>;
+```
+
+## Com Ícones
+
+```tsx
+import { Home, Users, Settings } from 'lucide-react';
+
+<List>
+  <ListItem>
+    <Home className="mr-2 h-4 w-4" />
+    Dashboard
+  </ListItem>
+  <ListItem>
+    <Users className="mr-2 h-4 w-4" />
+    Usuários
+  </ListItem>
+  <ListItem>
+    <Settings className="mr-2 h-4 w-4" />
+    Configurações
+  </ListItem>
+</List>;
+```
+
+## Clicável
+
+<ComponentPreview>
+  <div className="flex w-full gap-4 flex-wrap justify-center items-center">
+    <List>
+      <ListItem className="cursor-pointer hover:bg-muted">Dashboard</ListItem>
+      <ListItem className="cursor-pointer hover:bg-muted">Usuários</ListItem>
+    </List>
+  </div>
+</ComponentPreview>
+
+```tsx
+<List>
+  <ListItem className="cursor-pointer hover:bg-muted" onClick={() => {}}>
+    Dashboard
+  </ListItem>
+  <ListItem className="cursor-pointer hover:bg-muted" onClick={() => {}}>
+    Usuários
+  </ListItem>
+</List>
+```
+
+## API
+
+| Prop       | Tipo        | Padrão | Descrição      |
+| ---------- | ----------- | ------ | -------------- |
+| `children` | `ReactNode` | -      | Itens da lista |
+
+## Relacionados
+
+- [Dropdown Menu](/design-system/components/dropdown-menu)

@@ -1,0 +1,60 @@
+---
+title: Files (Storage)
+description: Gerenciamento de uploads, armazenamento de arquivos e proteção de acesso.
+date: 2026-01-29
+author: Chris + Antigravity
+version: 1.0.0
+tags: [storage, backend, infrastructure]
+---
+
+# Files (Storage)
+
+O sistema de **Files** do Kaven gerencia o ciclo de vida completo de arquivos, desde o upload via multipart até a entrega segura via URL ou streaming.
+
+## Visão Geral
+
+O framework utiliza um sistema de armazenamento local por padrão, mas é extensível para S3/Azure Blob via adapters. Todos os arquivos são registrados no banco de dados com metadados detalhados.
+
+### Limites Padrão
+
+- **Tamanho Máximo:** 10MB (configurável em `FileService`).
+- **Tipos Permitidos:** JPEG, PNG, GIF, WEBP, PDF, DOC, DOCX.
+
+## Implementação Técncia
+
+### Upload de Arquivos
+
+O upload é processado de forma atômica. O arquivo físico é salvo e o registro no banco é criado em sequência.
+
+```typescript
+// Exemplo via Service
+const fileRecord = await fileService.upload(multipartFile, userId, tenantId);
+```
+
+### Estrutura de Storage local
+
+Os arquivos são salvos na pasta `/uploads` na raiz do projeto, com nomes baseados em UUID para evitar colisões e ataques de enumeração.
+
+## Segurança
+
+1. **Owner-Only Access:** Por padrão, o `FileService` restringe o acesso aos arquivos apenas ao usuário que realizou o upload (`userId`).
+2. **Sanitize Filenames:** O nome original do arquivo é preservado apenas nos metadados; o arquivo em disco usa um UUID gerado pelo sistema.
+3. **Mime-type Validation:** O sistema valida o `mimetype` no nível do stream para evitar injeção de arquivos maliciosos.
+
+## Exemplo de Resposta (Metadados)
+
+```json
+{
+  "id": "file-uuid",
+  "filename": "uuid-name.png",
+  "originalName": "image.png",
+  "mimeType": "image/png",
+  "size": 20485,
+  "url": "/uploads/uuid-name.png"
+}
+```
+
+## Relacionados
+
+- [Avatar Upload](./AVATAR_UPLOAD_FEATURE)
+- [Audit Logs](./audit-logs)

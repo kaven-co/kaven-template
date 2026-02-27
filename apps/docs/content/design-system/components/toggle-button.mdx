@@ -1,0 +1,85 @@
+---
+title: Toggle Button
+description: Botões de alternância para seleção
+---
+
+import { ToggleButton, ToggleButtonGroup } from '@kaven/ui-base';
+import { ComponentPreview } from '@/components/ComponentPreview';
+import { Bold, Italic, Underline } from 'lucide-react';
+
+# Toggle Button
+
+> Botões que podem ser alternados entre estados ativo/inativo.
+
+## Básico
+
+```tsx
+import { ToggleButton } from '@kaven/ui-base';
+
+<ToggleButton value="bold" aria-label="Bold">
+  <Bold className="h-4 w-4" />
+</ToggleButton>;
+```
+
+## Grupo
+
+```tsx
+import { ToggleButtonGroup } from '@kaven/ui-base';
+
+<ToggleButtonGroup type="single" value={alignment} onValueChange={setAlignment}>
+  <ToggleButton value="left">
+    <AlignLeft className="h-4 w-4" />
+  </ToggleButton>
+  <ToggleButton value="center">
+    <AlignCenter className="h-4 w-4" />
+  </ToggleButton>
+  <ToggleButton value="right">
+    <AlignRight className="h-4 w-4" />
+  </ToggleButton>
+</ToggleButtonGroup>;
+```
+
+## Múltipla Seleção
+
+<ComponentPreview>
+  <div className="flex w-full gap-4 flex-wrap justify-center items-center">
+    <ToggleButtonGroup type="multiple" defaultValue={['bold']}>
+      <ToggleButton value="bold">
+        <Bold className="h-4 w-4" />
+      </ToggleButton>
+      <ToggleButton value="italic">
+        <Italic className="h-4 w-4" />
+      </ToggleButton>
+      <ToggleButton value="underline">
+        <Underline className="h-4 w-4" />
+      </ToggleButton>
+    </ToggleButtonGroup>
+  </div>
+</ComponentPreview>
+
+```tsx
+<ToggleButtonGroup type="multiple" defaultValue={['bold']}>
+  <ToggleButton value="bold">
+    <Bold className="h-4 w-4" />
+  </ToggleButton>
+  <ToggleButton value="italic">
+    <Italic className="h-4 w-4" />
+  </ToggleButton>
+  <ToggleButton value="underline">
+    <Underline className="h-4 w-4" />
+  </ToggleButton>
+</ToggleButtonGroup>
+```
+
+## API
+
+| Prop              | Tipo                         | Padrão | Descrição            |
+| ----------------- | ---------------------------- | ------ | -------------------- |
+| `value`           | `string`                     | -      | Valor do botão       |
+| `pressed`         | `boolean`                    | -      | Estado pressionado   |
+| `onPressedChange` | `(pressed: boolean) => void` | -      | Callback quando muda |
+
+## Relacionados
+
+- [Button](/design-system/components/button)
+- [Button Group](/design-system/components/button-group)

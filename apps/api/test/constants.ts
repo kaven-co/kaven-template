@@ -1,0 +1,10 @@
+export const TEST_PASSWORD = "password123";
+export const TEST_SECRET_32_CHARS = "12345678901234567890123456789012";
+export const TEST_API_KEY = "abcdef123456";
+export const TEST_TOKEN = "jwt-token-here";
+export const TEST_EMAIL = "valid@email.com";
+export const TEST_USER_EMAIL = "newuser@example.com";
+export const TEST_EXISTING_EMAIL = "existing@example.com";
+export const TEST_DB_URL = "postgresql://user:pass@localhost:5433/db";
+export const TEST_REDIS_URL = "redis://localhost:6379";
+export const TEST_SHORT_PASSWORD = "short";

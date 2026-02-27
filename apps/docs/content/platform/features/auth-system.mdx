@@ -1,0 +1,75 @@
+---
+title: Auth System
+description: Fluxos de autenticação, autorização, 2FA e Onboarding dinâmico (Modo Camaleão).
+date: 2026-01-29
+author: Chris + Antigravity
+version: 1.0.0
+tags: [auth, security, onboarding]
+---
+
+# Auth System
+
+O sistema de autenticação do Kaven é construído sobre **JWT (JSON Web Tokens)** e implementa fluxos avançados de segurança e onboarding.
+
+## Fluxos de Entrada
+
+### 1. Registro "Modo Camaleão"
+
+Ao se registrar, se o usuário não fornecer um `tenantSlug`, o sistema entra no **Modo Camaleão**:
+
+- Um novo Tenant é criado automaticamente usando o nome do usuário como base para o slug.
+- O usuário é promovido a administrador deste novo Tenant.
+- Este fluxo permite um onboarding "zero friction" para novos clientes.
+
+### 2. Verificação de Email
+
+O registro não concede acesso imediato. Um token de verificação é enviado e deve ser confirmado para ativar a conta (Status `ACTIVE`).
+
+## Segurança & 2FA
+
+O Kaven suporta **Autenticação de Dois Fatores (2FA)** via TOTP (Apps como Google Authenticator).
+
+### Fluxo de Login com 2FA
+
+1. O usuário envia `email` e `password`.
+2. O sistema retorna `requires2FA: true`.
+3. O frontend solicita o código de 6 dígitos.
+4. O usuário envia o código para completar o login e receber os tokens JWT.
+
+### Bloqueio de Conta
+
+- **Tentativas Falhas:** Após 5 tentativas incorretas, a conta é bloqueada por 15 minutos (`lockedUntil`).
+- **Audit Logs:** Cada falha gera um registro em `securityAuditLog` com IP e UserAgent.
+
+## Tokens JWT
+
+- **Access Token:** Curta duração, contém `sub`, `email`, `role` e `tenantId`.
+- **Refresh Token:** Longa duração, armazenado no banco para permitir renovação de sessão sem re-autenticação.
+
+## Implementação Técnica
+
+### Exemplo de Registro
+
+```typescript
+const result = await authService.register({
+  email: "user@example.com",
+  password: "SecurePassword123!",
+  name: "John Doe",
+});
+```
+
+### Exemplo de Login
+
+```typescript
+const loginData = await authService.login({
+  email: "user@example.com",
+  password: "SecurePassword123!",
+  twoFactorCode: "123456", // Opcional se habilitado
+});
+```
+
+## Relacionados
+
+- [Security Hardening](./security-hardening)
+- [Audit Logs](./audit-logs)
+- [Multi-tenancy](./TENANT_MANAGEMENT)

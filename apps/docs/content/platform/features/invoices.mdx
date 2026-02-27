@@ -1,0 +1,71 @@
+---
+title: Invoices
+description: Faturamento, geração de cobranças e notificações de pagamento.
+date: 2026-01-29
+author: Chris + Antigravity
+version: 1.0.0
+tags: [commerce, finance, invoices]
+---
+
+# Invoices
+
+O sistema de **Invoices** (Faturas) automatiza o faturamento de assinaturas e vendas avulsas, integrando-se diretamente ao `EmailServiceV2` para comunicação com o cliente.
+
+## Fluxo de Faturamento
+
+As faturas são geradas automaticamente pelo motor de assinaturas ou manualmente via Admin.
+
+### Estados da Fatura
+
+- **DRAFT**: Rascunho, ainda não visível para o cliente.
+- **PENDING**: Aguardando pagamento.
+- **PAID**: Pago e processado.
+- **OVERDUE**: Data de vencimento ultrapassada sem confirmação de pagamento.
+- **CANCELED**: Fatura invalidada.
+
+## Funcionalidades Core
+
+### 1. Geração Automática
+
+Ao final de um ciclo de cobrança, o sistema gera uma `Invoice` vinculada à `Subscription`.
+
+```typescript
+// Exemplo de criação manual/automática
+const invoice = await invoiceService.createInvoice({
+  tenantId: "uuid",
+  amountDue: 59.9,
+  dueDate: new Date("2026-02-10"),
+  currency: "BRL",
+});
+```
+
+### 2. Notificação por Email
+
+Utiliza o `EmailServiceV2` para enviar o corpo da fatura formatado.
+
+```typescript
+await invoiceService.sendInvoice(invoice.id);
+```
+
+### 3. Estatísticas Real-time
+
+O dashboard utiliza o método `getStats` para exibir visões agregadas de faturamento por Tenant.
+
+## Configuração
+
+| Variável           | Padrão | Descrição                         |
+| :----------------- | :----- | :-------------------------------- |
+| `INVOICE_PREFIX`   | `INV-` | Prefixo para números de fatura.   |
+| `CURRENCY_DEFAULT` | `BRL`  | Moeda padrão se não especificada. |
+
+## Invariantes de Negócio
+
+1. **Anti-Colisão:** Números de fatura são gerados usando transações SQL e sufixos aleatórios (`INV-YYYYMMDD-XXXX-HASH`) para garantir unicidade em alta escala.
+2. **Auditoria de Envio:** O sistema registra no campo `metadata` quem recebeu a fatura e quando o email foi disparado.
+3. **Restrição de Acesso:** Apenas administradores do Tenant ou Super-admins podem visualizar o conteúdo detalhado de uma Invoice.
+
+## Relacionados
+
+- [Orders](./orders)
+- [Email System](./email-system)
+- [Subscription System](./PLANS_PRODUCTS)

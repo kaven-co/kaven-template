@@ -1,0 +1,111 @@
+---
+title: TextField
+description: Input com label integrado para formulários
+---
+
+import { TextField } from '@kaven/ui-base';
+import { ComponentPreview } from '@/components/ComponentPreview';
+
+# TextField
+
+> Componente de input com label, helper text e validação integrados.
+
+## Básico
+
+```tsx
+import { TextField } from '@kaven/ui-base';
+
+<TextField label="Email" placeholder="seu@email.com" type="email" />;
+```
+
+## Com Helper Text
+
+<ComponentPreview>
+  <TextField label="Senha" type="password" helperText="Mínimo 8 caracteres" />
+</ComponentPreview>
+
+```tsx
+<TextField label="Senha" type="password" helperText="Mínimo 8 caracteres" />
+```
+
+## Com Erro
+
+<ComponentPreview>
+  <div className="flex w-full gap-4 flex-wrap justify-center items-center">
+    <TextField
+      label="Email"
+      defaultValue="invalid-email"
+      error={true}
+      helperText="Endereço de email inválido"
+    />
+  </div>
+</ComponentPreview>
+
+```tsx
+<TextField
+  label="Email"
+  value={email}
+  onChange={(e) => setEmail(e.target.value)}
+  error={!!errors.email}
+  helperText={errors.email?.message}
+/>
+```
+
+## Obrigatório
+
+<ComponentPreview>
+  <TextField label="Nome Completo" required placeholder="João Silva" />
+</ComponentPreview>
+
+```tsx
+<TextField label="Nome Completo" required placeholder="João Silva" />
+```
+
+## Disabled
+
+<ComponentPreview>
+  <TextField label="Campo Desabilitado" disabled value="Não editável" />
+</ComponentPreview>
+
+```tsx
+<TextField label="Campo Desabilitado" disabled value="Não editável" />
+```
+
+## Multiline (Textarea)
+
+<ComponentPreview>
+  <div className="flex w-full gap-4 flex-wrap justify-center items-center">
+    <TextField
+      label="Descrição"
+      multiline
+      rows={4}
+      placeholder="Digite uma descrição..."
+    />
+  </div>
+</ComponentPreview>
+
+```tsx
+<TextField
+  label="Descrição"
+  multiline
+  rows={4}
+  placeholder="Digite uma descrição..."
+/>
+```
+
+## API
+
+| Prop         | Tipo      | Padrão  | Descrição                  |
+| ------------ | --------- | ------- | -------------------------- |
+| `label`      | `string`  | -       | Label do campo             |
+| `helperText` | `string`  | -       | Texto de ajuda             |
+| `error`      | `boolean` | `false` | Estado de erro             |
+| `required`   | `boolean` | `false` | Campo obrigatório          |
+| `disabled`   | `boolean` | `false` | Desabilita o campo         |
+| `multiline`  | `boolean` | `false` | Textarea ao invés de input |
+| `rows`       | `number`  | `3`     | Linhas (se multiline)      |
+
+## Relacionados
+
+- [Input](/design-system/components/input) - Input básico
+- [Textarea](/design-system/components/textarea) - Textarea standalone

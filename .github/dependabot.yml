@@ -1,0 +1,71 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "bychrisr"
+    labels:
+      - "dependencies"
+    ignore:
+      # Skip all patch updates (too noisy)
+      - dependency-name: "*"
+        update-types: ["version-update:semver-patch"]
+      # Skip major updates for critical packages (require manual migration)
+      - dependency-name: "prisma"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@prisma/client"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "eslint"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "next"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dropzone"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "node-cron"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "nodemailer"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "sonner"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+    groups:
+      production-dependencies:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+        patterns:
+          - "*"
+        exclude-patterns:
+          - "@types/*"
+          - "eslint*"
+          - "prettier*"
+          - "vitest*"
+          - "typescript"
+      dev-tooling:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+        patterns:
+          - "@types/*"
+          - "eslint*"
+          - "prettier*"
+          - "vitest*"
+          - "typescript"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "ci"
+    reviewers:
+      - "bychrisr"

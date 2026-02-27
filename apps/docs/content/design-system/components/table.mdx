@@ -1,0 +1,125 @@
+---
+title: Table
+description: Tabelas básicas para exibir dados tabulares
+---
+
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@kaven/ui-base';
+import { ComponentPreview } from '@/components/ComponentPreview';
+
+# Table
+
+> Componente de tabela básica para exibir dados em formato tabular.
+
+## Básico
+
+```tsx
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@kaven/ui-base';
+
+<Table>
+  <TableHeader>
+    <TableRow>
+      <TableHead>Nome</TableHead>
+      <TableHead>Email</TableHead>
+      <TableHead>Status</TableHead>
+    </TableRow>
+  </TableHeader>
+  <TableBody>
+    <TableRow>
+      <TableCell>João Silva</TableCell>
+      <TableCell>joao@example.com</TableCell>
+      <TableCell>Ativo</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell>Maria Santos</TableCell>
+      <TableCell>maria@example.com</TableCell>
+      <TableCell>Ativo</TableCell>
+    </TableRow>
+  </TableBody>
+</Table>;
+```
+
+## Com Borda
+
+<ComponentPreview>
+  <Table className="border">{/* ... */}</Table>
+</ComponentPreview>
+
+```tsx
+<Table className="border">{/* ... */}</Table>
+```
+
+## Striped
+
+<ComponentPreview>
+  <div className="flex w-full gap-4 flex-wrap justify-center items-center">
+    <Table>
+      <TableBody>
+        <TableRow className="even:bg-muted/50">
+          <TableCell>Linha 1</TableCell>
+        </TableRow>
+        <TableRow className="even:bg-muted/50">
+          <TableCell>Linha 2</TableCell>
+        </TableRow>
+      </TableBody>
+    </Table>
+  </div>
+</ComponentPreview>
+
+```tsx
+<Table>
+  <TableBody>
+    <TableRow className="even:bg-muted/50">
+      <TableCell>Linha 1</TableCell>
+    </TableRow>
+    <TableRow className="even:bg-muted/50">
+      <TableCell>Linha 2</TableCell>
+    </TableRow>
+  </TableBody>
+</Table>
+```
+
+## Hover
+
+<ComponentPreview>
+  <div className="flex w-full gap-4 flex-wrap justify-center items-center">
+    <Table>
+      <TableBody>
+        <TableRow className="hover:bg-muted/50">
+          <TableCell>Linha com hover</TableCell>
+        </TableRow>
+      </TableBody>
+    </Table>
+  </div>
+</ComponentPreview>
+
+```tsx
+<Table>
+  <TableBody>
+    <TableRow className="hover:bg-muted/50">
+      <TableCell>Linha com hover</TableCell>
+    </TableRow>
+  </TableBody>
+</Table>
+```
+
+## API
+
+Componentes básicos sem props especiais. Use classes CSS para estilização.
+
+## Relacionados
+
+- [Data Table](/design-system/components/data-table) - Tabelas avançadas

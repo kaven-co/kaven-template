@@ -1,0 +1,9 @@
+-- This migration is intentionally empty.
+--
+-- Context: The datetime format fields (dateFormat, timeFormat) were added to the
+-- PlatformConfig model in the Prisma schema, but no SQL ALTER TABLE was needed because
+-- these fields already existed in the database from a prior manual migration or seed.
+-- Prisma generated this empty migration to record that the schema state was reconciled.
+--
+-- Keeping this migration to preserve the migration history chain integrity.
+-- Removing it would break Prisma's migration ordering and checksums.

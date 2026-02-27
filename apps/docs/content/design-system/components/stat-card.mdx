@@ -1,0 +1,106 @@
+---
+title: Stat Card
+description: Cards de estatísticas com indicadores de tendência, mini-gráficos, tooltips e suporte a variantes visuais.
+---
+
+import { StatCard } from '@kaven/ui-base';
+import { ComponentPreview } from '@/components/ComponentPreview';
+import { StatCardDemo } from '@/components/demos/stat-card-demo';
+
+# Stat Card
+
+> Cards especializados para exibir métricas e KPIs com visualização de tendências, mini-gráficos e interatividade. Componente signature do Dashboard Kaven.
+
+## Visão Geral
+
+O componente `StatCard` evoluiu para suportar múltiplos casos de uso, incluindo:
+
+- **Tooltips Informativos:** Substituem o menu de ações padrão quando detalhamento é necessário.
+- **Variante Spotlight:** Efeito visual premium `outline` com iluminação dinâmica no hover.
+- **Indicadores de Tendência:** Setas automáticas e coloração semântica baseada em valores positivos/negativos.
+
+## Live Demo
+
+import { TooltipProvider } from '@kaven/ui-base';
+
+<ComponentPreview>
+  <TooltipProvider>
+    <StatCardDemo />
+  </TooltipProvider>
+</ComponentPreview>
+
+```tsx
+import { StatCard } from '@kaven/ui-base';
+import { Users, Activity } from 'lucide-react';
+
+// Card Padrão com Tendência e Tooltip
+<StatCard
+  title="Total Users"
+  value="12,345"
+  icon={Users}
+  trend={12.5}
+  trendLabel="vs last month"
+  tooltip="Total number of registered users in the platform"
+/>
+
+// Variante Outline (Spotlight) com Subtítulo
+<StatCard
+  title="Active Sessions"
+  value="456"
+  icon={Activity}
+  variant="outline"
+  subtitle="Currently active users"
+  tooltip="Users currently logged in across all devices"
+/>
+```
+
+## Funcionalidades Principais
+
+### Tooltip Inteligente
+
+O `StatCard` agora suporta uma prop `tooltip`. Quando definida, um ícone de informação aparece no card. No novo padrão de design (Observability), este tooltip **substitui** o menu de ações (3 pontos) no canto superior direito, priorizando a explicação da métrica sobre ações secundárias.
+
+```tsx
+<StatCard
+  title="Revenue"
+  value="$50,000"
+  tooltip="Gross revenue before tax deduction"
+/>
+```
+
+### Variante Spotlight (Outline)
+
+Para destacar métricas secundárias ou dar um visual mais moderno e "tech", utilize a variante `outline`. Ela ativa automaticamente o efeito `SpotlightCard`, que segue o mouse com um brilho sutil.
+
+```tsx
+<StatCard
+  variant="outline"
+  title="Server Load"
+  value="45%"
+  spotlightColor="rgba(59, 130, 246, 0.2)" // Opcional: cor do brilho
+/>
+```
+
+## API
+
+| Propriedade      | Tipo                                | Descrição                                                                         |
+| ---------------- | ----------------------------------- | --------------------------------------------------------------------------------- |
+| `title`          | `string`                            | Título do card.                                                                   |
+| `value`          | `string \| number`                  | Valor principal exibido em destaque.                                              |
+| `icon`           | `LucideIcon`                        | Componente de ícone (opcional).                                                   |
+| `trend`          | `number`                            | Valor percentual da tendência (positivo/negativo). Automático verde/vermelho.     |
+| `trendLabel`     | `string`                            | Texto descritivo da tendência (ex: "vs last month").                              |
+| `tooltip`        | `string`                            | Texto do tooltip explicativo. **Substitui o menu de ações se presente.**          |
+| `subtitle`       | `string`                            | Texto secundário abaixo do valor (alternativa ao trend).                          |
+| `variant`        | `'default' \| 'outline' \| 'ghost'` | Estilo visual do card. 'outline' ativa efeito Spotlight.                          |
+| `menuAction`     | `ReactNode`                         | Elemento customizado para substituir o menu de 3 pontos (se tooltip não existir). |
+| `chart`          | `ReactNode`                         | Elemento para renderizar mini-gráfico (Recharts) ao lado do valor.                |
+| `spotlightColor` | `string`                            | Cor do efeito spotlight (apenas variant='outline').                               |
+
+## Melhores Práticas
+
+- ✅ Use **Tooltip** para explicar métricas complexas ou calculadas (ex: "Taxa de Churn").
+- ✅ Use **Spotlight** (`variant="outline"`) para métricas de infraestrutura ou tecnologia (Visual Cyber/Tech).
+- ✅ Combine **Ícones coloridos** com o tema do dado (ex: Verde para dinheiro, Azul para usuários).
+- ❌ Evite tooltips muito longos; seja conciso.
+- ❌ Não misture estilos 'default' e 'outline' aleatoriamente; use para categorizar tipos de métricas.

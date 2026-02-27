@@ -1,0 +1,235 @@
+---
+title: Fluent UI Adapter
+description: Adapter que mapeia os tokens e componentes do Kaven Design System para o Microsoft Fluent UI 2 design language
+---
+
+import { Callout } from 'nextra/components';
+
+# Fluent UI Adapter
+
+O Fluent UI adapter traduz os tokens e componentes do Kaven Design System para a linguagem visual do Microsoft Fluent UI 2.
+
+<Callout type="info">
+  Referencia: [fluent2.microsoft.design](https://fluent2.microsoft.design/) --
+  Segoe UI Variable, sistema de shadows profissionais, corner radius sutil (2-8px), e paleta grey10-grey190.
+</Callout>
+
+## Ativando o Adapter
+
+```tsx
+import { DesignSystemProvider } from '@/lib/design-system';
+import { DesignSystemType } from '@/lib/design-system/core/types';
+
+function App() {
+  return (
+    <DesignSystemProvider userId="user-1">
+      {/* Use setDesignSystem(DesignSystemType.FLUENT) para ativar */}
+    </DesignSystemProvider>
+  );
+}
+```
+
+Ou programaticamente:
+
+```tsx
+import { useDesignSystem } from '@/lib/design-system';
+import { DesignSystemType } from '@/lib/design-system/core/types';
+
+function ThemeSwitcher() {
+  const { setDesignSystem, designSystem } = useDesignSystem();
+
+  return (
+    <button onClick={() => setDesignSystem(DesignSystemType.FLUENT)}>
+      Ativar Fluent UI
+    </button>
+  );
+}
+```
+
+## Design Tokens
+
+Quando o Fluent adapter esta ativo, os tokens sao mapeados automaticamente:
+
+| Token Semantico | Valor Fluent (Light) | Valor Fluent (Dark) |
+|---|---|---|
+| `--color-primary` | `#0f6cbd` (Brand Blue) | `#479ef5` |
+| `--color-text-primary` | `#242424` (grey14) | `#ffffff` |
+| `--color-bg-default` | `#ffffff` | `#292929` |
+| `--color-border-default` | `#e0e0e0` (grey88) | `#525252` |
+| `--font-family` | Segoe UI Variable | Segoe UI Variable |
+| `--radius-md` | `4px` | `4px` |
+
+## 6 Core Components
+
+O adapter inclui 6 componentes core com a estetica Fluent:
+
+### FluentButton
+
+```tsx
+import { FluentButton } from '@/lib/design-system/adapters/fluent';
+
+// Variantes: primary, secondary, outline, subtle, transparent
+<FluentButton variant="primary">Save</FluentButton>
+<FluentButton variant="outline">Cancel</FluentButton>
+<FluentButton variant="subtle" size="small">Edit</FluentButton>
+<FluentButton loading>Saving...</FluentButton>
+```
+
+**Props:**
+
+| Prop | Tipo | Default | Descricao |
+|---|---|---|---|
+| `variant` | `'primary' \| 'secondary' \| 'outline' \| 'subtle' \| 'transparent'` | `'primary'` | Estilo visual |
+| `size` | `'small' \| 'medium' \| 'large'` | `'medium'` | Tamanho |
+| `icon` | `ReactNode` | - | Icone |
+| `iconPosition` | `'before' \| 'after'` | `'before'` | Posicao do icone |
+| `loading` | `boolean` | `false` | Estado de loading |
+| `fullWidth` | `boolean` | `false` | Largura total |
+
+### FluentInput
+
+```tsx
+import { FluentInput } from '@/lib/design-system/adapters/fluent';
+
+// Appearances: outline, underline, filled-darker, filled-lighter
+<FluentInput label="Name" placeholder="Enter your name" />
+<FluentInput appearance="underline" label="Email" />
+<FluentInput
+  appearance="filled-darker"
+  validationState="error"
+  validationMessage="This field is required"
+/>
+```
+
+**Props:**
+
+| Prop | Tipo | Default | Descricao |
+|---|---|---|---|
+| `size` | `'small' \| 'medium' \| 'large'` | `'medium'` | Tamanho |
+| `appearance` | `'outline' \| 'underline' \| 'filled-darker' \| 'filled-lighter'` | `'outline'` | Estilo do campo |
+| `label` | `string` | - | Label |
+| `validationState` | `'none' \| 'success' \| 'warning' \| 'error'` | `'none'` | Estado de validacao |
+| `validationMessage` | `string` | - | Mensagem de validacao |
+| `contentBefore` | `ReactNode` | - | Conteudo antes do input |
+| `contentAfter` | `ReactNode` | - | Conteudo apos o input |
+
+### FluentSelect
+
+```tsx
+import { FluentSelect } from '@/lib/design-system/adapters/fluent';
+
+<FluentSelect
+  label="Country"
+  placeholder="Select a country"
+  options={[
+    { value: 'us', label: 'United States' },
+    { value: 'br', label: 'Brazil' },
+    { value: 'uk', label: 'United Kingdom' },
+  ]}
+  onChange={(value) => console.log(value)}
+/>
+```
+
+### FluentDialog
+
+```tsx
+import { FluentDialog, FluentButton } from '@/lib/design-system/adapters/fluent';
+
+<FluentDialog
+  open={isOpen}
+  onOpenChange={setIsOpen}
+  title="Confirm Action"
+  subtitle="This cannot be undone."
+  actions={
+    <>
+      <FluentButton variant="secondary" onClick={() => setIsOpen(false)}>
+        Cancel
+      </FluentButton>
+      <FluentButton variant="primary" onClick={handleConfirm}>
+        Confirm
+      </FluentButton>
+    </>
+  }
+>
+  <p>Are you sure you want to proceed?</p>
+</FluentDialog>
+```
+
+### FluentTable
+
+```tsx
+import {
+  FluentTable,
+  FluentTableHeader,
+  FluentTableBody,
+  FluentTableRow,
+  FluentTableHead,
+  FluentTableCell,
+} from '@/lib/design-system/adapters/fluent';
+
+<FluentTable>
+  <FluentTableHeader>
+    <FluentTableRow>
+      <FluentTableHead>Name</FluentTableHead>
+      <FluentTableHead>Status</FluentTableHead>
+      <FluentTableHead>Date</FluentTableHead>
+    </FluentTableRow>
+  </FluentTableHeader>
+  <FluentTableBody>
+    <FluentTableRow>
+      <FluentTableCell>Kaven Platform</FluentTableCell>
+      <FluentTableCell>Active</FluentTableCell>
+      <FluentTableCell>2026-02-16</FluentTableCell>
+    </FluentTableRow>
+  </FluentTableBody>
+</FluentTable>
+```
+
+### FluentCard
+
+```tsx
+import {
+  FluentCard,
+  FluentCardHeader,
+  FluentCardBody,
+  FluentCardFooter,
+  FluentButton,
+} from '@/lib/design-system/adapters/fluent';
+
+<FluentCard size="medium" interactive>
+  <FluentCardHeader>
+    <h3 className="font-semibold">Project Overview</h3>
+  </FluentCardHeader>
+  <FluentCardBody>
+    <p>This is a Fluent-styled card component with subtle shadows and clean borders.</p>
+  </FluentCardBody>
+  <FluentCardFooter>
+    <FluentButton variant="primary" size="small">View</FluentButton>
+    <FluentButton variant="subtle" size="small">Dismiss</FluentButton>
+  </FluentCardFooter>
+</FluentCard>
+```
+
+## Diferencas Visuais vs MUI Default
+
+| Aspecto | MUI (Minimals) | Fluent UI 2 |
+|---|---|---|
+| Font | Public Sans / DM Sans | Segoe UI Variable |
+| Radius | 8-16px (arredondado) | 2-8px (mais sutil) |
+| Shadows | Soft, coloridos | Dual-layer, neutros |
+| Brand Color | `#00ab55` (green) | `#0f6cbd` (blue) |
+| Body Font Size | 16px | 14px |
+| Transitions | 200-300ms | 50-200ms (mais rapido) |
+
+## Customizacao
+
+O adapter aceita customizacoes via `updateCustomization()`:
+
+```tsx
+const { updateCustomization } = useDesignSystem();
+
+// Override a cor primaria mantendo o estilo Fluent
+await updateCustomization({
+  colors: { primary: '#5b5fc7' }, // Teams purple
+});
+```

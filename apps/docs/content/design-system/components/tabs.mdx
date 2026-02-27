@@ -1,0 +1,84 @@
+---
+title: Tabs
+description: Navegação por abas para organizar conteúdo
+---
+
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@kaven/ui-base';
+import { ComponentPreview } from '@/components/ComponentPreview';
+import { TabsNewPatternDemo } from '@/components/demos/tabs-new-pattern-demo';
+import { TabsDemo } from '@/components/demos/tabs-demo';
+
+# Tabs
+
+> Componente de abas para alternar entre diferentes visualizações de conteúdo.
+
+## Exemplo Básico
+
+<ComponentPreview>
+  <TabsDemo />
+</ComponentPreview>
+
+```tsx
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@kaven/ui-base';
+
+<Tabs defaultValue="account" className="w-[400px]">
+  <TabsList className="grid w-full grid-cols-2">
+    <TabsTrigger value="account">Account</TabsTrigger>
+    <TabsTrigger value="password">Password</TabsTrigger>
+  </TabsList>
+  <TabsContent value="account">
+    <p className="text-sm text-gray-500 py-4">
+      Make changes to your account here.
+    </p>
+  </TabsContent>
+  <TabsContent value="password">
+    <p className="text-sm text-gray-500 py-4">Change your password here.</p>
+  </TabsContent>
+</Tabs>;
+```
+
+## Novo Padrão de Dashboard
+
+Este é o padrão visual atualizado utilizado nas páginas de **Users** e **Observability**. Ele apresenta um design mais limpo, com fundo transparente, linha indicadora animada e ícones.
+
+<ComponentPreview>
+  <TabsNewPatternDemo />
+</ComponentPreview>
+
+### Código do Padrão
+
+```tsx
+// Exemplo de estilização customizada (Tailwind classes)
+const tabTriggerClass = cn(
+  'relative h-14 rounded-none bg-transparent px-0 pb-3 pt-3 font-semibold text-muted-foreground shadow-none transition-none cursor-pointer',
+  '!bg-transparent !shadow-none !border-0 hover:text-foreground mx-4 first:ml-0',
+  'data-[state=active]:!bg-transparent data-[state=active]:!shadow-none data-[state=active]:!text-foreground data-[state=active]:!border-none',
+  'dark:data-[state=active]:!bg-transparent dark:data-[state=active]:!border-none',
+  'after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-full after:scale-x-0 after:bg-primary after:transition-transform after:duration-300 data-[state=active]:after:scale-x-100',
+);
+
+<Tabs defaultValue="metrics" className="w-full">
+  <div className="flex flex-col md:flex-row items-center w-full border-b border-border/40 gap-4">
+    <TabsList className="bg-transparent p-0 h-auto gap-0 justify-start px-4 w-full flex-nowrap overflow-x-auto border-b-0 no-scrollbar">
+      <TabsTrigger value="metrics" className={tabTriggerClass}>
+        <Activity className="mr-2 h-4 w-4" />
+        Metrics
+      </TabsTrigger>
+      {/* ... outras tabs */}
+    </TabsList>
+  </div>
+  {/* ... TabsContent */}
+</Tabs>;
+```
+
+## API
+
+| Prop            | Tipo                      | Padrão | Descrição              |
+| --------------- | ------------------------- | ------ | ---------------------- |
+| `defaultValue`  | `string`                  | -      | Aba inicial ativa      |
+| `value`         | `string`                  | -      | Aba ativa (controlado) |
+| `onValueChange` | `(value: string) => void` | -      | Callback quando muda   |
+
+## Relacionados
+
+- [Accordion](/design-system/components/accordion) - Conteúdo colapsável

@@ -1,0 +1,84 @@
+---
+title: Security Hardening
+description: Implementação de medidas de segurança e conformidade (Week 4 Audit)
+date: 2026-01-28
+author: Kaven Engineering
+tags: [security, compliance, hardening, xss, secrets]
+---
+
+# Security Hardening & Compliance
+
+Este documento detalha as medidas de segurança implementadas durante a auditoria de conformidade (Week 4), focando em proteção contra vulnerabilidades conhecidas, sanitização de dados e gerenciamento de segredos.
+
+## 1. Proteção de Infraestrutura (Vulnerabilidades)
+
+### Next.js Upgrade (CVE-2025-XXXX)
+
+Todos os aplicativos (`admin`, `docs`, `tenant`) foram atualizados para **Next.js 16.1.5** para mitigar vulnerabilidades relacionadas a DoS (Allocation of Resources Without Limits or Throttling).
+
+- **Impacto:** Eliminação de risco de denegação de serviço via requisições manipuladas.
+- **Validação:** Builds processados via Turbopack sem erros.
+
+## 2. Prevenção de XSS (Cross-Site Scripting)
+
+Implementamos uma estratégia de defesa em profundidade para sanitização de dados.
+
+### 2.1 Output Sanitization (Defensive)
+
+Mesmo que a entrada seja validada, a saída de endpoints críticos agora passa por uma camada final de sanitização usando `isomorphic-dompurify`.
+
+**Localização:**
+
+- `src/modules/app/projects/projects.controller.ts`
+- `src/modules/app/tasks/tasks.controller.ts`
+
+```typescript
+// Exemplo de implementação
+const safeDescription = sanitize(input.description);
+```
+
+### 2.2 Input Validation (Type Narrowing)
+
+Controllers agora aplicam type narrowing explícito em Query Parameters para prevenir injeção de objetos ou arrays onde strings são esperadas.
+
+**Localização:**
+
+- `TenantController`, `UserController`, `ExportController`
+
+```typescript
+const search =
+  query.search && typeof query.search === "string"
+    ? sanitize(query.search)
+    : undefined;
+```
+
+## 3. Gerenciamento de Segredos em Testes
+
+Eliminamos o uso de credenciais e segredos _hardcoded_ em arquivos de teste, centralizando-os em um único ponto de verdade auditável.
+
+- **Arquivo Central:** `apps/api/test/constants.ts`
+- **Benefício:** Facilita a rotação de segredos de teste e previne vazamento acidental em logs de CI.
+
+```typescript
+import { TEST_PASSWORD, TEST_API_KEY } from "../../../test/constants";
+```
+
+## 4. Security Requests (Aprovação de Operações Sensíveis)
+
+Operações críticas que podem comprometer a segurança da conta dos usuários (como o **Reset de 2FA**) não são executadas imediatamente. Elas seguem um fluxo de governança:
+
+1. **Solicitação:** Um administrador solicita o reset justificando o motivo.
+2. **Revisão:** A solicitação é enviada para os `SUPER_ADMIN` via sistema de notificações.
+3. **Aprovação:** Um `SUPER_ADMIN` revisa a justificativa e aprova/rejeita.
+4. **Execução:** Apenas após a aprovação, a ação pode ser executada por um executor autorizado.
+
+Toda a trilha de auditoria (quem solicitou, quem revisou e quem executou) é persistida em `SecurityRequest`.
+
+## 5. Configuração de Compilador (TypeScript)
+
+O arquivo `tsconfig.json` raiz foi corrigido para garantir que todos os arquivos do projeto sejam adequadamente tipados e verificados, fechando brechas que permitiam código não verificado no build.
+
+---
+
+> [!IMPORTANT]
+> Estas medidas complementam as políticas de segurança existentes (RBAC, JWT, Rate Limiting).

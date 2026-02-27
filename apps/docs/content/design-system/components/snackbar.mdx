@@ -1,0 +1,98 @@
+---
+title: Snackbar
+description: Notificações temporárias e feedback ao usuário
+---
+
+import { Snackbar } from '@kaven/ui-base';
+import { ComponentPreview } from '@/components/ComponentPreview';
+
+# Snackbar
+
+> Mensagens temporárias que aparecem na parte inferior da tela para feedback de ações.
+
+## Básico
+
+```tsx
+import { useSnackbar } from '@/hooks/use-snackbar';
+
+function MyComponent() {
+  const { showSnackbar } = useSnackbar();
+
+  const handleClick = () => {
+    showSnackbar('Operação realizada com sucesso!');
+  };
+
+  return <Button onClick={handleClick}>Mostrar Snackbar</Button>;
+}
+```
+
+## Variantes
+
+```tsx
+// Success
+showSnackbar('Salvo com sucesso!', { variant: 'success' });
+
+// Error
+showSnackbar('Erro ao salvar', { variant: 'error' });
+
+// Warning
+showSnackbar('Atenção: verifique os dados', { variant: 'warning' });
+
+// Info
+showSnackbar('Informação importante', { variant: 'info' });
+```
+
+## Com Ação
+
+```tsx
+showSnackbar('Item excluído', {
+  action: {
+    label: 'Desfazer',
+    onClick: () => handleUndo(),
+  },
+});
+```
+
+## Duração
+
+```tsx
+// 3 segundos (padrão)
+showSnackbar('Mensagem rápida');
+
+// 5 segundos
+showSnackbar('Mensagem longa', { duration: 5000 });
+
+// Permanente (até fechar manualmente)
+showSnackbar('Mensagem importante', { duration: Infinity });
+```
+
+## Posição
+
+```tsx
+// Bottom center (padrão)
+showSnackbar('Mensagem', { position: 'bottom-center' });
+
+// Bottom left
+showSnackbar('Mensagem', { position: 'bottom-left' });
+
+// Bottom right
+showSnackbar('Mensagem', { position: 'bottom-right' });
+
+// Top center
+showSnackbar('Mensagem', { position: 'top-center' });
+```
+
+## API
+
+| Prop       | Tipo                                                                 | Padrão            | Descrição         |
+| ---------- | -------------------------------------------------------------------- | ----------------- | ----------------- |
+| `message`  | `string`                                                             | -                 | Mensagem a exibir |
+| `variant`  | `'success' \| 'error' \| 'warning' \| 'info'`                        | `'info'`          | Tipo de snackbar  |
+| `duration` | `number`                                                             | `3000`            | Duração em ms     |
+| `position` | `'top-center' \| 'bottom-center' \| 'bottom-left' \| 'bottom-right'` | `'bottom-center'` | Posição           |
+| `action`   | `{ label: string, onClick: () => void }`                             | -                 | Ação opcional     |
+
+## Relacionados
+
+- [Alert](/design-system/components/alert) - Alertas persistentes
+- [Dialog](/design-system/components/dialog) - Modais

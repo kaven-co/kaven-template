@@ -1,0 +1,92 @@
+---
+title: Menu
+description: Lista de ações ou opções exibida temporariamente.
+---
+
+import { Menu, MenuItem } from '@kaven/ui-base';
+import { Button } from '@kaven/ui-base';
+import { ComponentPreview } from '@/components/ComponentPreview';
+import { MenuBasicDemo } from '@/components/examples/MenuBasicDemo';
+import { MenuSelectionDemo } from '@/components/examples/MenuSelectionDemo';
+
+# Menu
+
+> Menus exibem uma lista de escolhas em uma superfície temporária.
+
+## Básico
+
+<ComponentPreview>
+  <MenuBasicDemo />
+</ComponentPreview>
+
+```tsx
+const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+const open = Boolean(anchorEl);
+
+const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+  setAnchorEl(event.currentTarget);
+};
+const handleClose = () => {
+  setAnchorEl(null);
+};
+
+<Button onClick={handleClick}>Abrir Menu</Button>
+<Menu anchorEl={anchorEl} open={open} onClose={handleClose}>
+  <MenuItem onClick={handleClose}>Perfil</MenuItem>
+  <MenuItem onClick={handleClose}>Minha Conta</MenuItem>
+  <MenuItem onClick={handleClose}>Sair</MenuItem>
+</Menu>
+```
+
+## Com Divisor e Seleção
+
+<ComponentPreview>
+  <MenuSelectionDemo />
+</ComponentPreview>
+
+```tsx
+<Menu anchorEl={anchorEl} open={open} onClose={handleClose}>
+  <MenuItem
+    selected={selectedIndex === 0}
+    onClick={(event) => handleMenuItemClick(event, 0)}
+  >
+    Leitura
+  </MenuItem>
+  <MenuItem
+    selected={selectedIndex === 1}
+    onClick={(event) => handleMenuItemClick(event, 1)}
+  >
+    Escrita
+  </MenuItem>
+  <MenuItem divider />
+  <MenuItem
+    selected={selectedIndex === 2}
+    onClick={(event) => handleMenuItemClick(event, 2)}
+  >
+    Admin
+  </MenuItem>
+</Menu>
+```
+
+## API
+
+| Prop              | Tipo                       | Padrão                                       | Descrição              |
+| ----------------- | -------------------------- | -------------------------------------------- | ---------------------- |
+| `anchorEl`        | `HTMLElement \| null`      | -                                            | Elemento âncora        |
+| `open`            | `boolean`                  | -                                            | Estado de visibilidade |
+| `onClose`         | `() => void`               | -                                            | Callback de fechamento |
+| `anchorOrigin`    | `{ vertical, horizontal }` | `{ vertical: 'bottom', horizontal: 'left' }` | Origem da âncora       |
+| `transformOrigin` | `{ vertical, horizontal }` | `{ vertical: 'top', horizontal: 'left' }`    | Origem do menu         |
+
+### MenuItem
+
+| Prop       | Tipo      | Padrão  | Descrição                       |
+| ---------- | --------- | ------- | ------------------------------- |
+| `selected` | `boolean` | `false` | Estado selecionado              |
+| `disabled` | `boolean` | `false` | Estado desabilitado             |
+| `divider`  | `boolean` | `false` | Adiciona linha divisória abaixo |
+
+## Relacionados
+
+- [Dropdown Menu](/design-system/components/dropdown-menu)
+- [Popover](/design-system/components/popover)

@@ -1,0 +1,37 @@
+# Kaven Frontend Rules (Brandbook v2.0.1 + Atomic Design)
+
+## Stack
+- Next.js App Router + React 19 + TypeScript strict
+- Tailwind CSS v4 (CSS-first)
+- Design System source-of-truth: @kaven/ui
+
+## Atomic Design
+- atoms -> molecules -> organisms -> templates -> pages
+- lower levels must not import higher levels
+
+## Branding
+- Primary: #10B981
+- Secondary/Transform: #F97316
+- Accent: #00D9FF
+- Display font: Space Grotesk
+- Body font: Inter
+- Kai is technical adaptability symbol, never mystical mascot
+
+## Component API
+- Prefer standardized props: size, density, tone, variant, fullWidth
+- Required size scale: 2xs, xs, sm, md, lg, xl, 2xl
+
+## Accessibility
+- icon-only buttons must have aria-label or sr-only text
+- do not use focus:outline-none without focus-visible styles
+- inputs require labels
+
+## Tailwind
+- forbid unresolved dynamic utility classes (e.g. shadow-${x})
+- prefer cn() + cva() for variants
+- avoid arbitrary values when token exists
+
+## Performance
+- avoid unnecessary use client
+- use next/image where practical
+- keep shared UI in @kaven/ui to reduce bundle drift

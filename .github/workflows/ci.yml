@@ -9,49 +9,166 @@ on:
 # SECURITY: Explicit minimal permissions (principle of least privilege)
 # See: https://docs.github.com/en/actions/using-jobs/assigning-permissions-to-jobs
 permissions:
-  contents: read        # Read repo contents
-  pull-requests: write  # Comment on PRs (optional, for test results)
+  contents: read # Read repo contents
+  pull-requests: write # Comment on PRs (optional, for test results)
 
 jobs:
   quality-gates:
     runs-on: ubuntu-latest
-    
+
+    # Add PostgreSQL service for security tests
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: kaven_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     strategy:
       matrix:
-        node-version: [20.x]  # Test only on Node 20 (production version)
-    
+        node-version: [20.x] # Test only on Node 20 (production version)
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          persist-credentials: false  # Don't persist GITHUB_TOKEN
-      
+          persist-credentials: false # Don't persist GITHUB_TOKEN
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
         with:
           version: 9
-      
+
       - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: 'pnpm'
-      
+          cache: "pnpm"
+
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y ripgrep
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      
+
+      - name: Clean Prisma Client cache
+        run: rm -rf node_modules/.prisma node_modules/@prisma/client
+
+      - name: Generate Prisma Client
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/kaven_test
+        run: npx prisma generate --schema=packages/database/prisma/schema.prisma
+
+      - name: Run database migrations
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/kaven_test
+        run: npx prisma migrate deploy --schema=packages/database/prisma/schema.prisma
+
       - name: Lint
         run: pnpm run lint
-      
+
+      - name: Design System Policy Checks
+        run: pnpm run policy:design-system
+
+      - name: Design System Docs Policy Checks
+        run: pnpm run policy:design-system-docs
+
+      - name: UI Migration Clean Check
+        run: pnpm run check:ui-migration-clean
+
       - name: Typecheck
         run: pnpm run typecheck
-      
+
       - name: Test
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/kaven_test
+          REDIS_URL: redis://localhost:6379
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          NODE_ENV: test
         run: pnpm run test
-      
-      - name: Build
-        run: pnpm run build
-      
+
+      - name: Test summary
+        if: always()
+        run: |
+          echo "## Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "Run \`npx vitest run --dir apps/api --reporter=verbose\` for details" >> $GITHUB_STEP_SUMMARY
+
+      - name: Security Tests
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/kaven_test
+          REDIS_URL: redis://localhost:6379
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          NODE_ENV: test
+        run: pnpm test:security
+        working-directory: apps/api
+
+      - name: Check Security Coverage
+        run: |
+          cd apps/api
+          if [ -f coverage/coverage-summary.json ]; then
+            COVERAGE_PCT=$(jq '.total.lines.pct' coverage/coverage-summary.json)
+            echo "Security test coverage: ${COVERAGE_PCT}%"
+            if (( $(echo "$COVERAGE_PCT < 80" | bc -l) )); then
+              echo "Security test coverage below minimum (80%)"
+              exit 1
+            fi
+            echo "Security test coverage meets minimum requirement"
+          else
+            echo "Coverage file not found, skipping check"
+          fi
+
+      - name: Build packages
+        run: pnpm turbo build --filter=@kaven/ui-base --filter=@kaven/shared --filter=@kaven/database
+
+      - name: Build API
+        run: pnpm turbo build --filter=api
+
+      - name: Build Admin
+        run: pnpm turbo build --filter=admin
+
+      - name: Build Tenant
+        run: pnpm turbo build --filter=tenant
+
+      - name: Build Docs
+        run: pnpm turbo build --filter=docs
+
+      - name: Report build sizes
+        if: always()
+        run: |
+          echo "## Build Sizes" >> $GITHUB_STEP_SUMMARY
+          echo "| App | Size |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|------|" >> $GITHUB_STEP_SUMMARY
+          for app in admin tenant docs; do
+            if [ -d "apps/$app/.next" ]; then
+              size=$(du -sh "apps/$app/.next" | cut -f1)
+              echo "| $app | $size |" >> $GITHUB_STEP_SUMMARY
+            fi
+          done
+          if [ -d "apps/api/dist" ]; then
+            size=$(du -sh "apps/api/dist" | cut -f1)
+            echo "| api | $size |" >> $GITHUB_STEP_SUMMARY
+          fi
+
       # SECURITY: Verify commit signatures (if enabled)
       - name: Verify commit signatures
         if: github.event_name == 'pull_request'
@@ -62,9 +179,12 @@ jobs:
               exit 1
             fi
           done
-        continue-on-error: true  # Don't fail CI if unsigned (warn only)
-      
+        continue-on-error: true # Don't fail CI if unsigned (warn only)
+
       # Optional: Upload coverage to codecov
       # - name: Upload coverage
       #   uses: codecov/codecov-action@v3
       #   if: success()
+
+  # Dependency scanning handled by GitHub Dependabot (see .github/dependabot.yml)
+  # Code review handled by CodeRabbit (see .coderabbit.yaml)

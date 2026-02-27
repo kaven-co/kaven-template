@@ -1,0 +1,115 @@
+---
+title: AppBar
+description: Barra de navegação superior da aplicação
+---
+
+import { AppBar } from '@kaven/ui-base';
+import { ComponentPreview } from '@/components/ComponentPreview';
+import { Button } from '@kaven/ui-base';
+import { Avatar, AvatarFallback } from '@kaven/ui-base';
+import { Bell } from 'lucide-react';
+
+# AppBar
+
+Barra de navegação superior com suporte a logo, menu e ações.
+
+## Uso Básico
+
+## Uso Básico
+
+<div className="preview-box">
+  <AppBar position="static" className="w-full">
+    <div className="flex w-full items-center justify-between">
+      <div className="font-bold">Logo</div>
+      <div className="flex gap-4">
+        <Button variant="text">Dashboard</Button>
+        <Button variant="text">Usuários</Button>
+      </div>
+      <div className="flex items-center gap-2">
+        <Avatar>
+          <AvatarFallback>CN</AvatarFallback>
+        </Avatar>
+      </div>
+    </div>
+  </AppBar>
+</div>
+
+<ComponentPreview>
+  <div className="flex w-full gap-4 flex-wrap justify-center items-center">
+    <AppBar position="static">
+      <div className="flex w-full items-center justify-between px-4 min-h-[64px]">
+        <div className="font-bold text-lg">Logo</div>
+        <nav className="flex gap-4">
+          <Button variant="ghost" size="sm">
+            Dashboard
+          </Button>
+          <Button variant="ghost" size="sm">
+            Usuários
+          </Button>
+        </nav>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon">
+            <Bell className="h-5 w-5" />
+          </Button>
+          <Avatar>
+            <AvatarFallback>CN</AvatarFallback>
+          </Avatar>
+        </div>
+      </div>
+    </AppBar>
+  </div>
+</ComponentPreview>
+
+```tsx
+<AppBar position="static">
+  <div className="flex w-full items-center justify-between px-4 min-h-[64px]">
+    <div className="font-bold text-lg">Logo</div>
+    <nav className="flex gap-4">
+      <Button variant="ghost" size="sm">
+        Dashboard
+      </Button>
+      <Button variant="ghost" size="sm">
+        Usuários
+      </Button>
+    </nav>
+    <div className="flex items-center gap-2">
+      <Button variant="ghost" size="icon">
+        <Bell className="h-5 w-5" />
+      </Button>
+      <Avatar>
+        <AvatarFallback>CN</AvatarFallback>
+      </Avatar>
+    </div>
+  </div>
+</AppBar>
+```
+
+## Posições
+
+<ComponentPreview>
+  <div className="flex w-full gap-4 flex-wrap justify-center items-center">
+    <AppBar position="fixed">Fixo (padrão)</AppBar>
+    <AppBar position="sticky">Sticky</AppBar>
+    <AppBar position="static">Static</AppBar>
+  </div>
+</ComponentPreview>
+
+```tsx
+<AppBar position="fixed">Fixo (padrão)</AppBar>
+<AppBar position="sticky">Sticky</AppBar>
+<AppBar position="static">Static</AppBar>
+```
+
+## Boas Práticas
+
+### ✅ Fazer
+
+- Manter altura consistente (64px)
+- Logo à esquerda
+- Ações à direita
+
+### ❌ Não Fazer
+
+- AppBar muito alto
+- Muitos itens de navegação
+- Sem responsividade mobile

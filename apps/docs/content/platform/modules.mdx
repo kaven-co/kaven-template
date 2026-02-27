@@ -1,0 +1,80 @@
+---
+title: Sistema Modular
+description: Extensibilidade e modularização de features no Kaven v2.0
+date: 2026-01-10
+author: Chris + Claude Sonnet 4.5
+version: 2.0.0
+tags: [modules, modularity, dynamic-loading, plugins]
+---
+
+# Sistema Modular
+
+O Kaven v2.0 foi desenhado para ser "Lean". Isso significa que você não precisa carregar centenas de arquivos e dependências para features que seu projeto não utiliza.
+
+## 🧩 O Conceito
+
+Módulos são fatias verticais de funcionalidade que representam diferenciais para o usuário final (como IA ou Analytics) e que podem ser injetadas ou removidas sob demanda.
+
+### 🏛️ Base vs 📦 Módulos
+
+É fundamental entender o que faz parte do "Coração" do Kaven e o que é opcional:
+
+| Camada          | Exemplos                                   | Natureza             |
+| :-------------- | :----------------------------------------- | :------------------- |
+| **Base (Core)** | Auth, Tenancy, **Design System**, Base UI. | Não removível.       |
+| **Módulos**     | Payments, AI, Analytics, Notifications.    | Instaláveis via CLI. |
+
+### Pilares do Sistema:
+
+- **Isolamento:** Cada módulo reside em sua própria estrutura, minimizando efeitos colaterais.
+- **Gestão via CLI:** Controle total através de comandos simples.
+- **Manifesto de Configuração:** O arquivo `kaven.config.json` rastreia o estado da sua aplicação.
+
+## 🛠️ Gerenciando Módulos
+
+### Listando módulos disponíveis
+
+Para ver o que você pode adicionar ao seu projeto:
+
+```bash
+node kaven-cli/bin/kaven.js module list
+```
+
+### Ativando uma Feature (Ex: Payments)
+
+Para instalar o módulo de pagamentos do Stripe/PagueBit:
+
+```bash
+node kaven-cli/bin/kaven.js module add payments
+```
+
+O CLI irá:
+
+1. Copiar os arquivos necessários para as pastas do projeto.
+2. Adicionar as dependências no `package.json` (se necessário).
+3. Atualizar o `kaven.config.json` para marcar o módulo como ativo.
+
+## 📂 Estrutura de um Módulo
+
+Um módulo típico no Kaven segue este padrão:
+
+- `src/core`: Lógica de negócio e serviços.
+- `src/ui`: Componentes de interface e hooks.
+- `api`: Rotas e controllers.
+- `migrations`: (Opcional) Alterações sugeridas para o `schema.extended.prisma`.
+
+## ⚙️ Configuração Automática
+
+Ao adicionar um módulo, o CLI injeta as configurações necessárias. No entanto, algumas configurações sensíveis (como API Keys) ainda devem ser configuradas no seu arquivo `.env`.
+
+> [!CAUTION]
+> Remover um módulo (`module remove`) deletará os arquivos associados. Certifique-se de fazer commit do seu trabalho antes de realizar esta operação.
+
+## 🚀 Próximos Passos (Store de Módulos)
+
+Estamos trabalhando em um ecossistema onde você poderá baixar módulos da comunidade ou criar seus próprios módulos privados para reutilizar em múltiplos projetos.
+
+## Relacionados
+
+- [Kaven CLI](/platform/cli)
+- [Guia de Pagamentos](/platform/guides/payments)
