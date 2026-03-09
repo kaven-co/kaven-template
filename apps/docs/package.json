@@ -44,7 +44,7 @@
   "devDependencies": {
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-tailwindcss": "^3.18.2",
-    "@types/node": "^20.12.7",
+    "@types/node": "^25.4.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "pagefind": "^1.4.0",
