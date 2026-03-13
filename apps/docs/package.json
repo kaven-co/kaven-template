@@ -27,7 +27,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "katex": "^0.16.27",
-    "lucide-react": "^0.564.0",
+    "lucide-react": "^0.576.0",
     "next": "16.1.5",
     "nextra": "latest",
     "nextra-theme-docs": "latest",
@@ -37,7 +37,7 @@
     "rehype-katex": "^7.0.1",
     "remark-math": "^6.0.0",
     "remark-mermaid": "^0.2.0",
-    "tailwind-merge": "^3.4.0",
+    "tailwind-merge": "^3.5.0",
     "tailwindcss": "^4",
     "vaul": "^1.1.2"
   },
