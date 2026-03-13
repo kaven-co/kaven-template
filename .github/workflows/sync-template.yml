@@ -44,7 +44,7 @@ jobs:
 
     steps:
       - name: Checkout kaven-framework
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           persist-credentials: false
           fetch-depth: 0 # Full history so git rev-parse works correctly
