@@ -5,6 +5,7 @@ on:
     branches: [main, staging]
   pull_request:
     branches: [main, staging]
+  workflow_dispatch:
 
 # SECURITY: Explicit minimal permissions (principle of least privilege)
 # See: https://docs.github.com/en/actions/using-jobs/assigning-permissions-to-jobs
@@ -53,9 +54,7 @@ jobs:
           persist-credentials: false # Don't persist GITHUB_TOKEN
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 9
+        uses: pnpm/action-setup@v4
 
       - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4

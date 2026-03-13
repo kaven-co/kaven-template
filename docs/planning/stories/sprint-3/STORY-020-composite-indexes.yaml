@@ -1,0 +1,51 @@
+story:
+  id: STORY-020
+  epic_id: EPIC-003
+  title: "Composite Indexes Implementation"
+  description: |
+    Adicionar índices compostos nas tabelas mais consultadas para otimizar
+    performance de queries multi-tenant. Queries no dashboard levam 500ms+
+    por falta de índices em (tenantId, createdAt) e similares.
+
+    Target: queries do dashboard < 200ms (melhoria de 60%+).
+
+  priority: P1
+  effort_hours: 8
+  status: Done
+  assignee_role: Backend Engineer (DBA focus)
+  sprint: Sprint 3
+  dependencies: [STORY-003, STORY-004]
+  epic_id: EPIC-003
+
+  acceptance_criteria:
+    - [x] Índices compostos adicionados (tabelas críticas)
+      - [x] User: (tenantId, email), (tenantId, createdAt)
+      - [x] AuditLog: (tenantId, createdAt), (tenantId, userId)
+      - [x] Grant: (tenantId, userId), (tenantId, status)
+      - [x] Policy: (tenantId, role), (tenantId, createdAt)
+      - [x] Space: (tenantId, deletedAt), (tenantId, createdAt)
+
+    - [x] Performance validada
+      - [x] EXPLAIN ANALYZE antes e depois de cada índice
+      - [x] Dashboard query < 200ms com dados reais
+      - [x] N+1 queries eliminadas no dashboard
+
+    - [x] Migrations seguras
+      - [x] CREATE INDEX CONCURRENTLY (não bloqueia tabela)
+      - [x] Rollback script disponível
+
+  technical_notes: |
+    - Usar CONCURRENTLY para não bloquear tabelas em produção
+    - Verificar EXPLAIN ANALYZE nas queries mais frequentes do dashboard
+    - Prisma: usar @@index() no schema para manter documentação sincronizada
+    - Referência: docs/reviews/db-audit.md deve ter queries candidatas
+
+  files_to_modify:
+    - packages/database/prisma/schema.base.prisma (@@index additions)
+    - packages/database/prisma/migrations/ (nova migration)
+
+  definition_of_done:
+    - [x] Índices em todas as tabelas críticas
+    - [x] Dashboard queries < 200ms
+    - [x] Migration CONCURRENTLY testada
+    - [x] EXPLAIN ANALYZE documentado

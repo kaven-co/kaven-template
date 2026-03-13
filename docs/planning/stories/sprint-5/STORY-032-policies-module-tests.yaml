@@ -1,0 +1,37 @@
+story:
+  id: STORY-032
+  epic_id: EPIC-005
+  title: "Write test suite for policies module"
+  description: |
+    Policies module manages access policies with complex evaluation engine (multiple
+    condition types). PolicyService is imported from apps/api/src/services/policy.service.ts
+    (shared path, not module folder).
+  priority: P1
+  effort_hours: 6
+  status: DONE
+  assignee_role: Backend Engineer
+  sprint: Sprint 5
+  dependencies: []
+
+  acceptance_criteria:
+    - [x] Unit tests for policy CRUD
+    - [x] Tests for evaluatePolicy/evaluatePolicies logic
+    - [x] Tests for getMaskingConfig
+    - [x] Tests for policy-capability relationships
+    - [x] Tenant isolation tests
+    - [x] Minimum 70% line coverage
+    - [x] All tests pass in CI
+
+  technical_notes: |
+    PolicyService at shared path — mock at '../../../services/policy.service'.
+    Most complex test module — evaluation engine with multiple condition types.
+    Budget 6-8h. Use vi.hoisted() + vi.mock('../../../lib/prisma') with createPrismaMock
+    helper at apps/api/test/helpers/prisma-mock.ts.
+
+  files_to_create:
+    - apps/api/src/modules/policies/policy.controller.spec.ts
+
+  definition_of_done:
+    - [x] All tests pass in CI
+    - [x] 70%+ line coverage
+    - [x] Zero TypeScript errors

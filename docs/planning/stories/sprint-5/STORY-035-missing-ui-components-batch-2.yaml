@@ -1,0 +1,34 @@
+story:
+  id: STORY-035
+  epic_id: EPIC-005
+  title: "Implement missing UI components for docs (Batch 2)"
+  description: |
+    Second batch of missing UI components. Completes the full set needed for docs site
+    to build without import errors.
+  priority: P0
+  effort_hours: 16
+  status: DONE
+  assignee_role: Frontend Engineer
+  sprint: Sprint 5
+  dependencies:
+    - STORY-034
+
+  acceptance_criteria:
+    - [x] Implement remaining components from the audit list produced in STORY-034
+    - [x] Each component has TypeScript types exported
+    - [x] Each component exported from @kaven/ui barrel file
+    - [x] Full docs site builds with zero @kaven/ui import errors
+    - [x] Visual spot-check: docs pages render components correctly
+
+  technical_notes: |
+    Same CVA + cn() + forwardRef pattern. Defer any component requiring heavy new
+    dependencies (e.g., rich text editor) — create stub with TODO.
+    NOTE: Effort estimate (16h) may be adjusted after STORY-034 audit reveals actual gap size.
+
+  files_to_create:
+    - packages/ui/src/compat/*.tsx
+    - packages/ui/src/index.ts
+
+  definition_of_done:
+    - [x] Docs build succeeds with zero import errors
+    - [x] Zero TypeScript errors

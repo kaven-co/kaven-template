@@ -1,0 +1,46 @@
+story:
+  id: STORY-038
+  epic_id: EPIC-006
+  title: "Implement usage tracking counters for plan limits"
+  description: |
+    Feature limits UI shows 0 for all usage. apps/tenant/app/api/plan/usage/route.ts has
+    stub returning current:0. UsageRecord model exists in Prisma schema with tenantId,
+    featureId, currentUsage, periodStart, periodEnd. No UsageService exists yet.
+  priority: P0
+  effort_hours: 12
+  status: DONE
+  assignee_role: Backend Engineer
+  sprint: Sprint 5
+  dependencies: []
+
+  acceptance_criteria:
+    - [x] Create UsageService in apps/api/src/modules/usage/ with increment, decrement, getCurrentUsage, resetPeriod methods
+    - [x] Query actual counts from database for each tracked resource (users, projects, spaces, API calls)
+    - [x] Use atomic SQL for increments: UPDATE ... SET current_usage = current_usage + 1
+    - [x] Handle unlimited plans (limit = -1 or null)
+    - [x] Return format: { resource, used, limit, percentage }
+    - [x] Cache counts with 60s TTL to avoid expensive queries per page load
+    - [x] Update apps/tenant/app/api/plan/usage/route.ts to call real UsageService instead of returning 0
+    - [x] Tenant isolation: counts scoped to requesting tenant
+    - [x] Unit tests for usage counting logic
+    - [x] Unit tests for plan limit comparison
+
+  technical_notes: |
+    UsageRecord model already in schema. Use Prisma $executeRaw for atomic increments.
+    Start with DB-based counters (Phase 1 MVP). Redis optimization is post-launch.
+    Period management: monthly billing cycles with automatic rotation.
+    Requires 20260215000001_add_product_plan_relation migration to be applied first
+    (run npx prisma migrate deploy before starting).
+
+  files_to_create:
+    - apps/api/src/modules/usage/usage.service.ts
+    - apps/api/src/modules/usage/usage.service.spec.ts
+    - apps/api/src/modules/usage/usage.routes.ts
+
+  files_to_update:
+    - apps/tenant/app/api/plan/usage/route.ts
+
+  definition_of_done:
+    - [x] Usage API returns real counts
+    - [x] All tests pass in CI
+    - [x] Zero TypeScript errors

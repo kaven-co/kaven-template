@@ -1,0 +1,63 @@
+story:
+  id: STORY-026
+  epic_id: EPIC-004
+  title: "AWS SES Integration for Transactional Emails"
+  description: |
+    Integrar AWS Simple Email Service como provedor de email transacional,
+    complementando ou substituindo o provedor atual. AWS SES oferece melhor
+    deliverability e custo menor que alternativas como SendGrid ou Mailgun.
+
+    PRODUCTION CRITICAL: Emails transacionais (verificação de email, reset de senha,
+    notificações) são essenciais para qualquer SaaS em produção.
+
+  priority: P1
+  effort_hours: 12
+  status: Done
+  assignee_role: Backend Engineer (DevOps focus)
+  sprint: Sprint 4
+  dependencies: []
+  epic_id: EPIC-004
+
+  pre_sprint_action:
+    - Iniciar verificação de domínio no AWS SES (processo demora 24-48h)
+    - Configurar IAM user com permissões SES mínimas
+    - Verificar endereço de email remetente no SES
+
+  acceptance_criteria:
+    - [x] AWS SES configurado
+      - [x] Domínio verificado no SES
+      - [x] Credenciais AWS_SES_ACCESS_KEY, AWS_SES_SECRET_KEY no .env
+      - [x] Região configurada (us-east-1 ou sa-east-1 para latência Brasil)
+
+    - [x] Email service atualizado
+      - [x] Adapter AWS SES criado (seguindo padrão do adapter existente)
+      - [x] EMAIL_PROVIDER=ses config via env
+      - [x] Fallback para SMTP se SES falhar
+
+    - [x] Templates de email
+      - [x] welcome.html — boas-vindas após registro
+      - [x] verify-email.html — verificação de email
+      - [x] reset-password.html — reset de senha
+      - [x] invoice-paid.html — cobrança confirmada
+
+    - [x] Testes
+      - [x] Envio real testado (não mock) em ambiente de dev
+      - [x] Teste de entrega para Gmail, Outlook, Yahoo
+      - [x] Bounce handling configurado (SES SNS topic)
+
+  technical_notes: |
+    - Usar @aws-sdk/client-ses (não aws-sdk v2 que está em deprecation)
+    - SES sandbox: precisa de aprovação para sair (submeter request antes)
+    - Para Brasil: sa-east-1 (São Paulo) tem latência melhor
+    - SPF, DKIM e DMARC devem estar configurados no domínio
+
+  files_to_create:
+    - apps/api/src/services/email/providers/ses.provider.ts
+    - apps/api/src/services/email/templates/
+
+  definition_of_done:
+    - [x] Emails enviados com sucesso via AWS SES
+    - [x] Todos os templates implementados
+    - [x] Teste de deliverability em 3 provedores
+    - [x] Bounce handling configurado
+    - [x] Zero TypeScript errors

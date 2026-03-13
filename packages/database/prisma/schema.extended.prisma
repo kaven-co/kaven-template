@@ -27,11 +27,40 @@
 // ============================================
 
 // ===========================
+// SERVICE TOKENS (AI Agents Auth)
+// ===========================
+// Tokens de longa duração para agents (kaven-squad, mmos-squad, etc.)
+// autenticarem diretamente na API sem fluxo OAuth interativo.
+// Armazenam apenas o hash SHA-256 do token real — nunca o token em texto.
+
+model ServiceToken {
+  id           String    @id @default(cuid())
+  tenantId     String    @map("tenant_id")
+  agentId      String    @map("agent_id")    // ex: "kaven-squad/kai"
+  agentSquad   String    @map("agent_squad") // ex: "kaven-squad"
+  token        String    @unique             // hash SHA-256 do token real
+  capabilities String[]  // subset de capabilities — principle of least privilege
+  lastUsedAt   DateTime? @map("last_used_at") // atualizado a cada request autenticado
+  revokedAt    DateTime? @map("revoked_at")   // revogação manual ou automática
+  expiresAt    DateTime  @map("expires_at")  // TTL obrigatório — máximo 30 dias
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, agentId])
+  @@index([tenantId, lastUsedAt])
+  @@index([expiresAt])
+  @@map("service_tokens")
+}
+
+// ===========================
 // DEMO FEATURES (Projects/Tasks)
 // ===========================
 // Estes modelos são EXEMPLOS de features customizadas
 // Você pode removê-los ou adaptá-los conforme necessário
 
+// [KAVEN_MODULE:PROJECTS BEGIN]
 enum ProjectStatus {
   ACTIVE
   ARCHIVED
@@ -108,3 +137,22 @@ model Task {
   @@index([assigneeId])
   @@map("tasks")
 }
+// [KAVEN_MODULE:PROJECTS END]
+
+// ===========================
+// BILLING MODULE PLACEHOLDER
+// ===========================
+// Invoice, Order, Subscription, Plan, Payment, Product estão em schema.base.prisma
+// Este bloco reserva a seção para `kaven module activate/deactivate billing`
+
+// [KAVEN_MODULE:BILLING BEGIN]
+// [KAVEN_MODULE:BILLING END]
+
+// ===========================
+// NOTIFICATIONS MODULE PLACEHOLDER
+// ===========================
+// Notification e UserPreference estão em schema.base.prisma (InAppNotification, UserNotificationPreferences)
+// Este bloco reserva a seção para `kaven module activate/deactivate notifications`
+
+// [KAVEN_MODULE:NOTIFICATIONS BEGIN]
+// [KAVEN_MODULE:NOTIFICATIONS END]

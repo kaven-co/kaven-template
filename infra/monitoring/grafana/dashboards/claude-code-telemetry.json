@@ -1,0 +1,94 @@
+{
+  "annotations": {"list": []},
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "title": "Claude Code — Tokens por Sessão",
+      "description": "Total de tokens consumidos (input + output) ao longo do tempo",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"lineWidth": 2, "fillOpacity": 20, "gradientMode": "scheme"}, "unit": "short"}, "overrides": []},
+      "targets": [{"expr": "claude_code_tokens_total", "legendFormat": "{{type}} — {{model}}", "refId": "A"}]
+    },
+    {
+      "title": "Custo Estimado por Modelo ($)",
+      "description": "Custo acumulado estimado por modelo de IA",
+      "type": "stat",
+      "gridPos": {"h": 8, "w": 6, "x": 12, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 5}, {"color": "red", "value": 20}]}, "unit": "currencyUSD"}, "overrides": []},
+      "targets": [{"expr": "claude_code_cost_usd", "legendFormat": "{{model}}", "refId": "A"}],
+      "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "textMode": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}}
+    },
+    {
+      "title": "Sessões Ativas",
+      "description": "Número de sessões Claude Code ativas",
+      "type": "stat",
+      "gridPos": {"h": 8, "w": 6, "x": 18, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "blue", "value": null}, {"color": "green", "value": 1}]}, "unit": "short"}, "overrides": []},
+      "targets": [{"expr": "claude_code_sessions_active", "legendFormat": "Sessões", "refId": "A"}],
+      "options": {"colorMode": "background", "graphMode": "none", "justifyMode": "center", "textMode": "value"}
+    },
+    {
+      "title": "Tokens Input vs Output (Rate)",
+      "description": "Taxa de consumo de tokens input e output por minuto",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"lineWidth": 2, "fillOpacity": 10}, "unit": "short"}, "overrides": []},
+      "targets": [{"expr": "rate(claude_code_tokens_total{type=\"input\"}[5m])", "legendFormat": "Input tokens/s", "refId": "A"}, {"expr": "rate(claude_code_tokens_total{type=\"output\"}[5m])", "legendFormat": "Output tokens/s", "refId": "B"}]
+    },
+    {
+      "title": "Tool Calls (Rate)",
+      "description": "Chamadas de ferramentas por minuto",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"lineWidth": 2, "fillOpacity": 15}, "unit": "ops"}, "overrides": []},
+      "targets": [{"expr": "rate(claude_code_tool_calls_total[5m])", "legendFormat": "{{tool}}", "refId": "A"}]
+    },
+    {
+      "title": "API Request Latência",
+      "description": "Latência dos requests à API Anthropic",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"lineWidth": 1, "fillOpacity": 10}, "unit": "s"}, "overrides": []},
+      "targets": [{"expr": "claude_code_api_request_duration_seconds", "legendFormat": "{{model}}", "refId": "A"}]
+    },
+    {
+      "title": "Cache Hit Rate",
+      "description": "Taxa de cache hits nos prompts",
+      "type": "gauge",
+      "gridPos": {"h": 8, "w": 6, "x": 12, "y": 16},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "yellow", "value": 30}, {"color": "green", "value": 60}]}, "unit": "percent", "min": 0, "max": 100}, "overrides": []},
+      "targets": [{"expr": "claude_code_cache_hit_rate * 100", "legendFormat": "Cache Hit", "refId": "A"}]
+    },
+    {
+      "title": "Commits & PRs",
+      "description": "Commits e PRs criados pelo Claude Code",
+      "type": "stat",
+      "gridPos": {"h": 8, "w": 6, "x": 18, "y": 16},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "blue", "value": null}]}, "unit": "short"}, "overrides": []},
+      "targets": [{"expr": "claude_code_commits_total", "legendFormat": "Commits", "refId": "A"}, {"expr": "claude_code_pull_requests_total", "legendFormat": "PRs", "refId": "B"}],
+      "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "textMode": "auto"}
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["claude-code", "telemetry", "otel"],
+  "templating": {"list": []},
+  "time": {"from": "now-24h", "to": "now"},
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Claude Code — Telemetria OTel",
+  "uid": "claude-code-telemetry",
+  "version": 1
+}

@@ -1,0 +1,72 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'kaven-production'
+    environment: 'production'
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - alertmanager:9093
+
+# Load alert rules
+rule_files:
+  - 'alerts.yml'
+
+# Scrape configurations
+scrape_configs:
+  # Kaven API
+  - job_name: 'kaven-api'
+    static_configs:
+      - targets: ['host.docker.internal:8000']
+    metrics_path: '/api/observability/metrics'
+    scrape_interval: 10s
+    scrape_timeout: 5s
+
+  # PostgreSQL
+  - job_name: 'postgresql'
+    static_configs:
+      - targets: ['postgres_exporter:9187']
+    scrape_interval: 15s
+
+  # Redis
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis_exporter:9121']
+    scrape_interval: 15s
+
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Alertmanager
+  - job_name: 'alertmanager'
+    static_configs:
+      - targets: ['alertmanager:9093']
+
+  # Grafana
+  - job_name: 'grafana'
+    static_configs:
+      - targets: ['grafana:3000']
+
+  # Claude Code OTel (métricas nativas: tokens, custo, sessões)
+  - job_name: 'claude-code'
+    static_configs:
+      - targets: ['host.docker.internal:8888']
+    scrape_interval: 60s
+    scrape_timeout: 10s
+
+  # AIOX Metrics Exporter (GAP-7 — stories, agents, quality gates, session duration)
+  # Fonte: .aiox-core/core/orchestration/metrics-exporter.js
+  # Iniciar com: node .aiox-core/core/orchestration/metrics-exporter.js
+  # Porta configurável via AIOX_METRICS_PORT (default: 9464)
+  - job_name: 'aiox'
+    static_configs:
+      - targets: ['host.docker.internal:9464']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+    scrape_timeout: 10s

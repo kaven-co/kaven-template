@@ -1,6 +1,6 @@
 {
-  "name": "{{PROJECT_NAME}}",
-  "version": "0.1.0",
+  "name": "kaven-boilerplate",
+  "version": "0.1.0-alpha.0",
   "private": true,
   "workspaces": [
     "apps/*",

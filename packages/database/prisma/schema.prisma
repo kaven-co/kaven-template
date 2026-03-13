@@ -160,6 +160,15 @@ enum EmailQueueStatus {
 }
 
 // ===========================
+// AUDIT CALLER TYPE ENUM
+// ===========================
+
+enum CallerType {
+  HUMAN  // Requisição originada por usuário humano autenticado
+  AGENT  // Requisição originada por AI agent via ServiceToken
+}
+
+// ===========================
 // SPACES & PERMISSIONS ENUMS
 // ===========================
 
@@ -383,6 +392,9 @@ model Tenant {
   // Platform Config (branding/theme per tenant)
   platformConfigs PlatformConfig[]
 
+  // AI Agent Auth
+  serviceTokens ServiceToken[]
+
   @@index([slug])
   @@index([domain])
   @@index([status])
@@ -519,16 +531,20 @@ model RefreshToken {
 }
 
 model AuditLog {
-  id        String   @id @default(uuid())
-  action    String // Ex: "user.created", "tenant.updated"
-  entity    String // Ex: "User", "Tenant"
-  entityId  String
-  userId    String?
-  tenantId  String?
-  metadata  Json? // Dados adicionais
-  ipAddress String?
-  userAgent String?
-  createdAt DateTime @default(now())
+  id         String     @id @default(uuid())
+  action     String     // Ex: "user.created", "tenant.updated"
+  entity     String     // Ex: "User", "Tenant"
+  entityId   String
+  userId     String?
+  tenantId   String?
+  metadata   Json?      // Dados adicionais
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime   @default(now())
+
+  // Caller identification — quem originou a ação
+  callerType CallerType @default(HUMAN) @map("caller_type") // HUMAN | AGENT
+  agentId    String?    @map("agent_id")                   // ex: "kaven-squad/kai" (preenchido quando callerType = AGENT)
 
   // Soft delete + retention (LGPD/GDPR compliance)
   deletedAt      DateTime? // Soft delete timestamp
@@ -552,6 +568,8 @@ model AuditLog {
   @@index([tenantId, deletedAt])    // Tenant-scoped soft delete filtering (GDPR)
   @@index([tenantId, entity, createdAt]) // Tenant-scoped entity audit timeline
   @@index([tenantId, action, createdAt]) // Analytics: action frequency over time
+  @@index([callerType])                  // Filtrar logs por tipo de caller (HUMAN vs AGENT)
+  @@index([agentId])                     // Rastrear atividade de um agent específico
 }
 
 // ===========================
@@ -2321,6 +2339,34 @@ model SecurityRequest {
 
 // --- USER EXTENSIONS ---
 
+model ServiceToken {
+  id           String    @id @default(cuid())
+  tenantId     String    @map("tenant_id")
+  agentId      String    @map("agent_id")    // ex: "kaven-squad/kai"
+  agentSquad   String    @map("agent_squad") // ex: "kaven-squad"
+  token        String    @unique             // hash SHA-256 do token real
+  capabilities String[]  // subset de capabilities — principle of least privilege
+  lastUsedAt   DateTime? @map("last_used_at") // atualizado a cada request autenticado
+  revokedAt    DateTime? @map("revoked_at")   // revogação manual ou automática
+  expiresAt    DateTime  @map("expires_at")  // TTL obrigatório — máximo 30 dias
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, agentId])
+  @@index([tenantId, lastUsedAt])
+  @@index([expiresAt])
+  @@map("service_tokens")
+}
+
+// ===========================
+// DEMO FEATURES (Projects/Tasks)
+// ===========================
+// Estes modelos são EXEMPLOS de features customizadas
+// Você pode removê-los ou adaptá-los conforme necessário
+
+// [KAVEN_MODULE:PROJECTS BEGIN]
 enum ProjectStatus {
   ACTIVE
   ARCHIVED
@@ -2397,3 +2443,22 @@ model Task {
   @@index([assigneeId])
   @@map("tasks")
 }
+// [KAVEN_MODULE:PROJECTS END]
+
+// ===========================
+// BILLING MODULE PLACEHOLDER
+// ===========================
+// Invoice, Order, Subscription, Plan, Payment, Product estão em schema.base.prisma
+// Este bloco reserva a seção para `kaven module activate/deactivate billing`
+
+// [KAVEN_MODULE:BILLING BEGIN]
+// [KAVEN_MODULE:BILLING END]
+
+// ===========================
+// NOTIFICATIONS MODULE PLACEHOLDER
+// ===========================
+// Notification e UserPreference estão em schema.base.prisma (InAppNotification, UserNotificationPreferences)
+// Este bloco reserva a seção para `kaven module activate/deactivate notifications`
+
+// [KAVEN_MODULE:NOTIFICATIONS BEGIN]
+// [KAVEN_MODULE:NOTIFICATIONS END]

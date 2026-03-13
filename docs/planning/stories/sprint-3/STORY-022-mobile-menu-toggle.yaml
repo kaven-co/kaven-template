@@ -1,0 +1,49 @@
+story:
+  id: STORY-022
+  epic_id: EPIC-003
+  title: "Mobile Menu Toggle (Hamburger + Drawer)"
+  description: |
+    Implementar menu mobile funcional no Tenant App. Atualmente em telas menores
+    que 768px o menu lateral some sem substituto, quebrando completamente a UX mobile.
+
+  priority: P1
+  effort_hours: 4
+  status: Done
+  assignee_role: Frontend Engineer
+  sprint: Sprint 3
+  dependencies: []
+  epic_id: EPIC-003
+
+  acceptance_criteria:
+    - [x] Hamburger button visível em mobile (< 768px)
+      - [x] Posicionado no header, lado direito
+      - [x] Ícone alterna entre ☰ e ✕
+
+    - [x] Drawer lateral funcional
+      - [x] Abre ao clicar no hamburger
+      - [x] Fecha ao clicar fora ou no ✕
+      - [x] Contém todos os itens de navegação do sidebar
+      - [x] Animação de slide (300ms)
+
+    - [x] Sidebar original oculto em mobile
+      - [x] < 768px: sidebar escondido, drawer disponível
+      - [x] ≥ 768px: sidebar fixo, hamburger escondido
+
+    - [x] Acessibilidade
+      - [x] aria-label no botão hamburger
+      - [x] Foco gerenciado ao abrir drawer
+
+  technical_notes: |
+    - Verificar layout-client.tsx para encontrar o layout do dashboard
+    - Usar Sheet do shadcn/ui para o drawer (já disponível no projeto)
+    - Breakpoint Tailwind: md:hidden para mostrar/esconder
+
+  files_to_modify:
+    - apps/tenant/app/[locale]/(dashboard)/layout-client.tsx
+    - apps/tenant/app/[locale]/(dashboard)/layout.tsx
+
+  definition_of_done:
+    - [x] Mobile menu funcional em 320px, 375px, 414px
+    - [x] Desktop não afetado
+    - [x] Zero TypeScript errors
+    - [x] Teste de snapshot atualizado

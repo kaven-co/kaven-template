@@ -1,0 +1,43 @@
+story:
+  id: STORY-046
+  epic_id: EPIC-007
+  title: "Finalize technical debt document from DRAFT to APPROVED"
+  description: |
+    docs/prd/technical-debt-DRAFT.md is in DRAFT status. After Sprint 5-6 resolves many items,
+    update document to reflect current state and promote to APPROVED.
+  priority: P2
+  effort_hours: 4
+  status: Done
+  assignee_role: Tech Lead
+  sprint: Sprint 6
+  dependencies:
+    - STORY-028
+    - STORY-029
+    - STORY-030
+    - STORY-031
+    - STORY-032
+    - STORY-034
+    - STORY-035
+
+  acceptance_criteria:
+    - [x] Review all items in technical-debt-DRAFT.md against current codebase state
+    - [x] Mark resolved items as DONE with resolution date and PR reference
+    - [x] Update effort estimates for remaining items
+    - [x] Recalculate totals and risk assessment
+    - [x] Remove DRAFT status, change to APPROVED
+    - [x] Rename file to technical-debt.md (remove DRAFT suffix)
+
+  technical_notes: |
+    Cross-reference with Sprint 5-6 completed stories. Use git log to find PR references
+    for resolved items.
+
+  files_to_create:
+    - docs/prd/technical-debt.md
+
+  files_to_remove:
+    - docs/prd/technical-debt-DRAFT.md
+
+  definition_of_done:
+    - [x] Document finalized
+    - [x] No stale items
+    - [x] Status APPROVED

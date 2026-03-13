@@ -1,0 +1,37 @@
+story:
+  id: STORY-029
+  epic_id: EPIC-005
+  title: "Write test suite for roles module"
+  description: |
+    Roles module manages RBAC with capability-based permissions. Security-critical module.
+    RoleService has CRUD + capability management with $transaction usage.
+  priority: P0
+  effort_hours: 8
+  status: DONE
+  assignee_role: Backend Engineer
+  sprint: Sprint 5
+  dependencies: []
+
+  acceptance_criteria:
+    - [x] Unit tests for role CRUD with space context validation
+    - [x] Tests for role-capability association (RoleCapability model)
+    - [x] Tests for user-space-role assignment (UserSpaceRole)
+    - [x] Tests for permission checking logic
+    - [x] Tenant isolation tests
+    - [x] Edge case: role without space context
+    - [x] Minimum 80% line coverage
+    - [x] All tests pass in CI
+
+  technical_notes: |
+    RoleService uses $transaction — mock prisma.$transaction as callback.
+    Use vi.hoisted() + vi.mock('../../../lib/prisma') with createPrismaMock helper
+    at apps/api/test/helpers/prisma-mock.ts.
+    Test capability validation logic separately.
+
+  files_to_create:
+    - apps/api/src/modules/roles/role.service.spec.ts
+
+  definition_of_done:
+    - [x] All tests pass in CI
+    - [x] 80%+ line coverage
+    - [x] Zero TypeScript errors

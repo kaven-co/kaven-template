@@ -1,0 +1,46 @@
+epic:
+  id: EPIC-004
+  title: "Sprint 4: P1 Completion & Production Polish"
+  description: |
+    Completar itens P1 restantes para garantir production-ready status completo.
+    Inclui AWS SES integration (email transacional), Plan/Product pattern fix,
+    e Feature Limits UI para demonstrar capacidades de tier management.
+
+    PRODUCTION-READY: Com este Epic completo, o framework está pronto para
+    operação em produção com todos os sistemas críticos funcionais.
+
+  priority: P1
+  effort_hours: 26
+  duration_days: 3
+  sprint: Sprint 4 (Week 11)
+  dependencies:
+    - EPIC-001  # Security must be done
+    - EPIC-002  # Frontend must be complete
+
+  stories:
+    - STORY-025  # Plan/Product Hybrid Pattern Fix
+    - STORY-026  # AWS SES Integration
+    - STORY-027  # Feature Limits Display UI
+
+  business_impact:
+    email_functionality: CRITICAL for production
+    tier_management: Required for monetization demo
+    technical_debt_completion: 282h total (P0+P1)
+
+  success_criteria:
+    - Transactional emails working via AWS SES
+    - Plan/Product pattern clarified and documented
+    - Feature limits visible to users
+    - All P0+P1 items completed
+    - Production-ready checklist complete
+    - Framework ready for paying customers
+
+  risks:
+    - AWS SES verification process takes 24-48h
+    - Email deliverability testing needed
+    - Feature limits UI may need UX iteration
+
+  mitigation:
+    - Start SES verification in Sprint 3
+    - Test emails with multiple providers (Gmail, Outlook, etc)
+    - Get UX feedback on Feature Limits mockup before implementation

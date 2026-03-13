@@ -1,0 +1,32 @@
+story:
+  id: STORY-037
+  epic_id: EPIC-005
+  title: "Fix CI build validation for all Next.js apps"
+  description: |
+    After UI component work in STORY-034/035, validate that pnpm run build succeeds for all apps. Fix any remaining build issues (missing types, import resolution, SSR errors).
+  priority: P1
+  effort_hours: 6
+  status: Done
+  assignee_role: Frontend Engineer
+  sprint: Sprint 6
+  dependencies:
+    - STORY-034
+    - STORY-035
+
+  acceptance_criteria:
+    - [x] pnpm run build completes for apps/admin
+    - [x] pnpm run build completes for apps/tenant
+    - [x] pnpm run build completes for apps/docs
+    - [x] CI pipeline build step passes without failures
+    - [x] Document any build workarounds needed — no workarounds required, all apps build cleanly
+
+  technical_notes: |
+    Common issues: missing type exports, server/client component mismatches, dynamic imports needed for client-only components. Use turbo build for all apps.
+
+  files_to_create:
+    - apps/*/next.config.ts (possible fixes)
+    - packages/ui/src/index.ts (possible re-exports)
+
+  definition_of_done:
+    - [x] All 3 apps build in CI
+    - [x] Zero build errors

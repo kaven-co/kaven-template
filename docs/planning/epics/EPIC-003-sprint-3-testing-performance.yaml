@@ -1,0 +1,56 @@
+epic:
+  id: EPIC-003
+  title: "Sprint 3: Core Services Testing & Performance"
+  description: |
+    Aumentar test coverage de 26% para 70% mínimo, testando core services que
+    contêm lógica crítica de negócio. Implementar otimizações de performance
+    através de índices compostos e melhorias no RLS middleware.
+
+    QUALITY BLOCKER: 4 core services com 0% coverage (grant, policy, payment)
+    contêm lógica de permissões e billing que não pode ficar sem testes.
+    Target: 70% coverage mínimo para production-ready.
+
+  priority: P1
+  effort_hours: 80
+  duration_days: 10
+  sprint: Sprint 3 (Week 9-10)
+  dependencies:
+    - EPIC-001  # Security foundation must be in place
+
+  stories:
+    - STORY-015  # Grant Service Tests
+    - STORY-016  # Policy Service Tests
+    - STORY-017  # User Service Tests
+    - STORY-018  # Payment Service Tests
+    - STORY-019  # Audit Logs Soft Delete
+    - STORY-020  # Composite Indexes Implementation
+    - STORY-021  # IDOR Middleware Expansion
+    - STORY-022  # Mobile Menu Toggle
+    - STORY-023  # Real Data Integration Tenant App
+    - STORY-024  # Quick Wins P1 (5 items)
+
+  business_impact:
+    quality_risk: HIGH
+    production_readiness: BLOCKED without tests
+    performance_impact: 30-50% query optimization with indexes
+
+  success_criteria:
+    - Test coverage reaches 70%+ (from 26%)
+    - All core services have unit tests
+    - Critical business logic validated
+    - Query performance improved by 30%+
+    - IDOR middleware covers all entities
+    - Mobile UX fully functional
+    - CI tests passing consistently
+
+  risks:
+    - Test writing may reveal bugs requiring fixes
+    - Coverage target ambitious (44% increase)
+    - Index creation may lock tables briefly
+    - Mobile testing requires multiple devices
+
+  mitigation:
+    - Prioritize highest-risk services first
+    - Create tests incrementally with daily PRs
+    - Schedule index creation during low-traffic window
+    - Use BrowserStack for mobile testing

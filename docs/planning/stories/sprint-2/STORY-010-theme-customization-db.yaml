@@ -1,0 +1,48 @@
+story:
+  id: STORY-010
+  epic_id: EPIC-002
+  title: "Theme Customization DB Integration"
+  description: |
+    Conectar a página de settings/theme com persistência real no banco de dados.
+    Atualmente a customização de tema é apenas visual (estado local), sem salvar.
+
+    P0: Theme customization é o principal demo de white-label do Kaven.
+    Demo quebrado = compradores não conseguem visualizar o valor do white-labeling.
+
+  priority: P0
+  effort_hours: 12
+  status: COMPLETED
+  assignee_role: Fullstack Engineer
+  sprint: Sprint 2
+  dependencies: []
+  epic_id: EPIC-002
+
+  acceptance_criteria:
+    - [ ] Settings > Theme: salvar no banco
+      - [ ] PUT /api/settings/theme atualiza PlatformConfig no DB
+      - [ ] Cores primária, secundária, nome, logo salvos
+      - [ ] Toast de sucesso após salvar
+
+    - [ ] Theme persiste entre sessões
+      - [ ] Ao recarregar a página, tema carregado do DB
+      - [ ] layout.tsx usa dados reais do PlatformConfig
+
+    - [ ] Validação de input
+      - [ ] Cores válidas (HEX format)
+      - [ ] Nome mínimo 2 caracteres
+
+  technical_notes: |
+    - settings-theme.tsx já tem o formulário visual, falta o backend
+    - PlatformConfig model no Prisma schema já existe
+    - Endpoint existente: apps/api/src/modules/settings/platform/route.ts (verificar)
+    - Usar rota Next.js existente: app/api/settings/platform/route.ts
+
+  files_to_modify:
+    - apps/tenant/sections/settings/settings-theme.tsx
+    - apps/api/src/modules/ (criar/atualizar settings module)
+
+  definition_of_done:
+    - [ ] Salvar tema funciona e persiste no DB
+    - [ ] Reload da página mantém o tema
+    - [ ] Zero TypeScript errors
+    - [ ] Teste básico de persistência

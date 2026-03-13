@@ -1,0 +1,46 @@
+story:
+  id: STORY-017
+  epic_id: EPIC-003
+  title: "User Service Unit Tests"
+  description: |
+    Implementar suite de testes unitários para o User Service, cobrindo
+    criação, atualização, deleção e busca de usuários no contexto multi-tenant.
+
+  priority: P1
+  effort_hours: 8
+  status: COMPLETED
+  assignee_role: Backend Engineer (QA focus)
+  sprint: Sprint 3
+  dependencies: []
+  epic_id: EPIC-003
+
+  acceptance_criteria:
+    - [ ] Cobertura: User Service ≥ 85%
+      - [ ] createUser() — hash de senha, tenantId associado
+      - [ ] updateUser() — não pode mudar para outro tenant
+      - [ ] deleteUser() — soft delete com deletedAt
+      - [ ] findUser() — filtrado por tenantId via RLS
+      - [ ] listUsers() — paginação + filtro por tenant
+
+    - [ ] Segurança
+      - [ ] Senha nunca retornada em resposta
+      - [ ] Usuário não pode ver usuários de outro tenant
+      - [ ] Self-deletion retorna erro
+
+    - [ ] Integração 2FA
+      - [ ] setup2FA() gera secret correto
+      - [ ] verify2FA() valida token TOTP
+
+  technical_notes: |
+    - Verificar estrutura atual do User Service
+    - bcryptjs já adicionado como dependência (PR#4)
+    - Mockar bcrypt no unit test (não usar real hash)
+
+  files_to_create:
+    - apps/api/src/modules/users/services/user.service.test.ts
+
+  definition_of_done:
+    - [ ] Coverage ≥ 85% no User Service
+    - [ ] Testes de segurança de senha passando
+    - [ ] Zero TypeScript errors
+    - [ ] CI verde

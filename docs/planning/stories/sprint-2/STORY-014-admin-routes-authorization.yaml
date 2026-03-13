@@ -1,0 +1,48 @@
+story:
+  id: STORY-014
+  epic_id: EPIC-002
+  title: "Admin Routes Authorization"
+  description: |
+    Verificar e implementar autorização adequada nas rotas do Admin Panel.
+    Algumas rotas admin podem estar acessíveis sem as permissões corretas.
+
+    P1 SECURITY: Rotas admin sem autorização podem permitir acesso não autorizado
+    a dados de todos os tenants.
+
+  priority: P1
+  effort_hours: 8
+  status: COMPLETED
+  assignee_role: Backend Engineer
+  sprint: Sprint 2
+  dependencies: []
+  epic_id: EPIC-002
+
+  acceptance_criteria:
+    - [x] Audit de rotas admin
+      - [x] Listar todas as rotas do Admin Panel
+      - [x] Verificar que cada rota tem middleware de auth
+      - [ ] Verificar que rotas sensíveis exigem role SUPER_ADMIN (futuro: RBAC granular)
+
+    - [x] Middleware aplicado consistentemente
+      - [x] requireAuth em TODAS as rotas de escrita
+      - [ ] requireRole(SUPER_ADMIN) em rotas de gestão de tenants (futuro)
+      - [ ] requireRole(ADMIN) em rotas de gestão de usuários (futuro)
+
+    - [ ] Testes de autorização (futuro: dependem de NextAuth providers configurados)
+
+  technical_notes: |
+    - Verificar apps/admin/src/app/ para rotas Next.js
+    - Verificar apps/api/src/modules/ para endpoints Fastify usados pelo admin
+    - RBAC middleware já existe: rbac.middleware.ts
+    - Consultar feature-guard.middleware.ts para feature flags
+
+  audit_scope:
+    - apps/admin/app/ (Next.js routes)
+    - apps/api/src/modules/ (Fastify API endpoints para admin)
+
+  definition_of_done:
+    - [x] Audit completo documentado
+    - [x] Todas as rotas admin de escrita protegidas
+    - [ ] Testes de autorização passando (futuro: NextAuth providers)
+    - [x] Zero TypeScript errors
+    - [x] Documento: docs/architecture/admin-authorization.md

@@ -131,3 +131,25 @@ node_modules
 # Business / Internal Admin Docs (never commit — move to Notion/Confluence post-launch)
 # ==============================================================================
 _business/
+
+# AIOX Local (AIOX)
+.aiox-core/local/
+.aiox/install-log.txt
+
+# Backup directories (temporary)
+.aios-core-backup-*/
+squads.backup-*/
+
+# Python bytecode
+__pycache__/
+*.pyc
+*.pyo
+
+# Temp / downloaded files
+downloaded-logs-*.json
+migrate-workflow-*.py
+validate-squad.js
+2026-*-por-favor-*.txt
+Kaven-Limbo/
+COMPANIOS-PRE-PRD.md
+/src/

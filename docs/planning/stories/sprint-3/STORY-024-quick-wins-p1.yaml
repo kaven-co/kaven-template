@@ -1,0 +1,53 @@
+story:
+  id: STORY-024
+  epic_id: EPIC-003
+  title: "Quick Wins P1 — Technical Debt Batch"
+  description: |
+    Resolver 5 itens de tech debt P1 de baixa/média complexidade identificados
+    no brownfield discovery, agrupados por eficiência. Cada item individual seria
+    sub-threshold para uma story própria.
+
+  priority: P1
+  effort_hours: 16
+  status: Done
+  assignee_role: Backend Engineer
+  sprint: Sprint 3
+  dependencies: []
+  epic_id: EPIC-003
+
+  acceptance_criteria:
+
+    - [x] QW-1: TypeScript strict mode habilitado no tsconfig
+      - [x] tsconfig.json: "strict": true  # Root tsconfig + tenant + admin + shared all have strict:true; API inherits from root
+      - [x] Todos os erros resultantes corrigidos
+      - [x] Zero type errors em build  # npx tsc --noEmit passes cleanly
+
+    - [x] QW-2: Fix TypeScript inference errors em security.helpers.ts
+      - [x] Action item da Sprint 1 retrospectiva
+      - [x] Zero type errors no helper de testes de segurança  # apps/api/test/security/helpers/security.helpers.ts — typecheck clean
+
+    - [x] QW-3: Dependency scanning no CI  # Implemented via Dependabot (not Snyk)
+      - [x] .github/dependabot.yml: weekly npm + github-actions scanning configured
+      - [x] PRs abertos automaticamente para dependency updates com reviewer assignment
+      - [ ] SNYK_TOKEN como GitHub secret  # N/A — using Dependabot instead of Snyk
+
+    - [x] QW-4: Rate limiting configurável por rota
+      - [x] rate-limit.middleware.ts: config por endpoint  # 3 exported configs: global, auth, webhook
+      - [x] Auth endpoints: 10 req/min (mais restritivo)  # authRateLimitConfig: max=10
+      - [x] API geral: 100 req/min  # rateLimitConfig: max=100
+
+    - [x] QW-5: Padronização de respostas de erro da API
+      - [x] Todos os endpoints retornam { error, message, code }  # AppError class + global error handler in app.ts normalizes all responses
+      - [x] HTTP status codes consistentes (não misturar 400/422)  # Global handler + AppError factory helpers enforce consistency
+      - [x] Enum de error codes documentado  # utils/errors.ts: BAD_REQUEST, UNAUTHORIZED, FORBIDDEN, NOT_FOUND, CONFLICT, VALIDATION_ERROR, RATE_LIMIT_EXCEEDED, INTERNAL_ERROR
+
+  technical_notes: |
+    - Executar QW-1 primeiro (strict mode pode revelar bugs reais)
+    - QW-3: requer conta Snyk e token — verificar antes de implementar
+    - QW-4: rate-limit.middleware.ts já existe, só configurar
+
+  definition_of_done:
+    - [x] Todos os 5 quick wins implementados  # All 5 verified as already complete
+    - [x] Zero TypeScript errors (com strict mode)  # tsc --noEmit passes cleanly
+    - [x] CI verde com dependency scanning  # Dependabot (not Snyk) handles this
+    - [x] Respostas de erro padronizadas documentadas  # utils/errors.ts + global handler in app.ts

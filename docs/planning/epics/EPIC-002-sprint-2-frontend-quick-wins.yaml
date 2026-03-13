@@ -1,0 +1,52 @@
+epic:
+  id: EPIC-002
+  title: "Sprint 2: Frontend Tenant App & Quick Wins"
+  description: |
+    Completar funcionalidades demonstrativas do Tenant App e resolver quick wins
+    de sistema que desbloqueiam o time de vendas e melhoram a experiência de demonstração.
+
+    SALES BLOCKER: Time de vendas não consegue demonstrar billing journey completo
+    sem Invoice/Order history. Theme customization quebrado impede demo de white-label.
+    Estimativa: 47% redução em conversion rate com demo incompleto.
+
+  priority: P0
+  effort_hours: 72
+  duration_days: 9
+  sprint: Sprint 2 (Week 7-8)
+  dependencies: []
+
+  stories:
+    - STORY-008  # Invoice History Page
+    - STORY-009  # Order History Page
+    - STORY-010  # Theme Customization DB Integration
+    - STORY-011  # Theme Per-Tenant Architecture Fix
+    - STORY-012  # Tenant App Theme API Implementation
+    - STORY-013  # Real Data Fetching Fix
+    - STORY-014  # Admin Routes Authorization
+
+  business_impact:
+    sales_risk: HIGH
+    demo_blocker: YES
+    conversion_impact: -47% with broken demo
+    estimated_lost_revenue: $6,708/year per salesperson
+
+  success_criteria:
+    - Invoice history page with PDF download working
+    - Order history page with status tracking working
+    - Theme customization persisted in database
+    - Theme customization per-tenant (not per-user)
+    - Sales team can complete full billing demo
+    - Admin panel properly authorized
+    - All Tenant App features use real API data
+
+  risks:
+    - SSR hydration issues with theme loading
+    - Migration from per-user to per-tenant may affect existing data
+    - PDF generation performance may need optimization
+    - Mobile responsiveness requires testing across devices
+
+  mitigation:
+    - Use proven patterns from existing pages
+    - Test SSR hydration in development
+    - Data migration script with validation
+    - Mobile testing on Sprint 2 Day 5-6

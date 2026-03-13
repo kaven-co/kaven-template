@@ -1,0 +1,49 @@
+story:
+  id: STORY-023
+  epic_id: EPIC-003
+  title: "Real Data Integration — Remaining Tenant App Pages"
+  description: |
+    Completar a substituição de mock data por dados reais nas páginas do Tenant App
+    que não foram cobertas pela STORY-013. Foco nas páginas de analytics, banking
+    e booking (dashboards demonstrativos).
+
+  priority: P1
+  effort_hours: 8
+  status: DONE
+  assignee_role: Fullstack Engineer
+  sprint: Sprint 3
+  dependencies: [STORY-013]
+  epic_id: EPIC-003
+
+  acceptance_criteria:
+    - [x] /dashboard/analytics — dados reais
+      - [x] Métricas de tenants ativos da API
+      - [x] Gráfico de crescimento com dados históricos
+      - [x] Período selecionável (7d, 30d, 90d)
+
+    - [x] /dashboard/banking — dados reais
+      - [x] Saldo calculado a partir de invoices pagas
+      - [x] Transações recentes da tabela de payments
+
+    - [x] /dashboard/booking — dados reais ou remover
+      - [x] Se sem entidade de booking no schema: mostrar "Coming Soon"
+      - [x] Se existir: conectar com dados reais
+
+    - [x] Charts (Recharts) com dados dinâmicos
+      - [x] Não mais arrays hardcoded
+      - [x] Loading skeleton enquanto busca dados
+
+  technical_notes: |
+    - Verificar se booking/banking são demonstrativos ou features reais do framework
+    - Se demonstrativos sem schema correspondente: substituir por "coming soon" page
+    - Usar React Server Components para fetch server-side
+
+  files_to_modify:
+    - apps/tenant/app/[locale]/(dashboard)/dashboard/analytics/page.tsx
+    - apps/tenant/app/[locale]/(dashboard)/dashboard/banking/page.tsx
+    - apps/tenant/app/[locale]/(dashboard)/dashboard/booking/page.tsx
+
+  definition_of_done:
+    - [x] Zero arrays hardcoded em páginas de analytics
+    - [x] Loading states implementados
+    - [x] Zero TypeScript errors

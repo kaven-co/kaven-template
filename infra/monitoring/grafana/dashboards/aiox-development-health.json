@@ -1,0 +1,350 @@
+{
+  "annotations": {"list": []},
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "title": "Stories Concluídas (Total)",
+      "description": "Total acumulado de stories concluídas pelo AIOX na sessão corrente",
+      "type": "stat",
+      "gridPos": {"h": 6, "w": 6, "x": 0, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "blue", "value": null},
+              {"color": "green", "value": 1}
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {"expr": "aiox_stories_completed_total", "legendFormat": "Stories Done", "refId": "A"}
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "textMode": "value_and_name",
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}
+      }
+    },
+    {
+      "title": "Stories Pendentes",
+      "description": "Stories ainda pendentes na sessão atual (derivado do session-state)",
+      "type": "stat",
+      "gridPos": {"h": 6, "w": 6, "x": 6, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null},
+              {"color": "yellow", "value": 3},
+              {"color": "red", "value": 8}
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {"expr": "aiox_stories_pending", "legendFormat": "Pendentes", "refId": "A"}
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "textMode": "value_and_name",
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}
+      }
+    },
+    {
+      "title": "Quality Gate Pass Rate",
+      "description": "Taxa de quality gates aprovados (0% a 100%). Threshold verde: ≥80%, amarelo: ≥50%",
+      "type": "gauge",
+      "gridPos": {"h": 6, "w": 6, "x": 12, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "red", "value": null},
+              {"color": "yellow", "value": 50},
+              {"color": "green", "value": 80}
+            ]
+          },
+          "unit": "percent",
+          "min": 0,
+          "max": 100
+        },
+        "overrides": []
+      },
+      "targets": [
+        {"expr": "aiox_quality_gate_pass_rate * 100", "legendFormat": "Pass Rate", "refId": "A"}
+      ],
+      "options": {
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "orientation": "auto",
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      }
+    },
+    {
+      "title": "Duração da Sessão Corrente",
+      "description": "Tempo decorrido da sessão AIOX em andamento",
+      "type": "stat",
+      "gridPos": {"h": 6, "w": 6, "x": 18, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "blue", "value": null},
+              {"color": "green", "value": 300},
+              {"color": "yellow", "value": 3600}
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {"expr": "aiox_session_duration_seconds", "legendFormat": "Sessão", "refId": "A"}
+      ],
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "textMode": "value_and_name",
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}
+      }
+    },
+    {
+      "title": "Stories por Fase (Timeline)",
+      "description": "Progressão de stories concluídas ao longo do tempo — ritmo de entrega",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 6},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "custom": {"lineWidth": 2, "fillOpacity": 20, "gradientMode": "scheme"},
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {"expr": "aiox_stories_completed_total", "legendFormat": "Concluídas", "refId": "A"},
+        {"expr": "aiox_stories_pending", "legendFormat": "Pendentes", "refId": "B"}
+      ]
+    },
+    {
+      "title": "Agents Utilizados — Distribuição",
+      "description": "Total de ativações por agente AIOX. Identifica quais agents dominam o desenvolvimento.",
+      "type": "piechart",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 6},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {"expr": "aiox_agents_activated_total", "legendFormat": "{{agent}}", "refId": "A"}
+      ],
+      "options": {
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "pieType": "donut",
+        "displayLabels": ["name", "percent"]
+      }
+    },
+    {
+      "title": "Agents Ativados — Timeline (Rate)",
+      "description": "Taxa de ativação de agentes ao longo do tempo (5m rate). Picos indicam períodos de alta atividade.",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 14},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "custom": {"lineWidth": 2, "fillOpacity": 10},
+          "unit": "ops"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {"expr": "rate(aiox_agents_activated_total[5m])", "legendFormat": "{{agent}}", "refId": "A"}
+      ]
+    },
+    {
+      "title": "Quality Gates — Passed vs Failed",
+      "description": "Comparação absoluta entre gates aprovados e reprovados. Meta: failed próximo de zero.",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 14},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "custom": {"lineWidth": 2, "fillOpacity": 15},
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {"id": "byName", "options": "Failed"},
+            "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}}]
+          },
+          {
+            "matcher": {"id": "byName", "options": "Passed"},
+            "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "green"}}]
+          }
+        ]
+      },
+      "targets": [
+        {"expr": "aiox_quality_gates_passed_total", "legendFormat": "Passed", "refId": "A"},
+        {"expr": "aiox_quality_gates_failed_total", "legendFormat": "Failed", "refId": "B"}
+      ]
+    },
+    {
+      "title": "Duração Acumulada de Sessões",
+      "description": "Soma de tempo de todas as sessões AIOX — indica investimento total em desenvolvimento",
+      "type": "stat",
+      "gridPos": {"h": 6, "w": 8, "x": 0, "y": 22},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "blue", "value": null}
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {"expr": "aiox_session_duration_seconds_total", "legendFormat": "Total de sessões", "refId": "A"}
+      ],
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "textMode": "value_and_name",
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}
+      }
+    },
+    {
+      "title": "Quality Gates — Totais",
+      "description": "Contadores absolutos de gates aprovados e reprovados",
+      "type": "stat",
+      "gridPos": {"h": 6, "w": 8, "x": 8, "y": 22},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null}
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {"id": "byFrameRefID", "options": "B"},
+            "properties": [
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {"color": "green", "value": null},
+                    {"color": "yellow", "value": 1},
+                    {"color": "red", "value": 3}
+                  ]
+                }
+              },
+              {"id": "color", "value": {"mode": "thresholds"}}
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {"expr": "aiox_quality_gates_passed_total", "legendFormat": "Passed", "refId": "A"},
+        {"expr": "aiox_quality_gates_failed_total", "legendFormat": "Failed", "refId": "B"}
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "textMode": "value_and_name",
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}
+      }
+    },
+    {
+      "title": "Delivery Velocity (Stories/hora)",
+      "description": "Taxa de conclusão de stories por hora — indicador de velocidade da sprint",
+      "type": "stat",
+      "gridPos": {"h": 6, "w": 8, "x": 16, "y": 22},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "red", "value": null},
+              {"color": "yellow", "value": 0.5},
+              {"color": "green", "value": 1}
+            ]
+          },
+          "unit": "short",
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "rate(aiox_stories_completed_total[1h]) * 3600",
+          "legendFormat": "Stories/hora",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "textMode": "value_and_name",
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}
+      }
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["aiox", "development", "health", "kaven"],
+  "templating": {"list": []},
+  "time": {"from": "now-24h", "to": "now"},
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "AIOX — Development Health",
+  "uid": "aiox-development-health",
+  "version": 1
+}

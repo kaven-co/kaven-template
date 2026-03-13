@@ -1,0 +1,64 @@
+story:
+  id: STORY-006
+  epic_id: EPIC-001
+  title: "Implement Global Soft Delete Filter"
+  description: |
+    Adicionar filtro global soft delete em todas as queries Prisma para excluir
+    automaticamente registros com deletedAt != null.
+
+    P0 LAUNCH BLOCKER: Sem soft delete filter, queries retornam registros deletados.
+
+  priority: P0
+  effort_hours: 4
+  assignee_role: Backend Engineer
+  dependencies: [STORY-005]
+  debt_ids: [MTN-C5]
+
+  acceptance_criteria:
+    - [ ] Prisma Middleware: Soft Delete Filter
+      - [ ] Intercepta findMany, findFirst, findUnique
+      - [ ] Adiciona WHERE deletedAt: null automaticamente
+      - [ ] Exceto quando includeDeleted: true
+
+    - [ ] API Flag: includeDeleted option
+      - [ ] GET /api/users?includeDeleted=true
+      - [ ] Apenas admin pode usar flag
+
+    - [ ] Tests: Soft delete funcionando
+      - [ ] Query padrão → exclui deletados
+      - [ ] Query com includeDeleted: true → inclui deletados
+
+    - [ ] Documentation
+      - [ ] docs/patterns/soft-delete.md
+
+  technical_notes: |
+    **Implementation:**
+    ```typescript
+    prisma.$use(async (params, next) => {
+      if (params.action === 'findMany' || params.action === 'findFirst') {
+        if (!params.args.includeDeleted) {
+          params.args.where = {
+            ...params.args.where,
+            deletedAt: null
+          };
+        }
+      }
+      return next(params);
+    });
+    ```
+
+  files_to_modify:
+    - apps/api/src/middleware/prisma-soft-delete.ts (CREATE)
+    - apps/api/src/app.ts (UPDATE)
+    - apps/api/tests/soft-delete/soft-delete.spec.ts (CREATE)
+    - docs/patterns/soft-delete.md (CREATE)
+
+  time_estimate_breakdown:
+    - Middleware: 2h
+    - Tests: 1h
+    - Documentation: 1h
+    - Total: 4h
+
+  status: COMPLETED
+  created_at: 2026-02-07
+  created_by: "@aios-master"

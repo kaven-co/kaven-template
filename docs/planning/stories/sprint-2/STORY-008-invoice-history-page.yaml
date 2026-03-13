@@ -1,0 +1,61 @@
+story:
+  id: STORY-008
+  epic_id: EPIC-002
+  title: "Invoice History Page"
+  description: |
+    Implementar página de histórico de invoices no Tenant App, permitindo que usuários
+    visualizem todas as cobranças, façam download de PDFs e vejam status de pagamento.
+
+    P0 SALES BLOCKER: Time de vendas não consegue demonstrar billing journey completo.
+    Sem invoice history, compradores não conseguem ver o valor real do sistema de billing.
+
+  priority: P0
+  effort_hours: 8
+  status: COMPLETED
+  assignee_role: Frontend Engineer
+  sprint: Sprint 2
+  dependencies: []
+  epic_id: EPIC-002
+
+  acceptance_criteria:
+    - [ ] Rota: /[locale]/(dashboard)/billing/invoices
+      - [ ] Página SSR com lista de invoices
+      - [ ] Colunas: Data, Descrição, Valor, Status, Download
+      - [ ] Paginação (10 por página)
+      - [ ] Empty state quando sem invoices
+
+    - [ ] Dados: API real (não mock)
+      - [ ] GET /api/billing/invoices via Fastify backend
+      - [ ] Filtra por tenantId do usuário logado
+      - [ ] Retorna InvoiceStatus: paid, pending, overdue, void
+
+    - [ ] PDF Download
+      - [ ] Botão "Download PDF" em cada invoice
+      - [ ] Abre PDF em nova aba ou faz download
+
+    - [ ] Design: consistente com design system Kaven
+      - [ ] Segue padrão das páginas existentes (products, plans)
+      - [ ] Status badges com cores (green=paid, yellow=pending, red=overdue)
+      - [ ] Responsive (mobile + desktop)
+
+  technical_notes: |
+    - Usar padrão de fetch das páginas existentes (products/page.tsx como referência)
+    - Status badges: usar componente <Chip> do design system
+    - A API de billing pode não existir ainda — criar endpoint mínimo se necessário
+    - Tabela: usar padrão das outras tabelas (tenant-table-row.tsx como referência)
+
+  files_to_create:
+    - apps/tenant/app/[locale]/(dashboard)/billing/invoices/page.tsx
+    - apps/tenant/sections/billing/invoice-table-row.tsx
+    - apps/tenant/sections/billing/invoice-view.tsx
+
+  files_to_modify:
+    - apps/api/src/modules/ (criar billing module se não existir)
+
+  definition_of_done:
+    - [ ] Página acessível em /billing/invoices
+    - [ ] Dados reais da API (não hardcoded)
+    - [ ] PDF download funcionando
+    - [ ] Zero TypeScript errors
+    - [ ] Mobile responsive
+    - [ ] Testes básicos de renderização

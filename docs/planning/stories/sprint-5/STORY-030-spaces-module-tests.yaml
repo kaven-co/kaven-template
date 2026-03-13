@@ -1,0 +1,35 @@
+story:
+  id: STORY-030
+  epic_id: EPIC-005
+  title: "Write test suite for spaces module"
+  description: |
+    Spaces module provides organizational isolation within tenants. SpaceService has
+    listSpaces() and getSpaceById() — simplest module, good warm-up.
+  priority: P0
+  effort_hours: 8
+  status: DONE
+  assignee_role: Backend Engineer
+  sprint: Sprint 5
+  dependencies: []
+
+  acceptance_criteria:
+    - [x] Unit tests for space CRUD
+    - [x] Tests for SpaceUser membership
+    - [x] Tenant isolation tests
+    - [x] Space slug uniqueness within tenant
+    - [x] Cascade behavior tests
+    - [x] Minimum 80% line coverage
+    - [x] All tests pass in CI
+
+  technical_notes: |
+    Start here — simplest module (2 methods, straightforward queries).
+    Use vi.hoisted() + vi.mock('../../../lib/prisma') with createPrismaMock helper
+    at apps/api/test/helpers/prisma-mock.ts.
+
+  files_to_create:
+    - apps/api/src/modules/spaces/space.service.spec.ts
+
+  definition_of_done:
+    - [x] All tests pass in CI
+    - [x] 80%+ line coverage
+    - [x] Zero TypeScript errors

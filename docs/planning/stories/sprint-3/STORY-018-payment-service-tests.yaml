@@ -1,0 +1,47 @@
+story:
+  id: STORY-018
+  epic_id: EPIC-003
+  title: "Payment Service Unit Tests"
+  description: |
+    Implementar suite de testes unitários para o Payment Service, cobrindo
+    criação de subscriptions, webhooks Paddle, e processamento de eventos de billing.
+
+    QUALITY BLOCKER: Payment service tem 0% de cobertura. Lógica de billing
+    incorreta pode causar cobranças erradas ou não cobrar clientes.
+
+  priority: P1
+  effort_hours: 6
+  status: COMPLETED
+  assignee_role: Backend Engineer (QA focus)
+  sprint: Sprint 3
+  dependencies: [STORY-008, STORY-009]
+  epic_id: EPIC-003
+
+  acceptance_criteria:
+    - [ ] Cobertura: Payment Service ≥ 80%
+      - [ ] createSubscription() — criação com tenantId
+      - [ ] processWebhook() — eventos Paddle (subscription.created, payment.completed)
+      - [ ] cancelSubscription() — cancelamento e grace period
+      - [ ] getInvoices() — filtrado por tenantId
+
+    - [ ] Webhook security
+      - [ ] Assinatura Paddle validada (não processar webhooks falsos)
+      - [ ] Idempotência: mesmo webhook não processa duas vezes
+
+    - [ ] Multi-tenant isolation
+      - [ ] Invoice de tenant A não visível para tenant B
+      - [ ] Subscription criada com tenantId correto
+
+  technical_notes: |
+    - Mockar chamadas ao Paddle API (não usar Paddle real em testes)
+    - Usar mocks para webhooks Paddle com payloads de exemplo
+    - Verificar se payment module já existe no api
+
+  files_to_create:
+    - apps/api/src/modules/billing/services/payment.service.test.ts
+
+  definition_of_done:
+    - [ ] Coverage ≥ 80% no Payment Service
+    - [ ] Webhook validation testada
+    - [ ] Zero TypeScript errors
+    - [ ] CI verde

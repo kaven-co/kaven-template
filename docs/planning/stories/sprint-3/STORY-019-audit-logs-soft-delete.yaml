@@ -1,0 +1,55 @@
+story:
+  id: STORY-019
+  epic_id: EPIC-003
+  title: "Audit Logs Soft Delete Implementation"
+  description: |
+    Implementar soft delete para registros de audit log, garantindo que entradas
+    de auditoria não sejam permanentemente deletadas (compliance LGPD/GDPR).
+
+    Logs de auditoria devem ser retidos por período mínimo (90 dias padrão)
+    mesmo quando o usuário ou tenant solicita deleção.
+
+  priority: P1
+  effort_hours: 8
+  status: COMPLETED
+  assignee_role: Backend Engineer
+  sprint: Sprint 3
+  dependencies: [STORY-006]
+  epic_id: EPIC-003
+
+  acceptance_criteria:
+    - [x] Schema: AuditLog tem deletedAt e retentionUntil
+      - [x] deletedAt: DateTime? (soft delete padrão)
+      - [x] retentionUntil: DateTime (data mínima de retenção)
+      - [x] Migration SQL gerada
+
+    - [x] Soft Delete Filter: AuditLog excluído do filtro global
+      - [x] prisma-soft-delete.ts: AuditLog na whitelist
+      - [x] Queries normais não retornam logs "deletados"
+      - [x] Admin pode ver logs deletados (includeDeleted flag)
+
+    - [x] Retenção forçada
+      - [x] DELETE em AuditLog verifica retentionUntil
+      - [x] Se retentionUntil > now() → retorna erro 422
+      - [x] Mensagem: "Log retido por compliance até {data}"
+
+    - [x] Purge automático
+      - [x] Job/script para purgar logs após retenção expirada
+      - [x] Configurável via env: AUDIT_RETENTION_DAYS=90
+
+  technical_notes: |
+    - Verificar prisma-soft-delete.ts para adicionar AuditLog à whitelist
+    - RetentionUntil deve ser calculado no insert: now() + AUDIT_RETENTION_DAYS
+    - Compliance: LGPD Art. 16 exige mínimo de retenção para fins legítimos
+
+  files_to_modify:
+    - packages/database/prisma/schema.base.prisma
+    - packages/database/prisma/migrations/
+    - apps/api/src/middleware/prisma-soft-delete.ts
+    - apps/api/src/modules/audit/
+
+  definition_of_done:
+    - [ ] Migration funciona sem perda de dados
+    - [ ] Retenção forçada testada
+    - [ ] Purge script funcionando
+    - [ ] Zero TypeScript errors

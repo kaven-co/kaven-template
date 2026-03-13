@@ -1,0 +1,40 @@
+story:
+  id: STORY-041
+  epic_id: EPIC-006
+  title: "Implement Fluent UI design system adapter"
+  description: |
+    apps/admin/lib/design-system/provider/index.tsx has FLUENT adapter stub falling back to muiAdapter.
+    DesignSystemAdapter interface requires toSemanticTokens(), getDefaultTokens(), validateCustomization().
+    MUI and HIG adapters exist as reference.
+  priority: P2
+  effort_hours: 8
+  status: DONE
+  assignee_role: Frontend Engineer
+  sprint: Sprint 6
+  dependencies:
+    - STORY-042
+
+  acceptance_criteria:
+    - [x] Create Fluent UI adapter in packages/ui/src/adapters/fluent/ or apps/admin/lib/design-system/adapters/fluent/
+    - [x] Implement toSemanticTokens() mapping Fluent design language to semantic tokens
+    - [x] Implement getDefaultTokens() with Fluent default theme values
+    - [x] Implement validateCustomization() for Fluent-specific constraints
+    - [x] Map 6 core components: Button, Input, Select, Dialog, Table, Card
+    - [x] Support light and dark mode token sets
+    - [x] Documentation page showing Fluent adapter usage
+    - [x] At least 1 example rendering with Fluent adapter active
+
+  technical_notes: |
+    Fluent UI has depth/motion system and acrylic materials that don't map cleanly to SemanticDesignTokens.
+    Focus on color/typography/spacing mapping. Defer motion curves and acrylic.
+    Consider if launch priority justifies the effort (architect recommends post-launch).
+    RECOMMENDED: Implement STORY-042 (Shadcn) first — its CSS variable approach is closer
+    to existing token system. Fluent adapter should follow.
+
+  files_to_create:
+    - apps/admin/lib/design-system/adapters/fluent/index.ts
+
+  definition_of_done:
+    - [x] Fluent adapter selectable in provider
+    - [x] Renders correctly
+    - [x] Zero TypeScript errors

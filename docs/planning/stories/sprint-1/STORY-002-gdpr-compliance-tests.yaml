@@ -1,0 +1,370 @@
+story:
+  id: STORY-002
+  epic_id: EPIC-001
+  title: "Implement GDPR Compliance Tests (Data Export, Right to Erasure, Consent)"
+  description: |
+    Implementar suite completa de testes de conformidade GDPR cobrindo os 4 pilares críticos:
+    Right to Access (data export), Right to Erasure (delete account + data),
+    Consent Management (opt-in/opt-out), e Data Portability (export em formatos padrão).
+
+    Este é um requisito legal crítico para operar na Europa e garantir conformidade
+    com regulamentações de privacidade de dados.
+
+  priority: P0
+  effort_hours: 16
+  assignee_role: QA Engineer (with Legal/Compliance support)
+  dependencies: [STORY-001]
+  debt_ids: [COMP-C1]
+
+  acceptance_criteria:
+    - [ ] Right to Access Tests: User pode exportar todos seus dados
+      - [ ] GET /api/users/:id/export retorna JSON completo
+      - [ ] Export inclui: profile, invoices, payments, subscriptions, projects, tasks
+      - [ ] Export inclui audit logs do user (SecurityAuditLog filtrado)
+      - [ ] Export em múltiplos formatos: JSON, CSV, XML
+      - [ ] Export responde em < 30 segundos (performance test)
+      - [ ] User de tenant A não pode exportar dados de user tenant B (IDOR protection)
+
+    - [ ] Right to Erasure Tests: Delete account + data cascade
+      - [ ] DELETE /api/users/:id/gdpr-erase remove user permanentemente
+      - [ ] Cascade delete: user → invoices, payments, audit logs
+      - [ ] Anonymize ao invés de delete quando retenção legal requer (invoices fiscais)
+      - [ ] Após delete, login com email antigo retorna 404 Not Found
+      - [ ] Restore não é possível (hard delete, não soft delete)
+      - [ ] Email de confirmação enviado antes do delete (double opt-in)
+
+    - [ ] Consent Management Tests: Opt-in/opt-out tracking
+      - [ ] POST /api/users/:id/consent cria registro de consent
+      - [ ] Consent types: marketing_emails, analytics_tracking, third_party_sharing
+      - [ ] GET /api/users/:id/consent retorna histórico completo (timestamps + versão da policy)
+      - [ ] Revogar consent: PUT /api/users/:id/consent/:type revoke=true
+      - [ ] Consent versionado: mudança na privacy policy requer re-opt-in
+      - [ ] Consent audit trail (quem mudou, quando, de qual versão para qual)
+
+    - [ ] Data Portability Tests: Export em formatos padrão
+      - [ ] GET /api/users/:id/export?format=json retorna JSON schema padrão
+      - [ ] GET /api/users/:id/export?format=csv retorna CSV válido
+      - [ ] GET /api/users/:id/export?format=xml retorna XML válido
+      - [ ] Formato JSON segue schema comum (compatível com import de outros SaaS)
+      - [ ] Include metadata: export_date, data_version, user_id
+
+    - [ ] Retention Policy Tests: Data retention compliance
+      - [ ] Dados financeiros: retidos 7 anos (lei fiscal brasileira)
+      - [ ] Dados de audit: retidos 5 anos (compliance)
+      - [ ] Dados pessoais: deletados após 2 anos de inatividade (GDPR)
+      - [ ] Background job: DELETE FROM users WHERE last_login < 2 years AND gdpr_delete_requested = true
+      - [ ] Test que job roda e deleta corretamente
+
+    - [ ] CI Integration: Tests rodam em pipeline
+      - [ ] npm run test:gdpr passa com 100% success
+      - [ ] PR blockeado se GDPR tests falharem
+      - [ ] Coverage report gerado (gdpr-coverage.json)
+
+    - [ ] Documentation: GDPR patterns documentados
+      - [ ] docs/compliance/gdpr.md criado
+      - [ ] Flowchart de data export process
+      - [ ] Flowchart de data deletion process
+      - [ ] Legal disclaimer sobre retenção fiscal
+
+  technical_notes: |
+    **Framework: Jest + Supertest + Mock Email Service**
+
+    Criar helper functions reusáveis:
+
+    ```typescript
+    // apps/api/tests/helpers/gdpr.helpers.ts
+
+    export async function testDataExport(
+      userId: string,
+      format: 'json' | 'csv' | 'xml',
+      expectedFields: string[]
+    ) {
+      const response = await request(app)
+        .get(`/api/users/${userId}/export?format=${format}`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .expect(200);
+
+      if (format === 'json') {
+        const data = response.body;
+        expectedFields.forEach(field => {
+          expect(data).toHaveProperty(field);
+        });
+        expect(data.export_metadata).toHaveProperty('export_date');
+        expect(data.export_metadata).toHaveProperty('data_version');
+      }
+
+      return response.body;
+    }
+
+    export async function testDataErasure(
+      userId: string,
+      email: string
+    ) {
+      // Request erasure
+      await request(app)
+        .delete(`/api/users/${userId}/gdpr-erase`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .expect(202); // Accepted (async job)
+
+      // Wait for async job to complete
+      await waitForJobCompletion(`gdpr-erase-${userId}`);
+
+      // Verify user deleted
+      await request(app)
+        .get(`/api/users/${userId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(404);
+
+      // Verify login fails
+      await request(app)
+        .post('/api/auth/login')
+        .send({ email, password: 'old-password' })
+        .expect(404); // User not found
+    }
+
+    export async function testConsentManagement(
+      userId: string,
+      consentType: 'marketing_emails' | 'analytics_tracking' | 'third_party_sharing'
+    ) {
+      // Grant consent
+      const grantResponse = await request(app)
+        .post(`/api/users/${userId}/consent`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({
+          type: consentType,
+          granted: true,
+          policy_version: '2.1.0'
+        })
+        .expect(201);
+
+      expect(grantResponse.body).toHaveProperty('consent_id');
+      expect(grantResponse.body.granted).toBe(true);
+
+      // Revoke consent
+      await request(app)
+        .put(`/api/users/${userId}/consent/${consentType}`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ granted: false })
+        .expect(200);
+
+      // Verify audit trail
+      const auditResponse = await request(app)
+        .get(`/api/users/${userId}/consent`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .expect(200);
+
+      expect(auditResponse.body.consents).toHaveLength(2); // Grant + Revoke
+    }
+
+    export async function testDataPortability(
+      userId: string,
+      targetFormat: 'json' | 'csv' | 'xml'
+    ) {
+      const response = await request(app)
+        .get(`/api/users/${userId}/export?format=${targetFormat}`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .expect(200);
+
+      if (targetFormat === 'csv') {
+        expect(response.text).toMatch(/^user_id,email,name/); // CSV header
+      } else if (targetFormat === 'xml') {
+        expect(response.text).toMatch(/^<\?xml version/); // XML declaration
+      }
+
+      return response.body;
+    }
+    ```
+
+    **Test Files to Create:**
+
+    ```
+    apps/api/tests/compliance/
+    ├── right-to-access.spec.ts       # Data export tests (4h)
+    ├── right-to-erasure.spec.ts      # Delete account tests (4h)
+    ├── consent-management.spec.ts    # Consent opt-in/out tests (3h)
+    ├── data-portability.spec.ts      # Export formats tests (3h)
+    ├── retention-policy.spec.ts      # Data retention tests (2h)
+    └── helpers/
+        └── gdpr.helpers.ts           # Reusable helpers
+    ```
+
+    **API Endpoints to Implement:**
+
+    ```typescript
+    // apps/api/src/routes/gdpr.routes.ts
+
+    router.get('/users/:id/export', async (req, res) => {
+      const { id } = req.params;
+      const { format = 'json' } = req.query;
+
+      // Authorization check
+      if (req.user.id !== id && !req.user.isAdmin) {
+        return res.status(403).json({ error: 'Forbidden' });
+      }
+
+      const userData = await gdprService.exportUserData(id);
+
+      switch (format) {
+        case 'csv':
+          return res.type('text/csv').send(convertToCSV(userData));
+        case 'xml':
+          return res.type('application/xml').send(convertToXML(userData));
+        default:
+          return res.json(userData);
+      }
+    });
+
+    router.delete('/users/:id/gdpr-erase', async (req, res) => {
+      const { id } = req.params;
+
+      // Authorization check
+      if (req.user.id !== id) {
+        return res.status(403).json({ error: 'Forbidden' });
+      }
+
+      // Send confirmation email (double opt-in)
+      await emailService.sendGDPRErasureConfirmation(req.user.email);
+
+      // Queue async job
+      await jobQueue.add('gdpr-erase', { userId: id });
+
+      return res.status(202).json({
+        message: 'Erasure request accepted',
+        job_id: `gdpr-erase-${id}`
+      });
+    });
+
+    router.post('/users/:id/consent', async (req, res) => {
+      const { id } = req.params;
+      const { type, granted, policy_version } = req.body;
+
+      const consent = await prisma.userConsent.create({
+        data: {
+          userId: id,
+          type,
+          granted,
+          policy_version,
+          granted_at: new Date(),
+          ip_address: req.ip,
+        }
+      });
+
+      return res.status(201).json(consent);
+    });
+    ```
+
+    **Background Job for Data Retention:**
+
+    ```typescript
+    // apps/api/src/jobs/gdpr-cleanup.job.ts
+
+    export async function cleanupInactiveUsers() {
+      const twoYearsAgo = new Date();
+      twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
+
+      const inactiveUsers = await prisma.user.findMany({
+        where: {
+          last_login_at: { lt: twoYearsAgo },
+          gdpr_delete_requested: true,
+        }
+      });
+
+      for (const user of inactiveUsers) {
+        await gdprService.eraseUserData(user.id);
+        logger.info(`GDPR cleanup: Erased user ${user.id}`);
+      }
+
+      return { deleted_count: inactiveUsers.length };
+    }
+    ```
+
+    **CI Integration:**
+
+    Adicionar script em package.json:
+    ```json
+    {
+      "scripts": {
+        "test:gdpr": "jest apps/api/tests/compliance --coverage --coverageDirectory=coverage/gdpr"
+      }
+    }
+    ```
+
+    Adicionar step no GitHub Actions:
+    ```yaml
+    - name: Run GDPR Compliance Tests
+      run: pnpm run test:gdpr
+
+    - name: Check GDPR Coverage
+      run: |
+        if [ $(jq '.total.lines.pct < 100' coverage/gdpr/coverage-summary.json) ]; then
+          echo "GDPR test coverage < 100%"
+          exit 1
+        fi
+    ```
+
+  files_to_modify:
+    - apps/api/tests/compliance/right-to-access.spec.ts (CREATE)
+    - apps/api/tests/compliance/right-to-erasure.spec.ts (CREATE)
+    - apps/api/tests/compliance/consent-management.spec.ts (CREATE)
+    - apps/api/tests/compliance/data-portability.spec.ts (CREATE)
+    - apps/api/tests/compliance/retention-policy.spec.ts (CREATE)
+    - apps/api/tests/helpers/gdpr.helpers.ts (CREATE)
+    - apps/api/src/routes/gdpr.routes.ts (CREATE)
+    - apps/api/src/services/gdpr.service.ts (CREATE)
+    - apps/api/src/jobs/gdpr-cleanup.job.ts (CREATE)
+    - docs/compliance/gdpr.md (CREATE)
+    - .github/workflows/ci.yml (UPDATE - add GDPR tests step)
+    - package.json (UPDATE - add test:gdpr script)
+
+  definition_of_done:
+    - [ ] Code written and self-reviewed
+    - [ ] All acceptance criteria checkboxes marked
+    - [ ] Tests passing locally (npm run test:gdpr)
+    - [ ] Tests passing in CI (GitHub Actions green)
+    - [ ] Code review approved (1+ approval)
+    - [ ] Documentation updated (docs/compliance/gdpr.md)
+    - [ ] Legal review approved (if needed)
+    - [ ] PR merged to main
+    - [ ] Deployment successful (if applicable)
+
+  time_estimate_breakdown:
+    - Setup & Planning: 1h
+    - Right to Access Tests: 4h
+    - Right to Erasure Tests: 4h
+    - Consent Management Tests: 3h
+    - Data Portability Tests: 3h
+    - Retention Policy Tests: 2h
+    - Helper Functions: 1h
+    - Documentation: 2h
+    - CI Integration: 1h
+    - Buffer: 1h
+    - Total: 16h
+
+  risks:
+    - name: "Data retention laws vary by country"
+      probability: MEDIUM
+      impact: HIGH
+      mitigation: "Focus on EU GDPR + Brazil LGPD. Add config for country-specific retention."
+
+    - name: "Async delete jobs may fail silently"
+      probability: LOW
+      impact: HIGH
+      mitigation: "Add dead letter queue + monitoring alerts for failed erasure jobs"
+
+    - name: "Export may timeout for users with large datasets"
+      probability: MEDIUM
+      impact: MEDIUM
+      mitigation: "Implement pagination + async export (email download link when ready)"
+
+  validation:
+    - type: CODE_REVIEW
+      reviewer: Legal/Compliance Officer
+      checklist: "GDPR compliance requirements met"
+
+    - type: MANUAL_TEST
+      tester: QA Engineer
+      coverage: "Test all GDPR flows + verify CI integration"
+
+  status: COMPLETED
+  created_at: 2026-02-07
+  created_by: "@aios-master (Orion)"

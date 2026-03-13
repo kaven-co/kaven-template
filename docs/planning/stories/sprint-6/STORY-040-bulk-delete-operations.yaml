@@ -1,0 +1,39 @@
+story:
+  id: STORY-040
+  epic_id: EPIC-006
+  title: "Implement bulk delete operations for admin and tenant views"
+  description: |
+    TODO comments in admin and tenant tenant-view.tsx for handleDeleteSelected(). Multi-select UI already exists (selected state array, handleSelectRow). Need API endpoint and confirmation dialog.
+  priority: P1
+  effort_hours: 8
+  status: Done
+  assignee_role: Full Stack Engineer
+  sprint: Sprint 6
+  dependencies: []
+
+  acceptance_criteria:
+    - [x] Add POST /api/tenants/batch-delete endpoint with ids array validation
+    - [x] Require SUPER_ADMIN role for tenant bulk delete (admin-only operation)
+    - [x] Implement soft-delete in $transaction with RLS context
+    - [x] Add ConfirmationModal dialog showing count of items to be deleted
+    - [x] Wire handleDeleteSelected in admin view to new API via React Query mutation
+    - [x] Optimistic UI update with rollback on error
+    - [x] Audit log entry for bulk operations (single entry with affected IDs list)
+    - [x] Tests for bulk delete API endpoint
+    - [x] Tests for tenant isolation on bulk operations
+    - [x] Max 50 items per batch request validation
+
+  technical_notes: |
+    Use prisma.$transaction for atomicity. ConfirmationModal exists in @kaven/ui compat layer.
+    Soft delete uses deletedAt pattern. Follow existing single-delete pattern in tenant-details-view.tsx.
+    SCOPE: Bulk delete of tenants is a SUPER_ADMIN-only operation (admin panel only).
+    Tenant users cannot delete other tenants. Removed apps/tenant/ view from scope.
+
+  files_to_update:
+    - apps/api/src/modules/tenants/tenant.controller.ts
+    - apps/admin/sections/tenant/view/tenant-view.tsx
+
+  definition_of_done:
+    - [x] Bulk delete works end-to-end
+    - [x] All tests pass
+    - [x] Zero TypeScript errors

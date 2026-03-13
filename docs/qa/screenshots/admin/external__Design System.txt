@@ -1,0 +1,8 @@
+http://localhost:3002/docs/design-system -> REQUEST_ERROR apiRequestContext.get: connect ECONNREFUSED ::1:3002
+Call log:
+[2m  - → GET http://localhost:3002/docs/design-system[22m
+[2m    - user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.6 Safari/537.36[22m
+[2m    - accept: */*[22m
+[2m    - accept-encoding: gzip,deflate,br[22m
+[2m    - cookie: NEXT_LOCALE=pt[22m
+

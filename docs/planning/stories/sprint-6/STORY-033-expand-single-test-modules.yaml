@@ -1,0 +1,35 @@
+story:
+  id: STORY-033
+  epic_id: EPIC-005
+  title: "Expand test coverage for modules with minimal tests"
+  description: |
+    After Sprint 5 adds tests to 6 untested modules, audit remaining modules with only 1-2 test cases and expand coverage. Target: at least 5 meaningful test cases per module covering happy path, error cases, and edge cases.
+  priority: P1
+  effort_hours: 16
+  status: Done
+  assignee_role: Backend Engineer
+  sprint: Sprint 6
+  dependencies:
+    - STORY-028
+    - STORY-029
+    - STORY-030
+    - STORY-031
+    - STORY-032
+
+  acceptance_criteria:
+    - [x] Audit all modules to identify those with minimal test coverage (<=2 test cases)
+    - [x] For each identified module, add 3-5 additional test cases covering happy path, error handling, and edge cases
+    - [x] Each module reaches minimum 60% line coverage
+    - [x] All tests pass in CI
+    - [x] Generate coverage report and document improvements
+
+  technical_notes: |
+    Use vitest --coverage to identify low-coverage modules. Follow patterns established in Sprint 5 stories (STORY-028-032).
+
+  files_to_create:
+    - apps/api/src/modules/*/spec files
+
+  definition_of_done:
+    - [x] All modules have meaningful coverage
+    - [x] All tests pass in CI
+    - [ ] Coverage report generated

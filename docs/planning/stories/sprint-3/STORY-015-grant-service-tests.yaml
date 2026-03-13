@@ -1,0 +1,56 @@
+story:
+  id: STORY-015
+  epic_id: EPIC-003
+  title: "Grant Service Unit Tests"
+  description: |
+    Implementar suite de testes unitários para o Grant Service, cobrindo toda a
+    lógica de concessão de permissões, incluindo criação, validação e revogação.
+
+    QUALITY BLOCKER: Grant service tem 0% de cobertura. É o núcleo do sistema
+    de permissões multi-tenant — um bug aqui pode vazar dados entre tenants.
+
+  priority: P1
+  effort_hours: 8
+  status: COMPLETED
+  assignee_role: Backend Engineer (QA focus)
+  sprint: Sprint 3
+  dependencies: [STORY-003]
+  epic_id: EPIC-003
+
+  acceptance_criteria:
+    - [x] Cobertura: Grant Service ≥ 90%
+      - [x] createGrant() — casos feliz e de erro
+      - [x] revokeGrant() — revogação e idempotência
+      - [x] listGrants() — filtro por tenantId
+      - [x] validateGrant() — expiração, tenant check
+
+    - [x] Isolamento multi-tenant testado
+      - [x] Grant de tenant A não visível para tenant B
+      - [x] Criação de grant com tenantId incorreto → erro 403
+
+    - [x] Edge cases
+      - [x] Grant expirado retorna erro
+      - [x] Grant duplicado (idempotência)
+      - [x] Grant para usuário inexistente
+
+  technical_notes: |
+    - Seguir padrão dos testes existentes em apps/api/src/modules/grants/services/
+    - Usar fixtures de test-data.fixtures.ts
+    - Mockar Prisma Client (não usar banco real nos unit tests)
+    - Reference: grant-request.service.test.ts já existe — ampliar
+
+  files_to_modify:
+    - apps/api/src/modules/grants/services/grant.service.test.ts (criar se não existir)
+
+  definition_of_done:
+    - [x] Coverage ≥ 90% no Grant Service
+    - [x] Testes de isolamento multi-tenant passando
+    - [x] Zero TypeScript errors
+    - [x] CI verde
+
+  files_created:
+    - apps/api/src/modules/grants/services/grant.service.ts (novo — 4 métodos)
+    - apps/api/src/modules/grants/services/grant.service.test.ts (novo — 25 testes)
+
+  coverage_achieved: "98% stmts | 98% branch | 100% funcs | 100% lines"
+  completed_at: "2026-02-11"

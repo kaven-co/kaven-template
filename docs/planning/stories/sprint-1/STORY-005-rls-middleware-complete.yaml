@@ -1,0 +1,89 @@
+story:
+  id: STORY-005
+  epic_id: EPIC-001
+  title: "Complete Row-Level Security (RLS) Middleware Implementation"
+  description: |
+    Implementar middleware RLS global que automaticamente adiciona tenantId WHERE clause
+    em TODAS as queries Prisma, garantindo isolamento multi-tenant em nível de ORM.
+
+    P0 LAUNCH BLOCKER: Sem RLS, queries podem esquecer WHERE tenantId clause.
+
+  priority: P0
+  effort_hours: 8
+  assignee_role: Backend Engineer
+  dependencies: [STORY-003, STORY-004]
+  debt_ids: [MTN-C4]
+
+  acceptance_criteria:
+    - [ ] Prisma Middleware: RLS automático
+      - [ ] Intercepta todas queries (findMany, findUnique, update, delete)
+      - [ ] Adiciona WHERE tenantId automaticamente
+      - [ ] Usa AsyncLocalStorage para context
+
+    - [ ] Global Registration
+      - [ ] Middleware registrado no app initialization
+      - [ ] Aplica-se a TODOS os modelos tenant-scoped
+
+    - [ ] Whitelist: Modelos globais excluídos
+      - [ ] Tenant model (não tem tenantId próprio)
+      - [ ] User model (pode ter múltiplos tenants)
+      - [ ] Configuração via WHITELIST array
+
+    - [ ] Tests: RLS funcionando
+      - [ ] Query sem tenantId no context → erro
+      - [ ] Query com tenantId → WHERE adicionado automaticamente
+      - [ ] Whitelisted models → não filtrados
+
+    - [ ] Documentation
+      - [ ] docs/architecture/rls-middleware.md
+
+  technical_notes: |
+    **Implementation:**
+    ```typescript
+    // apps/api/src/middleware/prisma-rls.ts
+    import { AsyncLocalStorage } from 'async_hooks';
+
+    const tenantContext = new AsyncLocalStorage<{ tenantId: string }>();
+
+    export function setupPrismaRLS(prisma: PrismaClient) {
+      const WHITELIST = ['Tenant', 'User', 'Capability'];
+
+      prisma.$use(async (params, next) => {
+        const context = tenantContext.getStore();
+
+        if (!context?.tenantId) {
+          throw new Error('tenantId missing in context');
+        }
+
+        if (WHITELIST.includes(params.model)) {
+          return next(params);
+        }
+
+        // Add WHERE tenantId automatically
+        if (params.action === 'findMany' || params.action === 'findFirst') {
+          params.args.where = {
+            ...params.args.where,
+            tenantId: context.tenantId
+          };
+        }
+
+        return next(params);
+      });
+    }
+    ```
+
+  files_to_modify:
+    - apps/api/src/middleware/prisma-rls.ts (CREATE)
+    - apps/api/src/app.ts (UPDATE - register middleware)
+    - apps/api/tests/rls/rls-middleware.spec.ts (CREATE)
+    - docs/architecture/rls-middleware.md (CREATE)
+
+  time_estimate_breakdown:
+    - Middleware Implementation: 4h
+    - Tests: 2h
+    - Documentation: 2h
+    - Total: 8h
+
+  status: COMPLETED
+  created_at: 2026-02-07
+  created_by: "@aios-master"

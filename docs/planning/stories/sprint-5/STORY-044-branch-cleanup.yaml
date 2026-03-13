@@ -1,0 +1,30 @@
+story:
+  id: STORY-044
+  epic_id: EPIC-007
+  title: "Clean up stale branches (local + remote)"
+  description: |
+    Multiple stale branches exist from previous sprints. Clean up to reduce
+    repository clutter.
+  priority: P1
+  effort_hours: 2
+  status: DONE
+  assignee_role: DevOps Engineer
+  sprint: Sprint 5
+  dependencies: []
+
+  acceptance_criteria:
+    - [x] List all local and remote branches
+    - [x] Identify branches already merged to main
+    - [x] Delete merged branches (local + remote) after confirmation
+    - [x] Keep only: main, current sprint branch, and any active WIP branches
+    - [x] Document deleted branches in commit message
+
+  technical_notes: |
+    Use git branch --merged main, git branch -d, git push origin --delete.
+    Enable "Automatically delete head branches" in GitHub repo settings.
+
+  files_to_create: []
+
+  definition_of_done:
+    - [x] Only main and active branches remain
+    - [x] GitHub setting enabled

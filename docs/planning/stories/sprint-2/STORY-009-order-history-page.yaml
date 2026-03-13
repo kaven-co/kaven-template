@@ -1,0 +1,56 @@
+story:
+  id: STORY-009
+  epic_id: EPIC-002
+  title: "Order History Page"
+  description: |
+    Implementar página de histórico de pedidos no Tenant App, mostrando histórico de
+    compras, upgrades de plano e status de entrega de produtos digitais.
+
+    P0 SALES BLOCKER: Junto com Invoice History, completa o billing journey demo.
+    Compradores precisam ver a diferença entre order (compra) e invoice (cobrança).
+
+  priority: P0
+  effort_hours: 8
+  status: COMPLETED
+  assignee_role: Frontend Engineer
+  sprint: Sprint 2
+  dependencies: [STORY-008]
+  epic_id: EPIC-002
+
+  acceptance_criteria:
+    - [ ] Rota: /[locale]/(dashboard)/billing/orders
+      - [ ] Página SSR com lista de orders
+      - [ ] Colunas: Data, Produto/Plano, Valor, Status
+      - [ ] Paginação (10 por página)
+      - [ ] Empty state quando sem orders
+
+    - [ ] Dados: API real (não mock)
+      - [ ] GET /api/billing/orders via Fastify backend
+      - [ ] Filtra por tenantId do usuário logado
+      - [ ] OrderStatus: completed, pending, failed, refunded
+
+    - [ ] Navegação
+      - [ ] Link entre Order e Invoice correspondente
+      - [ ] Botão "Ver Detalhes" por order
+
+    - [ ] Design: consistente com design system Kaven
+      - [ ] Segue padrão das páginas existentes
+      - [ ] Status badges com cores
+      - [ ] Responsive (mobile + desktop)
+
+  technical_notes: |
+    - Mesmos padrões da STORY-008
+    - Compartilhar seção de billing (sections/billing/)
+    - Se billing module não existir após STORY-008, reusar o criado
+
+  files_to_create:
+    - apps/tenant/app/[locale]/(dashboard)/billing/orders/page.tsx
+    - apps/tenant/sections/billing/order-table-row.tsx
+    - apps/tenant/sections/billing/order-view.tsx
+
+  definition_of_done:
+    - [ ] Página acessível em /billing/orders
+    - [ ] Dados reais da API
+    - [ ] Link para invoices funcionando
+    - [ ] Zero TypeScript errors
+    - [ ] Mobile responsive

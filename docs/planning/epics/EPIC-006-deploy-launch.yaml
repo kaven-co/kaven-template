@@ -1,0 +1,149 @@
+epic:
+  id: EPIC-006
+  title: "Sprint D1: Deploy & Launch — Production Infrastructure Setup"
+  description: |
+    Deploy completo da plataforma Kaven em produção. Cobre infraestrutura base
+    (Neon PostgreSQL, Upstash Redis, GitHub OAuth, Paddle), deploy do Marketplace API
+    (Railway), configuração DNS/subdomains (Cloudflare), validação AWS SES,
+    fix crítico do kaven-template (BLOCKER #0), publicação do módulo payments,
+    e smoke test E2E completo que prova que o sistema funciona end-to-end.
+
+    **Goal:** Sistema funcionando end-to-end em produção, pronto para launch em 31/03/2026.
+
+    **Success Criteria:**
+    - `kaven init kaven-test` funciona (clone template + env interpolation)
+    - `kaven auth login` autentica via GitHub OAuth → JWT salvo no Marketplace
+    - `kaven module install payments` → download + verify Ed25519 signature + merge schema
+    - Signup no tenant → recebe email de boas-vindas via AWS SES (produção)
+    - Admin app mostra tenant criado + subscriptions funcionando
+
+  priority: P0
+  effort_hours: 52
+  duration_days: 21
+  sprint: Sprint D1 (Deploy Week 1-3)
+  start_date: 2026-02-25
+  end_date: 2026-03-17
+  team_size: 3
+
+  dependencies:
+    - EPIC-002  # CLI C2 done (kaven init + publish + upgrade + doctor + browse + cache + config)
+    - EPIC-003  # Marketplace M3 done (344 tests, full search + analytics + OpenAPI)
+
+  stories:
+    - D1.1   # Setup Neon PostgreSQL (2 databases)
+    - D1.2   # Setup Upstash Redis
+    - D1.3   # Create GitHub OAuth App
+    - D1.4   # Configure Paddle Production (3 products + webhook)
+    - D1.5   # Generate Production Secrets (JWT + Ed25519 keypair)
+    - D1.6   # Deploy Marketplace API (Railway)
+    - D1.7   # Configure DNS + Subdomains (Cloudflare)
+    - D1.8   # Verify AWS SES Production Access
+    - D1.9   # Fix kaven-template (BLOCKER #0)
+    - D1.10  # Publish Payments Module to Marketplace
+    - D1.11  # Seed Marketplace Content (4 modules)
+    - D1.12  # E2E Smoke Test — PROVA FINAL
+
+  blocked_by: []
+  blocks:
+    - EPIC-003-site  # kaven-site S1 depende de D1 completo
+
+  acceptance_criteria:
+    - [ ] Todos os 12 stories completados e verificados
+    - [ ] Marketplace API health check verde: https://marketplace.kaven.site/health
+    - [ ] `kaven init my-app` funciona do zero com template novo
+    - [ ] GitHub OAuth flow completo: browser → JWT → CLI autenticado
+    - [ ] `kaven module install payments` funciona sem erros (verify signature)
+    - [ ] Email de boas-vindas chega após signup via AWS SES produção
+    - [ ] E2E smoke test 100% passing — prova final do sistema
+    - [ ] Infra custo mensal verificado (~$65/mês baseline)
+
+  risks:
+    - name: "Railway deploy config issues com Fastify"
+      probability: MEDIUM
+      impact: HIGH
+      mitigation: "Testar Dockerfile localmente antes do deploy; usar healthcheck"
+
+    - name: "SES sandbox exit demorar mais de 48h"
+      probability: MEDIUM
+      impact: MEDIUM
+      mitigation: "Usar email verificado manualmente para testes locais enquanto aguarda"
+
+    - name: "kaven-template placeholders incompatíveis com CLI parser"
+      probability: HIGH
+      impact: HIGH
+      mitigation: "Alinhar {{PLACEHOLDERS}} com EnvManager.ts antes de criar template"
+
+    - name: "Prisma migration falhar em produção Neon"
+      probability: LOW
+      impact: HIGH
+      mitigation: "Rodar `prisma migrate deploy --dry-run` em staging primeiro"
+
+  metrics:
+    infra_readiness: "3/10 → 9/10"
+    deployment_readiness: "0% → 100%"
+    e2e_coverage: "0% → 100%"
+    launch_readiness: "5.4/10 → 9/10"
+
+  technical_notes: |
+    **Infrastructure Stack:**
+    - PostgreSQL: Neon (serverless, 2 dbs: kaven_marketplace + kaven_framework)
+    - Redis: Upstash (serverless, 10K free commands/day)
+    - Marketplace API: Railway (Fastify-native, auto-deploy from GitHub)
+    - Admin/Tenant/Docs: Vercel (3 Next.js apps)
+    - Email: AWS SES (us-east-1, domain kaven.site — DKIM/SPF/DMARC verified)
+    - DNS: Cloudflare (proxy on marketplace, DNS-only on Vercel apps)
+    - Payments: Paddle (MoR, 3 tiers: $99/$279/$549)
+    - Storage: AWS S3 (kaven-marketplace-artifacts, us-east-1)
+
+    **Cost Baseline (~$65/mês):**
+    - Neon PostgreSQL Pro: $25/mês
+    - Upstash Redis: $10/mês
+    - Railway (Marketplace API): $20/mês
+    - AWS S3 + SES: $10/mês
+    - Cloudflare DNS: $0
+    - Vercel (hobby): $0
+
+    **Agents responsáveis:**
+    - D1.1-D1.8: @devops (Deploy/Gage)
+    - D1.9-D1.11: @dev (Bolt) + @architect (Atlas)
+    - D1.12: @qa (Shield)
+
+  documentation:
+    - path: docs/planning/PRODUCTION-DEPLOY-PLAN.md
+      status: EXISTS
+      description: "Plano detalhado de deploy em 6 fases com checklists e env vars"
+
+    - path: docs/planning/stories/epic-6-deploy/sprint-d1/
+      status: TO_CREATE
+      description: "12 stories individuais para Sprint D1"
+
+  validation:
+    - type: HEALTH_CHECK
+      tool: curl
+      endpoint: "https://marketplace.kaven.site/health"
+      expected: '{"status":"ok"}'
+
+    - type: E2E_TEST
+      tool: kaven-cli
+      coverage: "init → auth → browse → install → dev → signup → email"
+
+  rollback_plan: |
+    Se algo crítico falhar durante Sprint D1:
+
+    1. **Rollback Infra:**
+       - Neon: reverter para branch anterior (Neon suporta branching)
+       - Railway: rollback via painel (botão revert deployment)
+       - Cloudflare: restaurar DNS records anteriores
+
+    2. **Rollback Code:**
+       - kaven-template: reverter para branch anterior no GitHub
+       - Feature flags para desabilitar novos módulos
+
+    3. **Comunicação:**
+       - Update CLAUDE.md com novo status
+       - Documentar blockers em _business/OWNER-TASKS.md
+
+  status: IN_PROGRESS
+  created_at: 2026-02-25
+  created_by: "Orion (aios-master) — orchestrated with Steave (kaven-squad-lead)"
+  updated_at: 2026-02-25

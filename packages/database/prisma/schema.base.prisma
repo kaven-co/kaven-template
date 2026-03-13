@@ -160,6 +160,15 @@ enum EmailQueueStatus {
 }
 
 // ===========================
+// AUDIT CALLER TYPE ENUM
+// ===========================
+
+enum CallerType {
+  HUMAN  // Requisição originada por usuário humano autenticado
+  AGENT  // Requisição originada por AI agent via ServiceToken
+}
+
+// ===========================
 // SPACES & PERMISSIONS ENUMS
 // ===========================
 
@@ -383,6 +392,9 @@ model Tenant {
   // Platform Config (branding/theme per tenant)
   platformConfigs PlatformConfig[]
 
+  // AI Agent Auth
+  serviceTokens ServiceToken[]
+
   @@index([slug])
   @@index([domain])
   @@index([status])
@@ -519,16 +531,20 @@ model RefreshToken {
 }
 
 model AuditLog {
-  id        String   @id @default(uuid())
-  action    String // Ex: "user.created", "tenant.updated"
-  entity    String // Ex: "User", "Tenant"
-  entityId  String
-  userId    String?
-  tenantId  String?
-  metadata  Json? // Dados adicionais
-  ipAddress String?
-  userAgent String?
-  createdAt DateTime @default(now())
+  id         String     @id @default(uuid())
+  action     String     // Ex: "user.created", "tenant.updated"
+  entity     String     // Ex: "User", "Tenant"
+  entityId   String
+  userId     String?
+  tenantId   String?
+  metadata   Json?      // Dados adicionais
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime   @default(now())
+
+  // Caller identification — quem originou a ação
+  callerType CallerType @default(HUMAN) @map("caller_type") // HUMAN | AGENT
+  agentId    String?    @map("agent_id")                   // ex: "kaven-squad/kai" (preenchido quando callerType = AGENT)
 
   // Soft delete + retention (LGPD/GDPR compliance)
   deletedAt      DateTime? // Soft delete timestamp
@@ -552,6 +568,8 @@ model AuditLog {
   @@index([tenantId, deletedAt])    // Tenant-scoped soft delete filtering (GDPR)
   @@index([tenantId, entity, createdAt]) // Tenant-scoped entity audit timeline
   @@index([tenantId, action, createdAt]) // Analytics: action frequency over time
+  @@index([callerType])                  // Filtrar logs por tipo de caller (HUMAN vs AGENT)
+  @@index([agentId])                     // Rastrear atividade de um agent específico
 }
 
 // ===========================

@@ -1,0 +1,272 @@
+story:
+  id: STORY-001
+  epic_id: EPIC-001
+  title: "Implement Security Test Suite (IDOR, CSRF, SQL Injection, XSS)"
+  description: |
+    Implementar suite completa de testes de segurança cobrindo 4 categorias críticas:
+    IDOR (Insecure Direct Object Reference), CSRF (Cross-Site Request Forgery),
+    SQL Injection, e XSS (Cross-Site Scripting).
+
+    Este é o teste de segurança mais crítico do framework, garantindo que não há
+    vulnerabilidades básicas que possam ser exploradas em produção.
+
+  priority: P0
+  effort_hours: 32
+  assignee_role: QA Engineer (with Security Engineer support)
+  dependencies: []
+  debt_ids: [TEST-C1]
+
+  acceptance_criteria:
+    - [ ] IDOR Tests: 33 tenant-scoped models testados
+      - [ ] Grant model (user de tenant A não acessa grant de tenant B)
+      - [ ] GrantRequest model
+      - [ ] Policy model
+      - [ ] Capability model
+      - [ ] SecurityAuditLog model
+      - [ ] ImpersonationSession model
+      - [ ] Invoice model
+      - [ ] Order model
+      - [ ] Payment model
+      - [ ] Subscription model
+      - [ ] Project model
+      - [ ] Task model
+      - [ ] Space model
+      - [ ] ... (21 models restantes)
+
+    - [ ] CSRF Tests: Todos POST/PUT/DELETE endpoints
+      - [ ] POST /api/grants sem CSRF token → 403 Forbidden
+      - [ ] POST /api/invoices sem CSRF token → 403 Forbidden
+      - [ ] PUT /api/users/:id sem CSRF token → 403 Forbidden
+      - [ ] DELETE /api/products/:id sem CSRF token → 403 Forbidden
+      - [ ] Com CSRF token inválido → 403 Forbidden
+      - [ ] Com CSRF token válido → 200/201 OK
+
+    - [ ] SQL Injection Tests: Queries com user input
+      - [ ] Search queries (GET /api/users?search=')
+      - [ ] Filter queries (GET /api/invoices?status='; DROP TABLE invoices--)
+      - [ ] Sort queries (GET /api/products?sort=name; DELETE FROM products--)
+      - [ ] Todas as queries devem retornar erro 400 (não executar SQL malicioso)
+
+    - [ ] XSS Tests: Inputs com <script> tags
+      - [ ] User names com <script>alert('XSS')</script>
+      - [ ] Invoice descriptions com <img src=x onerror=alert('XSS')>
+      - [ ] Product titles com <svg onload=alert('XSS')>
+      - [ ] Todos os inputs devem ser sanitizados (HTML entities escaped)
+
+    - [ ] CI Integration: Tests rodam em pipeline
+      - [ ] npm run test:security passa com 100% success
+      - [ ] PR blockeado se security tests falharem
+      - [ ] Coverage report gerado (security-coverage.json)
+
+    - [ ] Documentation: Security patterns documentados
+      - [ ] docs/testing/security.md criado
+      - [ ] Examples de como escrever IDOR tests
+      - [ ] Examples de como testar CSRF protection
+      - [ ] Best practices de security testing
+
+  technical_notes: |
+    **Framework: Jest + Supertest**
+
+    Criar helper functions reusáveis:
+
+    ```typescript
+    // apps/api/tests/helpers/security.helpers.ts
+
+    export async function testIDOR(
+      model: string,
+      endpoint: string,
+      tenantAUser: User,
+      tenantBResourceId: string
+    ) {
+      const response = await request(app)
+        .get(`${endpoint}/${tenantBResourceId}`)
+        .set('Authorization', `Bearer ${tenantAUser.accessToken}`)
+        .expect(403);
+
+      expect(response.body.error).toContain('Forbidden');
+    }
+
+    export async function testCSRF(
+      method: 'POST' | 'PUT' | 'DELETE',
+      endpoint: string,
+      data: any
+    ) {
+      // Test without CSRF token
+      await request(app)
+        [method.toLowerCase()](endpoint)
+        .send(data)
+        .expect(403);
+
+      // Test with invalid CSRF token
+      await request(app)
+        [method.toLowerCase()](endpoint)
+        .set('X-CSRF-Token', 'invalid-token')
+        .send(data)
+        .expect(403);
+
+      // Test with valid CSRF token
+      const csrfToken = await getCSRFToken();
+      await request(app)
+        [method.toLowerCase()](endpoint)
+        .set('X-CSRF-Token', csrfToken)
+        .send(data)
+        .expect(200);
+    }
+
+    export async function testSQLInjection(
+      endpoint: string,
+      queryParam: string,
+      injectionPayload: string
+    ) {
+      const response = await request(app)
+        .get(endpoint)
+        .query({ [queryParam]: injectionPayload })
+        .expect(400);
+
+      expect(response.body.error).toContain('Invalid input');
+    }
+
+    export async function testXSS(
+      endpoint: string,
+      data: Record<string, string>
+    ) {
+      const xssPayloads = [
+        '<script>alert("XSS")</script>',
+        '<img src=x onerror=alert("XSS")>',
+        '<svg onload=alert("XSS")>',
+      ];
+
+      for (const payload of xssPayloads) {
+        const response = await request(app)
+          .post(endpoint)
+          .send({ ...data, maliciousField: payload })
+          .expect(201);
+
+        // Verify response escapes HTML
+        expect(response.body.maliciousField).not.toContain('<script>');
+        expect(response.body.maliciousField).toContain('&lt;script&gt;');
+      }
+    }
+    ```
+
+    **Test Files to Create:**
+
+    ```
+    apps/api/tests/security/
+    ├── idor.spec.ts              # IDOR tests (12h)
+    ├── csrf.spec.ts              # CSRF tests (8h)
+    ├── sql-injection.spec.ts     # SQL Injection tests (6h)
+    ├── xss.spec.ts               # XSS tests (6h)
+    └── helpers/
+        └── security.helpers.ts   # Reusable helpers
+    ```
+
+    **Test Data Setup:**
+
+    Criar fixtures para security tests:
+    ```typescript
+    // apps/api/tests/fixtures/security.fixtures.ts
+
+    export async function createTenantIsolationTestData() {
+      // Tenant A
+      const tenantA = await prisma.tenant.create({
+        data: { name: 'Tenant A', slug: 'tenant-a' }
+      });
+      const userA = await createUser({ tenantId: tenantA.id });
+      const invoiceA = await createInvoice({ tenantId: tenantA.id });
+
+      // Tenant B
+      const tenantB = await prisma.tenant.create({
+        data: { name: 'Tenant B', slug: 'tenant-b' }
+      });
+      const userB = await createUser({ tenantId: tenantB.id });
+      const invoiceB = await createInvoice({ tenantId: tenantB.id });
+
+      return { tenantA, userA, invoiceA, tenantB, userB, invoiceB };
+    }
+    ```
+
+    **CI Integration:**
+
+    Adicionar script em package.json:
+    ```json
+    {
+      "scripts": {
+        "test:security": "jest apps/api/tests/security --coverage --coverageDirectory=coverage/security"
+      }
+    }
+    ```
+
+    Adicionar step no GitHub Actions:
+    ```yaml
+    - name: Run Security Tests
+      run: pnpm run test:security
+
+    - name: Check Security Coverage
+      run: |
+        if [ $(jq '.total.lines.pct < 100' coverage/security/coverage-summary.json) ]; then
+          echo "Security test coverage < 100%"
+          exit 1
+        fi
+    ```
+
+  files_to_modify:
+    - apps/api/tests/security/idor.spec.ts (CREATE)
+    - apps/api/tests/security/csrf.spec.ts (CREATE)
+    - apps/api/tests/security/sql-injection.spec.ts (CREATE)
+    - apps/api/tests/security/xss.spec.ts (CREATE)
+    - apps/api/tests/helpers/security.helpers.ts (CREATE)
+    - apps/api/tests/fixtures/security.fixtures.ts (CREATE)
+    - docs/testing/security.md (CREATE)
+    - .github/workflows/ci.yml (UPDATE - add security tests step)
+    - package.json (UPDATE - add test:security script)
+
+  definition_of_done:
+    - [ ] Code written and self-reviewed
+    - [ ] All acceptance criteria checkboxes marked
+    - [ ] Tests passing locally (npm run test:security)
+    - [ ] Tests passing in CI (GitHub Actions green)
+    - [ ] Code review approved (1+ approval)
+    - [ ] Documentation updated (docs/testing/security.md)
+    - [ ] PR merged to main
+    - [ ] Deployment successful (if applicable)
+
+  time_estimate_breakdown:
+    - Setup & Planning: 2h
+    - IDOR Tests (33 models): 12h
+    - CSRF Tests (all endpoints): 8h
+    - SQL Injection Tests: 6h
+    - XSS Tests: 6h
+    - Helper Functions: 2h
+    - Documentation: 2h
+    - CI Integration: 2h
+    - Buffer: 2h
+    - Total: 32h
+
+  risks:
+    - name: "Test suite takes longer than estimated"
+      probability: MEDIUM
+      impact: MEDIUM
+      mitigation: "Priorizar IDOR tests first (highest risk), deixar XSS para last"
+
+    - name: "False positives in security tests"
+      probability: LOW
+      impact: LOW
+      mitigation: "Peer review tests com Security Engineer"
+
+  validation:
+    - type: CODE_REVIEW
+      reviewer: Security Engineer
+      checklist: "Security testing best practices"
+
+    - type: MANUAL_TEST
+      tester: QA Engineer
+      coverage: "Run tests locally + verify CI integration"
+
+  status: COMPLETED
+  created_at: 2026-02-03
+  created_by: Tech Lead (Brownfield Discovery)
+  started_at: 2026-02-03T23:10:26-03:00
+  started_by: "@dev"
+  completed_at: 2026-02-04T02:06:00-03:00
+  completed_by: "@dev"

@@ -1,0 +1,43 @@
+story:
+  id: STORY-039
+  epic_id: EPIC-006
+  title: "Implement avatar file upload with storage backend"
+  description: |
+    User creation/edit form has TODO for avatar upload. Backend FileService exists at apps/api/src/modules/files/ with local storage. @fastify/multipart and sharp already installed. Need to wire frontend form to API and add image validation/resizing.
+  priority: P1
+  effort_hours: 10
+  status: Done
+  assignee_role: Full Stack Engineer
+  sprint: Sprint 6
+  dependencies: []
+
+  acceptance_criteria:
+    - [x] Wire frontend avatar upload in user-create-view.tsx to POST /api/users/:id/avatar
+    - [x] Add image validation: max 2MB, JPG/PNG/WebP only
+    - [x] Add image resizing via sharp to standard dimensions (128x128, 256x256)
+    - [x] Add avatarUrl field to User model if missing (Prisma migration)
+    - [x] After upload, update user profile with returned file URL
+    - [x] Frontend: preview before upload, progress indicator
+    - [ ] Tests for upload validation (size, format)
+    - [ ] Tests for image processing
+    - [x] Upload files scoped to tenantId (tenant isolation)
+
+  technical_notes: |
+    FileService already functional for local storage. sharp already installed. Focus on wiring, not storage abstraction. S3 integration is a separate story (post-launch).
+
+  files_to_create:
+    - packages/database/prisma/migrations/*_add_avatar_url/migration.sql
+
+  files_to_update:
+    - apps/tenant/sections/user/view/user-create-view.tsx
+    - apps/tenant/sections/user/view/user-edit-view.tsx
+    - apps/tenant/components/avatar-upload.tsx
+    - apps/tenant/app/[locale]/(dashboard)/settings/profile/page.tsx
+    - apps/api/src/modules/users/controllers/user.controller.ts
+    - apps/api/src/modules/users/services/user.service.ts
+    - apps/api/src/modules/users/routes/user.routes.ts
+
+  definition_of_done:
+    - [x] Avatar upload works end-to-end
+    - [ ] All tests pass
+    - [ ] Zero TypeScript errors

@@ -1,0 +1,39 @@
+story:
+  id: STORY-043
+  epic_id: EPIC-006
+  title: "Complete AWS SES email provider integration"
+  description: |
+    AWS SES SDK (@aws-sdk/client-ses v3) is already installed. The email system at apps/api/src/lib/email/
+    supports Postmark, Resend, SMTP but SES is a TODO in provider-email-detector.ts:198.
+  priority: P1
+  effort_hours: 12
+  status: Done
+  assignee_role: Backend Engineer
+  sprint: Sprint 6
+  dependencies: []
+
+  acceptance_criteria:
+    - [x] Implement SES adapter in apps/api/src/lib/email/providers/ses.ts using @aws-sdk/client-ses (already installed)
+    - [x] Auto-detection in provider-email-detector.ts when AWS_SES_REGION env is set
+    - [x] Support raw email sending (SendEmailCommand) and template-based sending (SendTemplatedEmailCommand)
+    - [x] Configurable: EMAIL_PROVIDER=ses with fallback to SMTP
+    - [x] Document minimum IAM permissions (ses:SendEmail, ses:SendRawEmail)
+    - [x] Bounce/complaint handling via SNS webhook endpoint
+    - [x] Unit tests with mocked AWS SDK
+    - [x] Integration test documentation (requires real AWS credentials)
+
+  technical_notes: |
+    @aws-sdk/client-ses ^3.970.0 already in dependencies. Follow existing provider pattern
+    (see postmark or resend providers as reference). Start domain verification EARLY (24-48h lead time).
+
+  files_to_create:
+    - apps/api/src/lib/email/providers/ses.ts
+    - apps/api/src/lib/email/providers/ses.spec.ts
+
+  files_to_update:
+    - apps/api/src/lib/email/provider-email-detector.ts
+
+  definition_of_done:
+    - [x] SES sends emails when configured
+    - [x] Tests pass (49/49 passing)
+    - [x] Zero TypeScript errors

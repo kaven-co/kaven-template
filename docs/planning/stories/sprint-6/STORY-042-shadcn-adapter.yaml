@@ -1,0 +1,35 @@
+story:
+  id: STORY-042
+  epic_id: EPIC-006
+  title: "Implement Shadcn design system adapter"
+  description: |
+    SHADCN adapter stub in provider falls back to muiAdapter. Shadcn uses CSS custom properties approach
+    closer to existing token system, making it easier to implement than Fluent.
+  priority: P2
+  effort_hours: 8
+  status: DONE
+  assignee_role: Frontend Engineer
+  sprint: Sprint 6
+  dependencies: []
+
+  acceptance_criteria:
+    - [x] Create Shadcn adapter in packages/ui/src/adapters/shadcn/ or apps/admin/lib/design-system/adapters/shadcn/
+    - [x] Implement toSemanticTokens() mapping Shadcn CSS variables to semantic tokens
+    - [x] Implement getDefaultTokens() with Shadcn default theme values
+    - [x] Implement validateCustomization()
+    - [x] Map 6 core components: Button, Input, Select, Dialog, Table, Card
+    - [x] Support light and dark mode
+    - [x] Documentation page showing Shadcn adapter usage
+    - [x] At least 1 example rendering with Shadcn adapter active
+
+  technical_notes: |
+    Shadcn's CSS custom property system is closer to existing SemanticDesignTokens — implement this
+    BEFORE Fluent (easier). Follow patterns in existing MUI and HIG adapters.
+
+  files_to_create:
+    - apps/admin/lib/design-system/adapters/shadcn/index.ts
+
+  definition_of_done:
+    - [x] Shadcn adapter selectable in provider
+    - [x] Renders correctly
+    - [x] Zero TypeScript errors

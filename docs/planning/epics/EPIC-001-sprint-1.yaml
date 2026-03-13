@@ -1,0 +1,164 @@
+epic:
+  id: EPIC-001
+  title: "Sprint 1: Security & Database Multi-Tenant Isolation"
+  description: |
+    Resolver blockers críticos de segurança e isolamento multi-tenant que impedem
+    o lançamento do framework. Inclui implementação de testes de segurança (IDOR,
+    CSRF, SQL Injection, XSS), testes de compliance GDPR, e adição de tenantId em
+    todos os models de permissões e audit logs.
+
+    **Goal:** Framework seguro, GDPR compliant, e com isolamento multi-tenant garantido.
+
+    **Success Criteria:**
+    - Zero security vulnerabilities (IDOR, CSRF, SQL Injection, XSS)
+    - GDPR data export/deletion testados e funcionando
+    - Todos os 33 models tenant-scoped protegidos por RLS middleware
+    - Soft delete filtrado automaticamente
+    - Space.tenantId validado (não nullable se aplicável)
+
+  priority: P0
+  effort_hours: 104
+  duration_days: 13
+  sprint: Sprint 1 (Week 5-6)
+  start_date: 2026-02-10
+  end_date: 2026-02-21
+  team_size: 3
+  dependencies: []
+
+  stories:
+    - STORY-001  # Security Test Suite (32h)
+    - STORY-002  # GDPR Compliance Tests (16h)
+    - STORY-003  # Permissions tenantId (24h)
+    - STORY-004  # Audit Systems tenantId (20h)
+    - STORY-005  # RLS Middleware Expansion (8h)
+    - STORY-006  # Soft Delete Filter (4h)
+    - STORY-007  # Space tenantId Validation (8h)
+
+  blocked_by: []
+  blocks: [EPIC-002]  # Sprint 2 depende de Sprint 1 estar completo
+
+  acceptance_criteria:
+    - [ ] Todos os 7 stories completados e merged
+    - [ ] CI/CD pipeline 100% verde
+    - [ ] Zero security tests falhando
+    - [ ] GDPR compliance tests passando
+    - [ ] Multi-tenant isolation validado em todos os 33 models
+    - [ ] Soft delete filtrado automaticamente em queries
+    - [ ] Code review completo e aprovado
+    - [ ] Documentation atualizada (security.md, gdpr.md)
+
+  risks:
+    - name: "Migration complexity"
+      probability: HIGH
+      impact: HIGH
+      mitigation: "Usar estratégia zero-downtime multi-phase (nullable → backfill → NOT NULL)"
+
+    - name: "Test suite takes longer than estimated"
+      probability: MEDIUM
+      impact: MEDIUM
+      mitigation: "Priorizar IDOR tests first (highest risk), deixar XSS para last"
+
+    - name: "Backfill data issues"
+      probability: LOW
+      impact: HIGH
+      mitigation: "Dry-run migrations em staging first, rollback plan preparado"
+
+  metrics:
+    security_coverage: "0% → 100%"
+    gdpr_compliance: "0% → 100%"
+    tenant_isolation: "7 models → 33 models"
+    test_coverage: "26% → 40%"
+
+  technical_notes: |
+    **Migration Strategy (DB-C1, DB-C2, DB-C3):**
+
+    FASE 1: Schema changes (nullable)
+    ```sql
+    ALTER TABLE "grants" ADD COLUMN "tenant_id" VARCHAR;
+    ALTER TABLE "grant_requests" ADD COLUMN "tenant_id" VARCHAR;
+    -- ... (13 models total)
+    ```
+
+    FASE 2: Backfill data (background job)
+    ```typescript
+    // Inferir tenantId via relationships
+    UPDATE grants SET tenant_id = (
+      SELECT tenant_id FROM users WHERE users.id = grants.user_id
+    );
+    ```
+
+    FASE 3: Validation (automated checks)
+    - Verificar que TODOS os records têm tenantId
+    - Alertar se algum record NULL
+
+    FASE 4: Enforce NOT NULL (após validação)
+    ```sql
+    ALTER TABLE "grants" ALTER COLUMN "tenant_id" SET NOT NULL;
+    ```
+
+    FASE 5: Índices compostos (performance)
+    ```sql
+    CREATE INDEX idx_grants_tenant_user ON grants(tenant_id, user_id);
+    ```
+
+    **Security Tests Framework:**
+    - Usar Jest + Supertest (já instalados)
+    - Criar helper functions para IDOR tests (reusable)
+    - Documentar test patterns em /docs/testing/security.md
+
+    **RLS Middleware Expansion:**
+    - Lista completa de 33 models tenant-scoped (ver DB Specialist feedback)
+    - Adicionar filtro deletedAt: null em TODOS os models com soft delete
+    - Adicionar logging para queries sem tenantId (monitoring)
+
+  documentation:
+    - path: docs/testing/security.md
+      status: TO_CREATE
+      description: "Security testing patterns e best practices"
+
+    - path: docs/compliance/gdpr.md
+      status: TO_CREATE
+      description: "GDPR compliance implementation guide"
+
+    - path: docs/architecture/multi-tenancy.md
+      status: TO_UPDATE
+      description: "Update com 33 models tenant-scoped list"
+
+  validation:
+    - type: SECURITY_SCAN
+      tool: npm audit
+      threshold: "0 high/critical vulnerabilities"
+
+    - type: PENETRATION_TEST
+      tool: Manual (QA Engineer)
+      coverage: "IDOR, CSRF, SQL Injection, XSS"
+
+    - type: CODE_REVIEW
+      reviewers: [Tech Lead, Security Engineer]
+      checklist: "Security review checklist"
+
+  rollback_plan: |
+    Se algo crítico falhar durante Sprint 1:
+
+    1. **Rollback Migrations:**
+       - Usar Prisma rollback: `pnpm prisma migrate rollback`
+       - Restaurar backup de database (pre-migration)
+
+    2. **Rollback Code:**
+       - Revert PRs na ordem inversa
+       - Restaurar branch main para commit anterior
+
+    3. **Communication:**
+       - Notificar stakeholders via Slack
+       - Update timeline (adicionar buffer de 1 week)
+       - Post-mortem meeting para entender root cause
+
+    **Backup Strategy:**
+    - Database snapshot antes de cada migration
+    - Git tags para cada story merged
+    - Docker images tagged por story ID
+
+  status: NOT_STARTED
+  created_at: 2026-02-03
+  created_by: Tech Lead (Brownfield Discovery)
+  updated_at: 2026-02-03

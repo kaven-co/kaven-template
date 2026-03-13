@@ -1,0 +1,344 @@
+story:
+  id: STORY-003
+  epic_id: EPIC-001
+  title: "Fix Missing tenantId in Permissions System (Grant, GrantRequest, Policy, Capability)"
+  description: |
+    Corrigir falha crítica de multi-tenancy no sistema de permissões onde as tabelas
+    Grant, GrantRequest, Policy e Capability não possuem campo tenantId, permitindo
+    vazamento de dados entre tenants.
+
+    Este é um P0 LAUNCH BLOCKER pois permite que tenants acessem permissões de outros
+    tenants, violando isolamento fundamental do sistema multi-tenant.
+
+  priority: P0
+  effort_hours: 24
+  assignee_role: Backend Engineer (with DBA support)
+  dependencies: [STORY-001, STORY-002]
+  debt_ids: [MTN-C1, MTN-C2]
+
+  acceptance_criteria:
+    - [ ] Schema Migration: tenantId adicionado em 4 tabelas
+      - [ ] Grant model → tenantId String @db.VarChar(191) NOT NULL
+      - [ ] GrantRequest model → tenantId String @db.VarChar(191) NOT NULL
+      - [ ] Policy model → tenantId String @db.VarChar(191) NOT NULL
+      - [ ] Capability model → tenantId String @db.VarChar(191) NOT NULL
+      - [ ] Index criado: @@index([tenantId]) em todas as 4 tabelas
+      - [ ] Foreign key adicionada: @@relation([tenantId] references Tenant(id))
+
+    - [ ] Data Backfill: Dados existentes migrados
+      - [ ] Script SQL para backfill de tenantId em Grant (via userId → user.tenantId)
+      - [ ] Script SQL para backfill de tenantId em GrantRequest (via userId)
+      - [ ] Script SQL para backfill de tenantId em Policy (via createdBy → user.tenantId)
+      - [ ] Script SQL para backfill de tenantId em Capability (global ou via primeiro tenant)
+      - [ ] Validação: ZERO registros com tenantId NULL após migration
+
+    - [ ] API Routes Updated: tenantId em todos os queries
+      - [ ] GET /api/grants?tenantId=${req.user.tenantId}
+      - [ ] POST /api/grants → automaticamente injeta tenantId do user logado
+      - [ ] PUT /api/grants/:id → valida que grant.tenantId === req.user.tenantId
+      - [ ] DELETE /api/grants/:id → valida que grant.tenantId === req.user.tenantId
+      - [ ] Mesma lógica aplicada para: /grant-requests, /policies, /capabilities
+
+    - [ ] Middleware RLS: Row-Level Security enforcement
+      - [ ] Middleware global `requireTenantId` adicionado em todas as rotas de permissions
+      - [ ] Rejeita requests onde req.user.tenantId está ausente (401 Unauthorized)
+      - [ ] Injeta tenantId automaticamente em queries CREATE
+      - [ ] Valida tenantId em queries UPDATE/DELETE/SELECT
+
+    - [ ] Multi-Tenant Isolation Tests
+      - [ ] Tenant A cria Grant → apenas Tenant A vê esse Grant
+      - [ ] Tenant B tenta acessar Grant de Tenant A → 403 Forbidden
+      - [ ] Tenant A tenta UPDATE Grant de Tenant B → 403 Forbidden
+      - [ ] Tenant A tenta DELETE GrantRequest de Tenant B → 403 Forbidden
+      - [ ] Tests cobrem todas 4 tabelas: Grant, GrantRequest, Policy, Capability
+
+    - [ ] Performance Tests
+      - [ ] Query com tenantId WHERE clause usa index (EXPLAIN ANALYZE)
+      - [ ] Performance não degrada (< 5ms overhead)
+      - [ ] Load test com 1000 tenants simultâneos
+
+    - [ ] Documentation
+      - [ ] docs/architecture/multi-tenancy.md atualizado
+      - [ ] docs/migrations/003-permissions-tenantid.md criado
+      - [ ] Schema diagram atualizado (ERD com tenantId FK)
+
+  technical_notes: |
+    **Problema Root Cause:**
+
+    As tabelas de permissões foram criadas no legacy boilerplate sem considerar
+    multi-tenancy. Isso permite queries como:
+
+    ```sql
+    -- BAD: No tenant isolation
+    SELECT * FROM Grant WHERE userId = 'user_123';
+    ```
+
+    Um usuário malicioso pode iterar todos os IDs e acessar grants de outros tenants.
+
+    **Solução:**
+
+    Adicionar tenantId em todas as tabelas e forçar WHERE clause:
+
+    ```sql
+    -- GOOD: Tenant isolation enforced
+    SELECT * FROM Grant WHERE userId = 'user_123' AND tenantId = 'tenant_A';
+    ```
+
+    **Migration Strategy:**
+
+    ```typescript
+    // Step 1: Add tenantId column (nullable first)
+    await prisma.$executeRaw`ALTER TABLE Grant ADD COLUMN tenantId VARCHAR(191) NULL`;
+
+    // Step 2: Backfill existing data
+    await prisma.$executeRaw`
+      UPDATE Grant g
+      SET tenantId = (SELECT u.tenantId FROM User u WHERE u.id = g.userId)
+      WHERE g.tenantId IS NULL
+    `;
+
+    // Step 3: Make column NOT NULL
+    await prisma.$executeRaw`ALTER TABLE Grant MODIFY tenantId VARCHAR(191) NOT NULL`;
+
+    // Step 4: Add index
+    await prisma.$executeRaw`CREATE INDEX idx_grant_tenantId ON Grant(tenantId)`;
+
+    // Step 5: Add foreign key
+    await prisma.$executeRaw`
+      ALTER TABLE Grant
+      ADD CONSTRAINT fk_grant_tenant
+      FOREIGN KEY (tenantId) REFERENCES Tenant(id) ON DELETE CASCADE
+    `;
+    ```
+
+    **Prisma Schema Changes:**
+
+    ```prisma
+    model Grant {
+      id          String   @id @default(cuid())
+      userId      String
+      resourceId  String
+      permission  String
+      tenantId    String   @db.VarChar(191)  // ADD THIS
+      createdAt   DateTime @default(now())
+
+      user   User   @relation(fields: [userId], references: [id])
+      tenant Tenant @relation(fields: [tenantId], references: [id])  // ADD THIS
+
+      @@index([userId])
+      @@index([tenantId])  // ADD THIS
+      @@index([tenantId, userId])  // Composite index for common queries
+    }
+
+    model GrantRequest {
+      id         String   @id @default(cuid())
+      userId     String
+      requestedPermission String
+      status     String
+      tenantId   String   @db.VarChar(191)  // ADD THIS
+      createdAt  DateTime @default(now())
+
+      user   User   @relation(fields: [userId], references: [id])
+      tenant Tenant @relation(fields: [tenantId], references: [id])  // ADD THIS
+
+      @@index([tenantId])  // ADD THIS
+    }
+
+    model Policy {
+      id          String   @id @default(cuid())
+      name        String
+      description String?
+      rules       Json
+      tenantId    String   @db.VarChar(191)  // ADD THIS
+      createdBy   String
+      createdAt   DateTime @default(now())
+
+      creator User   @relation(fields: [createdBy], references: [id])
+      tenant  Tenant @relation(fields: [tenantId], references: [id])  // ADD THIS
+
+      @@index([tenantId])  // ADD THIS
+    }
+
+    model Capability {
+      id          String   @id @default(cuid())
+      name        String
+      description String?
+      scope       String
+      tenantId    String?  @db.VarChar(191)  // NULLABLE (global capabilities)
+      createdAt   DateTime @default(now())
+
+      tenant Tenant? @relation(fields: [tenantId], references: [id])  // OPTIONAL
+
+      @@index([tenantId])  // ADD THIS
+    }
+    ```
+
+    **API Route Example:**
+
+    ```typescript
+    // apps/api/src/routes/grants.routes.ts
+
+    import { requireTenantId } from '../middleware/require-tenant-id';
+
+    // BEFORE (VULNERABLE)
+    router.get('/grants', async (req, res) => {
+      const grants = await prisma.grant.findMany({
+        where: { userId: req.user.id }  // ❌ No tenant isolation
+      });
+      res.json(grants);
+    });
+
+    // AFTER (SECURE)
+    router.get('/grants', requireTenantId, async (req, res) => {
+      const grants = await prisma.grant.findMany({
+        where: {
+          userId: req.user.id,
+          tenantId: req.user.tenantId  // ✅ Tenant isolation enforced
+        }
+      });
+      res.json(grants);
+    });
+
+    router.post('/grants', requireTenantId, async (req, res) => {
+      const grant = await prisma.grant.create({
+        data: {
+          ...req.body,
+          userId: req.user.id,
+          tenantId: req.user.tenantId  // ✅ Auto-inject tenantId
+        }
+      });
+      res.status(201).json(grant);
+    });
+
+    router.put('/grants/:id', requireTenantId, async (req, res) => {
+      // Verify ownership before update
+      const existing = await prisma.grant.findUnique({
+        where: { id: req.params.id }
+      });
+
+      if (!existing || existing.tenantId !== req.user.tenantId) {
+        return res.status(403).json({ error: 'Forbidden' });
+      }
+
+      const updated = await prisma.grant.update({
+        where: {
+          id: req.params.id,
+          tenantId: req.user.tenantId  // ✅ Double-check in WHERE
+        },
+        data: req.body
+      });
+
+      res.json(updated);
+    });
+    ```
+
+    **Middleware Implementation:**
+
+    ```typescript
+    // apps/api/src/middleware/require-tenant-id.ts
+
+    export function requireTenantId(req, res, next) {
+      if (!req.user) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      if (!req.user.tenantId) {
+        return res.status(401).json({
+          error: 'Unauthorized',
+          message: 'User missing tenantId - data integrity issue'
+        });
+      }
+
+      next();
+    }
+    ```
+
+    **Test Example:**
+
+    ```typescript
+    // apps/api/tests/multi-tenant/permissions-isolation.spec.ts
+
+    describe('Permissions Multi-Tenant Isolation', () => {
+      it('should prevent cross-tenant grant access', async () => {
+        // Tenant A creates grant
+        const grantA = await request(app)
+          .post('/api/grants')
+          .set('Authorization', `Bearer ${tenantAUserToken}`)
+          .send({ resourceId: 'res_123', permission: 'read' })
+          .expect(201);
+
+        // Tenant B tries to access Tenant A grant
+        await request(app)
+          .get(`/api/grants/${grantA.body.id}`)
+          .set('Authorization', `Bearer ${tenantBUserToken}`)
+          .expect(403);
+      });
+    });
+    ```
+
+  files_to_modify:
+    - packages/database/prisma/schema.prisma (UPDATE - add tenantId to 4 models)
+    - packages/database/prisma/migrations/XXX_add_tenantid_permissions.sql (CREATE)
+    - apps/api/src/routes/grants.routes.ts (UPDATE - add tenantId WHERE clauses)
+    - apps/api/src/routes/grant-requests.routes.ts (UPDATE)
+    - apps/api/src/routes/policies.routes.ts (UPDATE)
+    - apps/api/src/routes/capabilities.routes.ts (UPDATE)
+    - apps/api/src/middleware/require-tenant-id.ts (CREATE)
+    - apps/api/tests/multi-tenant/permissions-isolation.spec.ts (CREATE)
+    - docs/architecture/multi-tenancy.md (UPDATE)
+    - docs/migrations/003-permissions-tenantid.md (CREATE)
+
+  definition_of_done:
+    - [ ] Code written and self-reviewed
+    - [ ] All acceptance criteria checkboxes marked
+    - [ ] Migration tested on staging database
+    - [ ] Zero data loss verified (all records have valid tenantId)
+    - [ ] Tests passing locally (npm run test:multi-tenant)
+    - [ ] Tests passing in CI (GitHub Actions green)
+    - [ ] Performance tests show < 5ms overhead
+    - [ ] Code review approved (1+ approval + DBA review)
+    - [ ] Documentation updated
+    - [ ] PR merged to main
+    - [ ] Deployment successful with migration
+
+  time_estimate_breakdown:
+    - Schema Changes: 2h
+    - Migration Script (with backfill): 6h
+    - API Routes Update (4 routes): 8h
+    - Middleware Implementation: 2h
+    - Multi-Tenant Tests: 4h
+    - Documentation: 2h
+    - Total: 24h
+
+  risks:
+    - name: "Data backfill may fail for orphaned records"
+      probability: MEDIUM
+      impact: HIGH
+      mitigation: "Identify orphaned records first, assign to default tenant or delete"
+
+    - name: "Migration downtime on production"
+      probability: LOW
+      impact: HIGH
+      mitigation: "Run migration during maintenance window, use online schema change tool (gh-ost)"
+
+    - name: "Performance degradation with large datasets"
+      probability: LOW
+      impact: MEDIUM
+      mitigation: "Add composite indexes (tenantId, userId), test with 1M+ records"
+
+  validation:
+    - type: CODE_REVIEW
+      reviewer: Backend Lead + DBA
+      checklist: "Schema changes, migration safety, query performance"
+
+    - type: MANUAL_TEST
+      tester: QA Engineer
+      coverage: "Test multi-tenant isolation manually on staging"
+
+    - type: SECURITY_REVIEW
+      reviewer: Security Engineer
+      checklist: "Verify no SQL injection, proper WHERE clauses, IDOR prevention"
+
+  status: COMPLETED
+  created_at: 2026-02-07
+  created_by: "@aios-master (Orion)"

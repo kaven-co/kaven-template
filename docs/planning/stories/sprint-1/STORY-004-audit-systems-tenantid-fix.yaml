@@ -1,0 +1,71 @@
+story:
+  id: STORY-004
+  epic_id: EPIC-001
+  title: "Fix Missing tenantId in Audit Systems (SecurityAuditLog, ImpersonationSession)"
+  description: |
+    Corrigir falha crítica de multi-tenancy nos sistemas de auditoria onde as tabelas
+    SecurityAuditLog e ImpersonationSession não possuem campo tenantId.
+
+    P0 LAUNCH BLOCKER: Permite vazamento de audit logs entre tenants.
+
+  priority: P0
+  effort_hours: 20
+  assignee_role: Backend Engineer
+  dependencies: [STORY-003]
+  debt_ids: [MTN-C3]
+
+  acceptance_criteria:
+    - [ ] Schema Migration: tenantId adicionado em 2 tabelas
+      - [ ] SecurityAuditLog → tenantId String NOT NULL
+      - [ ] ImpersonationSession → tenantId String NOT NULL
+      - [ ] Indexes: @@index([tenantId])
+      - [ ] Foreign keys para Tenant
+
+    - [ ] Data Backfill: Dados existentes migrados
+      - [ ] SecurityAuditLog: backfill via userId → user.tenantId
+      - [ ] ImpersonationSession: backfill via targetUserId → user.tenantId
+      - [ ] Validação: ZERO registros com tenantId NULL
+
+    - [ ] API Routes Updated
+      - [ ] GET /api/audit-logs?tenantId=${req.user.tenantId}
+      - [ ] GET /api/impersonation-sessions?tenantId=${req.user.tenantId}
+      - [ ] Middleware requireTenantId aplicado
+
+    - [ ] Multi-Tenant Isolation Tests
+      - [ ] Tenant A não vê audit logs de Tenant B
+      - [ ] Tenant A não vê impersonation sessions de Tenant B
+
+    - [ ] Documentation
+      - [ ] docs/migrations/004-audit-tenantid.md
+
+  technical_notes: |
+    **Migration Script:**
+    ```sql
+    ALTER TABLE security_audit_logs ADD COLUMN tenant_id VARCHAR(191) NULL;
+
+    UPDATE security_audit_logs sal
+    SET tenant_id = (SELECT u.tenant_id FROM users u WHERE u.id = sal.user_id)
+    WHERE sal.tenant_id IS NULL;
+
+    ALTER TABLE security_audit_logs MODIFY tenant_id VARCHAR(191) NOT NULL;
+    CREATE INDEX idx_security_audit_logs_tenant_id ON security_audit_logs(tenant_id);
+    ```
+
+  files_to_modify:
+    - packages/database/prisma/schema.prisma (UPDATE)
+    - packages/database/prisma/migrations/XXX_audit_tenantid.sql (CREATE)
+    - apps/api/src/routes/audit-logs.routes.ts (UPDATE)
+    - apps/api/tests/multi-tenant/audit-isolation.spec.ts (CREATE)
+    - docs/migrations/004-audit-tenantid.md (CREATE)
+
+  time_estimate_breakdown:
+    - Schema Changes: 2h
+    - Migration Script: 6h
+    - API Routes: 6h
+    - Tests: 4h
+    - Documentation: 2h
+    - Total: 20h
+
+  status: COMPLETED
+  created_at: 2026-02-07
+  created_by: "@aios-master"

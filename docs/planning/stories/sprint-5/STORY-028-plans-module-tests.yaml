@@ -1,0 +1,36 @@
+story:
+  id: STORY-028
+  epic_id: EPIC-005
+  title: "Write test suite for plans module"
+  description: |
+    Plans module handles subscription logic and feature limits — core to the SaaS pricing model.
+    Existing plan.service.spec.ts covers plan CRUD but NOT feature limit enforcement or
+    PlanFeature associations.
+  priority: P0
+  effort_hours: 8
+  status: DONE
+  assignee_role: Backend Engineer
+  sprint: Sprint 5
+  dependencies: []
+
+  acceptance_criteria:
+    - [x] Unit tests for subscription lifecycle (subscribe/upgrade/downgrade/cancel)
+    - [x] Tests for feature limit enforcement (requireFeature middleware)
+    - [x] Tests for PlanFeature model associations
+    - [x] Tests for tenant-scoped plan queries (RLS)
+    - [x] Minimum 80% line coverage
+    - [x] All tests pass in CI
+
+  technical_notes: |
+    Follow existing plan.service.spec.ts pattern. Use vi.hoisted() + vi.mock('../../../lib/prisma')
+    with createPrismaMock helper at apps/api/test/helpers/prisma-mock.ts.
+    Test requireFeature middleware separately.
+
+  files_to_create:
+    - apps/api/src/modules/plans/plan-feature.service.spec.ts
+    - apps/api/src/modules/plans/plan-lifecycle.spec.ts
+
+  definition_of_done:
+    - [x] All tests pass in CI
+    - [x] 80%+ line coverage
+    - [x] Zero TypeScript errors

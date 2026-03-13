@@ -1,0 +1,44 @@
+story:
+  id: STORY-012
+  epic_id: EPIC-002
+  title: "Tenant App Theme API Implementation"
+  description: |
+    Implementar o endpoint Fastify de theme no backend da API, garantindo que o
+    Tenant App possa buscar e salvar configurações de tema via API REST.
+
+  priority: P1
+  effort_hours: 8
+  status: COMPLETED
+  assignee_role: Backend Engineer
+  sprint: Sprint 2
+  dependencies: [STORY-011]
+  epic_id: EPIC-002
+
+  acceptance_criteria:
+    - [x] GET /api/tenant/theme
+      - [x] Retorna PlatformConfig do tenant do usuário logado
+      - [x] Usa RLS middleware para filtrar por tenantId
+      - [x] 200 com config ou 404 se não configurado
+
+    - [x] PUT /api/tenant/theme
+      - [x] Atualiza ou cria PlatformConfig para o tenant
+      - [x] Requer role: OWNER ou ADMIN
+      - [x] Valida campos obrigatórios (primaryColor, name)
+      - [x] Retorna config atualizado
+
+    - [x] Testes
+      - [x] Teste de isolamento: tenant A não vê theme de tenant B
+      - [x] Teste de autorização: member não pode alterar theme
+
+  technical_notes: |
+    - Seguir padrão Fastify dos outros módulos (ver grants module como referência)
+    - Usar requireFeature middleware para verificar plano (theme customization pode ser feature premium)
+    - Endpoint no Fastify, não em Next.js API routes
+
+  files_to_create:
+    - apps/api/src/modules/theme/ (novo módulo)
+
+  definition_of_done:
+    - [x] Endpoints funcionando com dados reais
+    - [x] Isolamento multi-tenant validado em testes
+    - [x] Zero TypeScript errors

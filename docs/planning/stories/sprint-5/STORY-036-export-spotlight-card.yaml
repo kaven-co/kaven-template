@@ -1,0 +1,28 @@
+story:
+  id: STORY-036
+  epic_id: EPIC-005
+  title: "Export SpotlightCard from @kaven/ui barrel"
+  description: |
+    SpotlightCard component exists at packages/ui/src/compat/spotlight-card.tsx but is
+    NOT exported from the barrel file (index.ts). Quick 1-line fix.
+  priority: P0
+  effort_hours: 1
+  status: DONE
+  assignee_role: Frontend Engineer
+  sprint: Sprint 5
+  dependencies: []
+
+  acceptance_criteria:
+    - [x] Add SpotlightCard export to packages/ui/src/index.ts
+    - [x] Verify MDX docs importing SpotlightCard resolve correctly
+    - [x] Build passes
+
+  technical_notes: |
+    Add `export * from './compat/spotlight-card'` to index.ts. Verify no naming conflicts.
+
+  files_to_create:
+    - packages/ui/src/index.ts
+
+  definition_of_done:
+    - [x] Build passes
+    - [x] SpotlightCard importable from @kaven/ui

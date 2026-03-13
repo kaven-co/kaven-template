@@ -1,0 +1,38 @@
+story:
+  id: STORY-031
+  epic_id: EPIC-005
+  title: "Write test suites for currencies, dashboard, and export modules"
+  description: |
+    Three modules with zero test coverage, grouped for efficiency. currencies has inline
+    route handlers (no service), dashboard uses aggregate queries with date math, export
+    depends on shared exportService.
+  priority: P1
+  effort_hours: 12
+  status: DONE
+  assignee_role: Backend Engineer
+  sprint: Sprint 5
+  dependencies: []
+
+  acceptance_criteria:
+    - [x] currencies tests for CRUD + default currency handling + conversion logic
+    - [x] dashboard tests for metrics aggregation + tenant-scoped KPIs + date range filtering + zero-division edge case
+    - [x] export tests for CSV generation + format handling + tenant data isolation
+    - [x] Each module minimum 70% line coverage
+    - [x] All tests pass in CI
+
+  technical_notes: |
+    currencies has no service layer — test at route handler level or use supertest.
+    Dashboard needs careful mock setup for prisma.invoice.aggregate and prisma.user.count.
+    Export mock exportService, not Prisma directly.
+    Use vi.hoisted() + vi.mock('../../../lib/prisma') with createPrismaMock helper
+    at apps/api/test/helpers/prisma-mock.ts.
+
+  files_to_create:
+    - apps/api/src/modules/currencies/currencies.spec.ts
+    - apps/api/src/modules/dashboard/dashboard.service.spec.ts
+    - apps/api/src/modules/export/export.controller.spec.ts
+
+  definition_of_done:
+    - [x] All tests pass in CI
+    - [x] 70%+ line coverage for each module
+    - [x] Zero TypeScript errors

@@ -1,0 +1,33 @@
+epic:
+  id: EPIC-004
+  title: "Sprint 4: P1 Completion & Polish"
+  description: |
+    Finalizar itens P1 restantes: Plan/Product hybrid pattern, AWS SES integration,
+    Feature limits display.
+
+  priority: P1
+  effort_hours: 26
+  duration_days: 3
+  sprint: Sprint 4 (Week 11)
+  start_date: 2026-03-24
+  end_date: 2026-03-28
+  team_size: 2
+  dependencies: [EPIC-003]
+
+  stories:
+    - STORY-025  # Plan/Product Hybrid Pattern (6h)
+    - STORY-026  # AWS SES Integration (12h)
+    - STORY-027  # Feature Limits Display (6h)
+
+  acceptance_criteria:
+    - [ ] AWS SES sending emails successfully
+    - [ ] Feature limits visible in UI (badge + toast + modal)
+    - [ ] Hybrid Plan/Product pattern working (global + per-tenant)
+    - [ ] All P1 items merged
+
+  metrics:
+    email_providers: "3 → 4 (add AWS SES)"
+    feature_limits_ux: "0% → 100%"
+
+  status: NOT_STARTED
+  created_at: 2026-02-03

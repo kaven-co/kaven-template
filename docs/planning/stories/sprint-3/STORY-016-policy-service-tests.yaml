@@ -1,0 +1,47 @@
+story:
+  id: STORY-016
+  epic_id: EPIC-003
+  title: "Policy Service Unit Tests"
+  description: |
+    Implementar suite de testes unitários para o Policy Service, cobrindo
+    criação de políticas, aplicação de regras e validação de permissões.
+
+    QUALITY BLOCKER: Policy service tem 0% de cobertura. Políticas definem
+    o que cada role pode fazer — bug aqui pode escalar privilégios.
+
+  priority: P1
+  effort_hours: 6
+  status: COMPLETED
+  assignee_role: Backend Engineer (QA focus)
+  sprint: Sprint 3
+  dependencies: [STORY-003, STORY-004]
+  epic_id: EPIC-003
+
+  acceptance_criteria:
+    - [x] Cobertura: Policy Service ≥ 85%
+      - [ ] createPolicy() — criação com tenantId
+      - [ ] applyPolicy() — aplicação e herança de roles
+      - [ ] evaluatePermission() — allow/deny correto
+      - [ ] deletePolicy() — soft delete
+
+    - [ ] Isolamento multi-tenant testado
+      - [ ] Policy de tenant A não aplica para tenant B
+      - [ ] Herança de políticas dentro do mesmo tenant
+
+    - [ ] RBAC edge cases
+      - [ ] Role OWNER tem acesso a tudo dentro do tenant
+      - [ ] Role MEMBER tem acesso restrito
+      - [ ] Permissão explícita deny sobrepõe allow herdado
+
+  technical_notes: |
+    - Verificar apps/api/src/services/policy.service.ts (já existe)
+    - Usar mesmo padrão de mock do Prisma dos outros testes
+
+  files_to_create:
+    - apps/api/src/services/policy.service.test.ts
+
+  definition_of_done:
+    - [ ] Coverage ≥ 85% no Policy Service
+    - [ ] RBAC edge cases testados
+    - [ ] Zero TypeScript errors
+    - [ ] CI verde

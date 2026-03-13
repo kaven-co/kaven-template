@@ -1,0 +1,42 @@
+epic:
+  id: EPIC-003
+  title: "Sprint 3: Core Services Testing & Performance Optimization"
+  description: |
+    Aumentar test coverage de 26% para 70% testando core services (grant, policy,
+    user, payment). Otimizar performance com índices compostos. Completar mobile UX.
+
+  priority: P1
+  effort_hours: 80
+  duration_days: 10
+  sprint: Sprint 3 (Week 9-10)
+  start_date: 2026-03-10
+  end_date: 2026-03-21
+  team_size: 3
+  dependencies: [EPIC-002]
+
+  stories:
+    - STORY-015  # Grant Service Tests (8h)
+    - STORY-016  # Policy Service Tests (6h)
+    - STORY-017  # User Service Tests (8h)
+    - STORY-018  # Payment Service Tests (6h)
+    - STORY-019  # Audit Logs Soft Delete (8h)
+    - STORY-020  # Composite Indexes (8h)
+    - STORY-021  # IDOR Middleware (8h)
+    - STORY-022  # Mobile Menu Toggle (4h)
+    - STORY-023  # Real Data Integration (8h)
+    - STORY-024  # Quick Wins P1 (16h)
+
+  acceptance_criteria:
+    - [ ] Test coverage ≥ 70% (30/42 services)
+    - [ ] Core services 100% tested (grant, policy, user, payment)
+    - [ ] Dashboard queries <200ms (N+1 eliminated)
+    - [ ] Mobile menu functional (hamburger + drawer)
+    - [ ] IDOR middleware cobre Grant/Policy/Capability
+
+  metrics:
+    test_coverage: "26% → 70%"
+    query_performance: "500ms → 150ms (dashboard)"
+    mobile_ux: "Broken → Functional"
+
+  status: NOT_STARTED
+  created_at: 2026-02-03

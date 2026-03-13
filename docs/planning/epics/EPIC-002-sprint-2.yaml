@@ -1,0 +1,197 @@
+epic:
+  id: EPIC-002
+  title: "Sprint 2: Frontend Tenant App & Quick Wins"
+  description: |
+    Completar funcionalidades demo do Tenant App que demonstram customer journey
+    completo (signup → use → billing). Implementar Invoice/Order history pages,
+    sistema de theme customization per-tenant, e resolver quick wins de autorização.
+
+    **Goal:** Tenant App demo-ready com billing history e theme customization funcional.
+
+    **Success Criteria:**
+    - Invoice History page completa (list + detail + PDF download)
+    - Order History page completa (list + detail + tracking)
+    - Theme customization per-tenant (API integrado + DB-driven)
+    - Admin routes protegidos por authorization middleware
+    - Real tenant data fetching (não hardcoded)
+
+  priority: P0
+  effort_hours: 72
+  duration_days: 9
+  sprint: Sprint 2 (Week 7-8)
+  start_date: 2026-02-24
+  end_date: 2026-03-07
+  team_size: 3
+  dependencies: [EPIC-001]  # Depende de Sprint 1 estar completo
+
+  stories:
+    - STORY-008  # Invoice History Page (14h)
+    - STORY-009  # Order History Page (12h)
+    - STORY-010  # Theme API Integration (8h)
+    - STORY-011  # Theme Per-Tenant Refactor (12h)
+    - STORY-012  # Theme API Implementation (8h)
+    - STORY-013  # Real Data Fetching (4h)
+    - STORY-014  # Admin Authorization (8h)
+
+  blocked_by: [EPIC-001]
+  blocks: []  # Sprint 3 pode rodar em paralelo ou depois
+
+  acceptance_criteria:
+    - [ ] Todos os 7 stories completados e merged
+    - [ ] CI/CD pipeline 100% verde
+    - [ ] Invoice History page deployed e funcional
+    - [ ] Order History page deployed e funcional
+    - [ ] Theme customization demo working (logo + colors)
+    - [ ] Admin routes protegidos (403 Forbidden sem permission)
+    - [ ] Tenant data fetching real (não "Kaven HQ" hardcoded)
+    - [ ] E2E tests passando para Invoice/Order pages
+    - [ ] Demo recording atualizado (customer journey completo)
+
+  risks:
+    - name: "PDF generation complexity"
+      probability: MEDIUM
+      impact: MEDIUM
+      mitigation: "Usar library pronta (PDFKit ou React-PDF), não implementar do zero"
+
+    - name: "Theme SSR hydration issues"
+      probability: HIGH
+      impact: MEDIUM
+      mitigation: "Testar em dev/staging primeiro, usar Next.js best practices"
+
+    - name: "Migration conflicts (DesignSystemCustomization → TenantBranding)"
+      probability: LOW
+      impact: HIGH
+      mitigation: "Backup data antes de migration, dry-run em staging"
+
+  metrics:
+    demo_completeness: "53% → 100%"
+    frontend_coverage: "Invoice/Order: 0% → 100%"
+    theme_functional: "0% → 100%"
+    admin_security: "Unprotected → Protected"
+
+  technical_notes: |
+    **Invoice/Order Pages Design Pattern (UX Specialist):**
+
+    Style: **Tenant style** (glassmorphism, customer-friendly, card-based mobile)
+
+    Components to create:
+    ```
+    apps/tenant/app/[locale]/(dashboard)/invoices/
+    ├── page.tsx                    # List view (table desktop, cards mobile)
+    └── [id]/page.tsx               # Detail view + PDF download
+
+    apps/tenant/components/invoices/
+    ├── InvoicesTable.tsx           # Desktop table (reuse DataTable pattern)
+    ├── InvoiceCard.tsx             # Mobile card view
+    ├── InvoiceDetailView.tsx       # Detail layout
+    ├── InvoiceStatusBadge.tsx      # Status visual (Paid/Pending/Overdue)
+    └── InvoicePDFButton.tsx        # Download button
+    ```
+
+    **API Endpoints to create:**
+    - GET /api/app/invoices (tenant-scoped, paginated)
+    - GET /api/app/invoices/:id (tenant-scoped, with line items)
+    - GET /api/app/invoices/:id/pdf (generate PDF on-demand)
+
+    **Theme Customization Architecture (UX Specialist):**
+
+    Logo storage: **Hybrid approach**
+    - Primary: Database blob (File model)
+    - Fallback: External URL (if blob fails)
+
+    Migration: DesignSystemCustomization → TenantBranding
+    ```prisma
+    model TenantBranding {
+      id              String   @id @default(uuid())
+      tenantId        String   @unique  // ✅ One branding per tenant
+      logoFileId      String?  // FK to File model
+      logoUrl         String?  // External URL fallback
+      primaryColor    String?  // Hex color
+      secondaryColor  String?  // Hex color
+      // ...
+    }
+    ```
+
+    **Theme Provider Integration:**
+    ```typescript
+    // apps/tenant/providers/theme-provider.tsx
+    useEffect(() => {
+      async function loadTheme() {
+        try {
+          const response = await fetch('/api/app/branding');
+          if (response.ok) {
+            const branding = await response.json();
+            applyTenantBranding(branding);
+          }
+        } catch (error) {
+          console.error('Failed to load branding:', error);
+          // Fallback to default theme
+        }
+      }
+      loadTheme();
+    }, [tenantId]);
+    ```
+
+    **Admin Authorization Pattern:**
+    ```typescript
+    // apps/admin/app/api/products/route.ts
+    export async function GET(request: Request) {
+      // Add authorization check
+      const session = await getServerSession(authOptions);
+      if (!session?.user?.role || !['SUPER_ADMIN', 'TENANT_ADMIN'].includes(session.user.role)) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+      // ... rest of handler
+    }
+    ```
+
+  documentation:
+    - path: docs/frontend/invoice-order-spec.md
+      status: TO_CREATE
+      description: "Invoice/Order pages specification e design patterns"
+
+    - path: docs/frontend/theme-customization-guide.md
+      status: TO_CREATE
+      description: "Theme customization implementation guide"
+
+    - path: docs/security/admin-authorization.md
+      status: TO_UPDATE
+      description: "Admin routes authorization patterns"
+
+  validation:
+    - type: E2E_TEST
+      tool: Playwright
+      coverage: "Invoice page, Order page, Theme customization"
+
+    - type: VISUAL_REGRESSION
+      tool: Percy (optional)
+      coverage: "Invoice/Order pages em diferentes themes"
+
+    - type: DEMO_RECORDING
+      tool: Loom
+      content: "Complete customer journey (signup → use → billing)"
+
+  rollback_plan: |
+    Se algo crítico falhar durante Sprint 2:
+
+    1. **Rollback Migrations (TenantBranding):**
+       - Revert schema changes via Prisma
+       - Restaurar DesignSystemCustomization table
+
+    2. **Rollback Frontend:**
+       - Remove Invoice/Order routes (delete pages/)
+       - Revert ThemeProvider changes
+
+    3. **Feature Flags (if deployed):**
+       - Disable Invoice/Order pages via feature flag
+       - Revert to old theme provider
+
+    **Backup Strategy:**
+    - Database snapshot antes de TenantBranding migration
+    - Frontend build tagged por story ID
+    - Vercel deployment com rollback instant
+
+  status: NOT_STARTED
+  created_at: 2026-02-03
+  created_by: Tech Lead (Brownfield Discovery)
+  updated_at: 2026-02-03

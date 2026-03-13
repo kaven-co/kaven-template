@@ -1,0 +1,52 @@
+story:
+  id: STORY-013
+  epic_id: EPIC-002
+  title: "Real Data Fetching Fix"
+  description: |
+    Substituir dados mock/hardcoded em páginas do Tenant App por dados reais da API.
+    Várias páginas do dashboard mostram dados estáticos ou placeholders em vez de
+    dados reais do banco.
+
+    P1: Demo com dados falsos é perceptível por compradores técnicos e reduz credibilidade.
+
+  priority: P1
+  effort_hours: 12
+  status: COMPLETED
+  assignee_role: Fullstack Engineer
+  sprint: Sprint 2
+  dependencies: [STORY-008, STORY-009]
+  epic_id: EPIC-002
+
+  acceptance_criteria:
+    - [ ] Dashboard principal: dados reais
+      - [ ] Contadores (tenants, usuários, espaços) da API
+      - [ ] Gráficos Recharts com dados reais (não gerados)
+      - [ ] Últimas atividades da tabela Audit
+
+    - [ ] Páginas com dados mock identificadas e corrigidas
+      - [ ] /dashboard → stats reais
+      - [ ] /features → features do plano atual (não hardcoded)
+      - [ ] /pricing → planos do banco (não hardcoded)
+
+    - [ ] Loading states adequados
+      - [ ] Skeleton loader enquanto carrega
+      - [ ] Error state se API falhar
+
+  technical_notes: |
+    - Verificar cada página do dashboard para identificar mocks
+    - Usar padrão de fetch server-side (RSC) onde possível
+    - Zustand stores devem ser usados apenas para estado de UI, não dados do servidor
+    - Consultar stores existentes: auth.store.ts, tenant.store.ts, space.store.ts
+
+  audit_checklist:
+    - [ ] dashboard/page.tsx — verificar se usa mock data
+    - [ ] features/page.tsx — verificar se features são hardcoded
+    - [ ] pricing/page.tsx — verificar se planos são hardcoded
+    - [ ] plans/page.tsx — verificar se dados são reais
+    - [ ] settings/* — verificar se reflete estado real
+
+  definition_of_done:
+    - [ ] Zero mock data em páginas de produção
+    - [ ] Loading/error states implementados
+    - [ ] Zero TypeScript errors
+    - [ ] Testes de snapshot atualizados

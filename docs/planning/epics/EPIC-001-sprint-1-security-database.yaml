@@ -1,0 +1,53 @@
+epic:
+  id: EPIC-001
+  title: "Sprint 1: Security & Database Isolation"
+  description: |
+    Resolver blockers críticos de segurança e isolamento multi-tenant que impedem
+    o lançamento do produto. Este Epic foca em eliminar riscos de vazamento de dados
+    entre tenants e garantir compliance com GDPR, estabelecendo fundação segura
+    para o framework.
+
+    BLOCKER CRÍTICO: Framework não pode ser lançado sem estes itens completos.
+    Riscos de segurança incluem: data leaks entre tenants, GDPR non-compliance
+    (multas até €20M), zero testes de segurança (breach risk).
+
+  priority: P0
+  effort_hours: 104
+  duration_days: 13
+  sprint: Sprint 1 (Week 5-6)
+  dependencies: []
+
+  stories:
+    - STORY-001  # Security Test Suite Implementation
+    - STORY-002  # GDPR Compliance Tests
+    - STORY-003  # Permission Systems tenantId Migration
+    - STORY-004  # Audit Systems tenantId Migration
+    - STORY-005  # RLS Middleware Expansion
+    - STORY-006  # Soft Delete Auto-Filtering
+    - STORY-007  # Space.tenantId Nullable Investigation
+
+  business_impact:
+    security_risk: CRITICAL
+    compliance_risk: CRITICAL
+    estimated_breach_cost: R$ 500,000 - R$ 5,000,000
+    gdpr_fine_risk: €20,000,000
+
+  success_criteria:
+    - All security tests passing (IDOR, CSRF, SQL Injection, XSS)
+    - GDPR data export/deletion validated
+    - All 33 tenant-scoped models isolated
+    - Zero multi-tenant data leaks in tests
+    - Soft delete filtering automatic
+    - CI security gates passing
+
+  risks:
+    - Multi-tenant data leaks possible without fixes
+    - Legal liability if GDPR not implemented
+    - Database migrations require zero-downtime strategy
+    - Test suite may reveal additional security gaps
+
+  mitigation:
+    - Phased migration strategy (nullable → backfill → NOT NULL)
+    - Comprehensive test coverage before launch
+    - Security audit by external party (optional)
+    - Monitoring setup for queries without tenantId

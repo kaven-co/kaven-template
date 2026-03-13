@@ -1,0 +1,70 @@
+name: Sync Template
+
+# HOW TO SET UP TEMPLATE_REPO_TOKEN:
+# 1. Go to https://github.com/settings/tokens/new
+# 2. Create a Fine-grained token (recommended):
+#    - Resource owner: kaven-co
+#    - Repository access: Only kaven-co/kaven-template
+#    - Permissions → Contents: Read and Write
+#    (Classic token alternative: select the "repo" scope)
+# 3. In this repo → Settings → Secrets and variables → Actions
+# 4. Click "New repository secret"
+# 5. Name: TEMPLATE_REPO_TOKEN  |  Value: paste the token
+# 6. Save. The workflow will use it on the next push to main.
+
+on:
+  push:
+    branches: [main]
+    # Only run when source files actually change (skip docs-only, CI, etc.)
+    paths-ignore:
+      - '.github/workflows/**'
+      - '.github/scripts/**'
+      - 'docs/sessions/**'
+      - '*.md'
+      - 'CHANGELOG.md'
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Reason for manual sync (optional)'
+        required: false
+        default: 'manual trigger'
+
+# Prevent concurrent syncs — queue instead of cancel so no push is lost
+concurrency:
+  group: sync-template
+  cancel-in-progress: false
+
+permissions:
+  contents: read # This repo needs read only; write is done via TEMPLATE_REPO_TOKEN
+
+jobs:
+  sync:
+    name: Sync to kaven-co/kaven-template
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout kaven-framework
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0 # Full history so git rev-parse works correctly
+
+      - name: Install rsync
+        run: sudo apt-get update -qq && sudo apt-get install -y rsync
+
+      - name: Run generate-template.sh
+        env:
+          TEMPLATE_REPO_TOKEN: ${{ secrets.TEMPLATE_REPO_TOKEN }}
+          FRAMEWORK_SHA: ${{ github.sha }}
+        run: bash .github/scripts/generate-template.sh
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Template Sync" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Framework SHA | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Trigger | \`${{ github.event_name }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Target | [kaven-co/kaven-template](https://github.com/kaven-co/kaven-template) |" >> $GITHUB_STEP_SUMMARY

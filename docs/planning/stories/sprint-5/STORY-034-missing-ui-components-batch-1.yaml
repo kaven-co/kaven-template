@@ -1,0 +1,36 @@
+story:
+  id: STORY-034
+  epic_id: EPIC-005
+  title: "Implement missing UI components for docs (Batch 1)"
+  description: |
+    MDX docs reference components from @kaven/ui that may not exist or not be exported.
+    This story audits the exact gap and implements the first half. The compat layer pattern
+    uses CVA + Tailwind + React.forwardRef. 68 compat components already exist.
+  priority: P0
+  effort_hours: 16
+  status: DONE
+  assignee_role: Frontend Engineer
+  sprint: Sprint 5
+  dependencies: []
+
+  acceptance_criteria:
+    - [x] Run docs build and capture ALL import errors to produce definitive missing component list
+    - [x] Produce numbered audit artifact at docs/planning/ui-component-gap-audit.md with categorization
+    - [x] Categorize missing into: (a) exists but not exported, (b) simple atom/molecule to implement, (c) complex organism
+    - [x] Fix all category (a) — re-export existing components from index.ts
+    - [x] Implement first half of category (b) components following CVA + cn() + forwardRef pattern
+    - [x] Each new component has TypeScript types exported
+    - [x] Each component exported from @kaven/ui barrel file (packages/ui/src/index.ts)
+    - [x] Docs build passes for implemented components
+
+  technical_notes: |
+    Follow compat layer pattern. Use cva() from class-variance-authority, cn() from
+    patterns/utils, React.forwardRef. See compat/alert.tsx as reference.
+
+  files_to_create:
+    - packages/ui/src/compat/*.tsx (new components)
+    - packages/ui/src/index.ts (re-exports)
+
+  definition_of_done:
+    - [x] Docs build progresses (fewer import errors)
+    - [x] Zero TypeScript errors

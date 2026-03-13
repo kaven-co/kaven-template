@@ -1,0 +1,14 @@
+name: CI Diagnostic
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Echo test
+        run: echo "CI diagnostic is working"
+      
+      - name: Check runner
+        run: uname -a && echo "Runner OK"

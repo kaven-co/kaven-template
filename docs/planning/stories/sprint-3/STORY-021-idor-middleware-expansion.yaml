@@ -1,0 +1,48 @@
+story:
+  id: STORY-021
+  epic_id: EPIC-003
+  title: "IDOR Middleware Expansion"
+  description: |
+    Expandir o IDOR middleware existente para cobrir todos os modelos Prisma
+    com tenantId (33 modelos identificados). Atualmente cobre apenas 15 modelos.
+
+    SECURITY: Os 18 modelos descobertos sem cobertura IDOR incluem Grant, Policy e
+    Capability — o coração do sistema de permissões. Isso é P0 implícito.
+
+  priority: P1
+  effort_hours: 8
+  status: Done
+  assignee_role: Backend Engineer (Security focus)
+  sprint: Sprint 3
+  dependencies: [STORY-001, STORY-003, STORY-004]
+  epic_id: EPIC-003
+
+  acceptance_criteria:
+    - [x] IDOR middleware cobre TODOS os 33 modelos tenant-scoped
+      - [x] Grant, GrantRequest, Policy, Capability adicionados
+      - [x] AuditLog adicionado
+      - [x] Space e SpaceUser adicionados
+      - [x] Demais modelos identificados no brownfield discovery
+
+    - [x] Testes de IDOR expandidos
+      - [x] idor.spec.ts: de 15 para 33 modelos testados
+      - [x] Cada novo modelo tem teste de acesso cross-tenant
+
+    - [x] Documentação atualizada
+      - [x] Lista de modelos cobertos no IDOR middleware
+
+  technical_notes: |
+    - idor.middleware.ts já existe em apps/api/src/middleware/
+    - idor.spec.ts: 15 modelos atuais — expandir para 33
+    - Verificar packages/database/prisma/schema.base.prisma para lista completa
+    - Usar createAndTestIDOR() helper criado na STORY-001
+
+  files_to_modify:
+    - apps/api/src/middleware/idor.middleware.ts
+    - apps/api/test/security/idor.spec.ts (ou caminho equivalente)
+
+  definition_of_done:
+    - [x] 33/33 modelos cobertos pelo IDOR middleware
+    - [x] Testes de IDOR passando para todos os modelos
+    - [x] Zero TypeScript errors
+    - [x] CI verde

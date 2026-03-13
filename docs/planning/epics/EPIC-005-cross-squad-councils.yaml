@@ -1,0 +1,285 @@
+epic:
+  id: EPIC-005
+  title: Cross-Squad Council Expansion + Steave (Squad Lead)
+  status: planned
+  priority: high
+  start_date: 2026-02-17
+  target_date: 2026-02-19
+  owner: Claude
+  description: |
+    Expande o sistema cross-squad de 1 council (Design) para 5 councils completos,
+    adicionando Steave como squad lead e orquestrador estratégico. Steave possui
+    capacidades únicas: strategic thinking com leadership minds (Musk, Jobs, Altman),
+    ownership de Product e Growth councils, generic router para qualquer council,
+    e challenge mode para questionar decisões de outros agentes.
+
+    Este epic estabelece o padrão de integração cross-squad que pode ser replicado
+    para futuros squads no ecossistema AIOS.
+
+  business_value: |
+    - Decisões arquiteturais consultam Mitchell Hashimoto, Kent Beck, Guillermo Rauch
+    - Decisões de produto consultam Marty Cagan, Jeff Patton, Cagan-Patton
+    - Estratégias de growth consultam Seth Godin, Alex Hormozi, Eugene Schwartz
+    - Quality strategy consulta Kent Beck, Daniel Kahneman
+    - Leadership thinking consulta Elon Musk, Steve Jobs, Sam Altman
+    - Steave atua como entry point unificado e critical thinking partner
+    - Aumenta qualidade de decisões em 5 áreas críticas do produto
+
+scope:
+  in_scope:
+    - Criar agente Steave (kaven-squad-lead) com 8 commands
+    - Architecture Council (Atlas) com 3 minds
+    - Product Council (Steave) com 3 minds
+    - Growth Council (Steave) com 4 minds
+    - Quality Council (Shield) com 2 minds
+    - Strategic thinking command (*think) para Steave
+    - Generic router command (*consult) para Steave
+    - Challenge mode command (*challenge) para Steave
+    - 4 novos workflows (architecture, product, growth, quality)
+    - 7 novos task files
+    - Atualização de 3 agentes existentes (Atlas, Shield, squad.yaml)
+    - Documentação completa em CLAUDE.md
+    - 120 E2E validation checks (60 padrão + 60 completo)
+
+  out_of_scope:
+    - Modificação do Design Council existente (já funcional)
+    - Criação de novos minds no mmos-squad
+    - Integração com outros squads além de mmos-squad
+    - Automação de council selection (manual por enquanto)
+    - Dashboard de consultation analytics
+    - Consultation history tracking system
+
+sprints:
+  - id: sprint-cs1
+    name: Steave + Architecture Council + Product Council
+    duration: 2 days
+    stories:
+      - CS1.1: Criar agente Steave (squad lead)
+      - CS1.2: Architecture Council task file
+      - CS1.3: Architecture Council workflow
+      - CS1.4: Architecture Council registration (Atlas update + squad.yaml)
+      - CS1.5: Architecture Council E2E validation (30 checks)
+      - CS1.6: Product Council task file
+      - CS1.7: Product Council workflow
+      - CS1.8: Product Council registration (Steave wiring + squad.yaml)
+      - CS1.9: Product Council E2E validation (30 checks)
+      - CS1.10: Strategic thinking (*think) task + E2E (10 checks)
+    deliverables:
+      - kaven-squad-lead.md (agent file)
+      - 2 task files (architecture, product)
+      - 2 workflow files
+      - 3 agent updates (steave wiring, atlas update, squad.yaml)
+      - 70 E2E checks
+    pr: "#30 (~1200-1500 lines)"
+
+  - id: sprint-cs2
+    name: Growth Council + Quality Council
+    duration: 1 day
+    stories:
+      - CS2.1: Growth Council task + workflow
+      - CS2.2: Growth Council registration (Steave wiring) + E2E (30 checks)
+      - CS2.3: Quality Council task + workflow
+      - CS2.4: Quality Council registration (Shield update) + E2E (20 checks)
+    deliverables:
+      - 2 task files (growth, quality)
+      - 2 workflow files
+      - 2 agent updates (steave growth wiring, shield update)
+      - 50 E2E checks
+
+  - id: sprint-cs3
+    name: Generic Router + Challenge Mode + Documentation
+    duration: 1 day
+    stories:
+      - CS3.1: Generic *consult router implementation
+      - CS3.2: Challenge mode (*challenge) task
+      - CS3.3: CLAUDE.md comprehensive documentation update
+    deliverables:
+      - 2 task files (generic router, challenge)
+      - Complete CLAUDE.md update with all 5 councils
+    pr: "#31 (~900-1100 lines, includes CS2+CS3)"
+
+success_metrics:
+  - metric: Steave agent functional
+    target: 8 commands working
+    validation: Manual activation test
+
+  - metric: Cross-squad councils operational
+    target: 5 councils (Design + 4 new)
+    validation: Each council tested with sample question
+
+  - metric: E2E validation coverage
+    target: 120 checks passing (60 standard + 60 extended)
+    validation: Automated test suite
+
+  - metric: Documentation completeness
+    target: CLAUDE.md reflects all 5 councils
+    validation: Manual review checklist
+
+  - metric: squad.yaml parseable
+    target: Valid YAML with all components
+    validation: YAML validator
+
+  - metric: Mind paths verified
+    target: All 14 unique mind files exist
+    validation: File system check
+
+  - metric: PRs mergeable
+    target: 2 PRs with green CI
+    validation: GitHub PR checks
+
+  - metric: Agent collaboration working
+    target: Agents can invoke each other's councils
+    validation: Cross-agent consultation test
+
+risks:
+  - risk: Hormozi COGNITIVE_OS.md muito grande (~8k tokens)
+    probability: alta
+    impact: média
+    mitigation: |
+      Warning explícito no task file recomendando Sonnet para Hormozi.
+      Sugerir single/duo mode em vez de roundtable quando Hormozi incluído.
+      Considerar criar versão resumida no futuro.
+
+  - risk: Kent Beck compartilhado entre Architecture e Quality
+    probability: média
+    impact: média
+    mitigation: |
+      Channeling instructions explícitas e diferentes:
+      - Architecture: foco em patterns, testing strategy, DX
+      - Quality: foco em TDD, risk analysis, coverage strategy
+      Documentar claramente em cada task file.
+
+  - risk: Steave persona muito complexa
+    probability: média
+    impact: média
+    mitigation: |
+      System prompt focado e organizado por seções.
+      Core principles claros (7 items).
+      Commands bem definidos com propósitos distintos.
+
+  - risk: squad.yaml merge conflicts durante desenvolvimento
+    probability: média
+    impact: média
+    mitigation: |
+      Usar estratégia append-only para mudanças.
+      Rebase frequente da main.
+      Testar parsing após cada mudança.
+
+  - risk: 8 agentes pode confundir usuários
+    probability: baixa
+    impact: baixa
+    mitigation: |
+      Steave como entry point claro e documentado.
+      *help organizado por categoria.
+      Agent collaboration table em cada agent file.
+
+  - risk: Mind paths quebrados ou movidos
+    probability: baixa
+    impact: alta
+    mitigation: |
+      Validação de paths no Step 2 de cada council.
+      Graceful degradation se mind não carrega.
+      File system check nos E2E tests.
+
+  - risk: Template inconsistências entre councils
+    probability: média
+    impact: média
+    mitigation: |
+      Seguir Design Council (PR#27/PR#29) como referência exata.
+      Copiar estrutura e adaptar apenas o necessário.
+      Review checklist para verificar consistência.
+
+dependencies:
+  existing_features:
+    - Design Council (PR#27, PR#29) - padrão de referência
+    - kaven-squad agents (7 agentes atuais)
+    - mmos-squad minds (30 minds disponíveis)
+    - squad.yaml structure (manifesto atual)
+
+  external_dependencies:
+    - nenhuma
+
+  blocks:
+    - nenhum
+
+tech_debt_created:
+  - item: Consultation history tracking não implementado
+    priority: P2
+    effort: 8h
+    note: Pode ser adicionado em epic futuro com analytics dashboard
+
+  - item: Automated council selection baseado em contexto
+    priority: P3
+    effort: 16h
+    note: Atual é manual, mas inteligência para auto-selecionar minds seria útil
+
+  - item: Hormozi mind optimization (versão resumida)
+    priority: P2
+    effort: 4h
+    note: COGNITIVE_OS.md muito grande, criar versão otimizada mantém fidelidade
+
+rollout_plan:
+  phase_1:
+    name: Sprint CS1 - Steave + Architecture + Product
+    duration: 2 days
+    deliverables:
+      - PR#30 com Steave agent completo
+      - Architecture Council operacional (Atlas)
+      - Product Council operacional (Steave)
+      - Strategic thinking (*think) funcional
+      - 70 E2E checks passando
+
+  phase_2:
+    name: Sprint CS2+CS3 - Growth + Quality + Docs
+    duration: 2 days
+    deliverables:
+      - PR#31 com todos os councils completos
+      - Growth Council operacional (Steave)
+      - Quality Council operacional (Shield)
+      - Generic router (*consult) funcional
+      - Challenge mode (*challenge) funcional
+      - CLAUDE.md atualizado
+      - 120 E2E checks total
+
+  phase_3:
+    name: Post-Merge Validation
+    duration: 1 day
+    tasks:
+      - Test cada council com questões reais
+      - Verificar cross-agent collaboration
+      - Coletar feedback de usabilidade
+      - Ajustar documentação conforme necessário
+
+tags:
+  - cross-squad
+  - mmos-integration
+  - steave
+  - architecture-council
+  - product-council
+  - growth-council
+  - quality-council
+  - strategic-thinking
+  - squad-lead
+
+related_epics:
+  - EPIC-001: Sprint 1 (security foundation)
+  - EPIC-002: Sprints 2-4 (feature development)
+  - EPIC-003: Sprints 5-7 (testing & polish)
+  - EPIC-004: Marketplace Sprints M1-M2 (licensing & payments)
+
+notes: |
+  Este epic estabelece o padrão de integração cross-squad que pode ser replicado
+  para futuros squads. A estrutura de task + workflow + agent wiring + E2E é
+  template para qualquer nova integração.
+
+  Steave é o primeiro agente "meta" do kaven-squad - ele não implementa código,
+  mas orquestra outros agentes e traz strategic thinking ao squad. Isso abre
+  precedente para outros agentes meta no futuro (e.g., product manager agent,
+  design lead agent).
+
+  Os 5 councils cobrem as 5 áreas críticas de decisão em SaaS development:
+  1. Design (UX/UI) - já existente
+  2. Architecture (technical decisions)
+  3. Product (discovery, strategy, validation)
+  4. Growth (marketing, positioning, GTM)
+  5. Quality (testing strategy, risk analysis)

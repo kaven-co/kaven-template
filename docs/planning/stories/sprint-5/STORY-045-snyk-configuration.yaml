@@ -1,0 +1,38 @@
+story:
+  id: STORY-045
+  epic_id: EPIC-007
+  title: "Replace Snyk with Dependabot + CodeRabbit for CI security"
+  description: |
+    Replaced Snyk (required paid token) with GitHub Dependabot (free, native) for
+    dependency scanning and CodeRabbit (AI code review) for PR quality gates.
+  priority: P1
+  effort_hours: 1
+  status: DONE
+  assignee_role: DevOps Engineer
+  sprint: Sprint 5
+  dependencies: []
+
+  acceptance_criteria:
+    - [x] Remove Snyk job from .github/workflows/ci.yml
+    - [x] Create .github/dependabot.yml for weekly dependency scanning
+    - [x] Create .coderabbit.yaml with project-specific review rules
+    - [x] Configure path-specific review instructions (api, ui, tenant, admin, database)
+    - [x] Dependabot scans npm + GitHub Actions dependencies
+
+  technical_notes: |
+    Decision: Snyk replaced by Dependabot (free SCA) + CodeRabbit (AI code review).
+    Dependabot: weekly scans, groups production deps, ignores patch updates.
+    CodeRabbit: auto-reviews PRs with pt-BR language, path-specific instructions.
+    CODERABBIT_API_KEY must be added as GitHub secret for CLI usage.
+
+  files_to_create:
+    - .github/dependabot.yml
+    - .coderabbit.yaml
+
+  files_to_update:
+    - .github/workflows/ci.yml
+
+  definition_of_done:
+    - [x] Snyk removed from CI
+    - [x] Dependabot configured
+    - [x] CodeRabbit configured
