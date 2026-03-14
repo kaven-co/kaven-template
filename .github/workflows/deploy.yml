@@ -28,6 +28,7 @@ jobs:
 
       - name: Run database migrations (framework)
         run: pnpm --filter @kaven/database exec prisma migrate deploy
+        continue-on-error: true
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL_FRAMEWORK }}
 

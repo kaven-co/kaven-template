@@ -257,13 +257,13 @@ export default function RegisterPage() {
         <div className="text-center mt-6">
             <p className="text-xs text-muted-foreground">
                 By signing up, I agree to{' '}
-                <Link href="/terms" className="underline text-muted-foreground hover:text-foreground transition-colors">
+                <a href="#" className="underline text-muted-foreground hover:text-foreground transition-colors">
                     Terms of Service
-                </Link>{' '}
+                </a>{' '}
                 and{' '}
-                <Link href="/privacy" className="underline text-muted-foreground hover:text-foreground transition-colors">
+                <a href="#" className="underline text-muted-foreground hover:text-foreground transition-colors">
                     Privacy Policy
-                </Link>.
+                </a>.
             </p>
         </div>
       </form>
