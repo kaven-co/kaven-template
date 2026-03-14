@@ -42,7 +42,7 @@ export default function SignupForm() {
   const tCommon = useTranslations('Common');
   const router = useRouter();
   const searchParams = useSearchParams();
-  const token = searchParams.get('token');
+  const token = searchParams?.get('token') ?? null;
 
   const [showPassword, setShowPassword] = useState(false);
   const [isValidToken, setIsValidToken] = useState<boolean | null>(token ? null : false);

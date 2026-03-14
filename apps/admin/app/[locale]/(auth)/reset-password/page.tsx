@@ -12,7 +12,7 @@ import Link from 'next/link';
 
 export default function ResetPasswordPage() {
   const searchParams = useSearchParams();
-  const token = searchParams.get('token');
+  const token = searchParams?.get('token') ?? null;
   const router = useRouter();
 
   const [password, setPassword] = useState('');
