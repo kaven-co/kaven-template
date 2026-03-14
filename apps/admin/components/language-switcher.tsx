@@ -25,7 +25,7 @@ export function LanguageSwitcher() {
     // For now, let's just do a hard window location change or simple replacement string logic 
     // to avoid complex typed routing setup for this iteration.
     
-    const newPath = pathname.replace(`/${locale}`, `/${newLocale}`);
+    const newPath = (pathname ?? '').replace(`/${locale}`, `/${newLocale}`);
     startTransition(() => {
         router.replace(newPath);
     });
