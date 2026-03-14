@@ -1,0 +1,46 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# OpenSSL required by Prisma on Alpine
+RUN apk add --no-cache openssl python3 make g++
+
+RUN corepack enable && corepack prepare pnpm@9 --activate
+
+# Copy workspace config first (layer cache)
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+
+# Copy only the packages needed by apps/api
+COPY packages/shared/package.json ./packages/shared/
+COPY packages/shared/tsconfig.json ./packages/shared/
+COPY packages/shared/src ./packages/shared/src/
+
+COPY packages/database/package.json ./packages/database/
+COPY packages/database/prisma ./packages/database/prisma/
+COPY packages/database/scripts ./packages/database/scripts/
+
+COPY apps/api/package.json ./apps/api/
+
+# Install all deps at workspace level
+RUN pnpm install --frozen-lockfile --ignore-scripts
+
+# Generate Prisma client
+RUN pnpm --filter @kaven/database db:generate
+
+# Build @kaven/shared → produces packages/shared/dist/
+RUN pnpm --filter @kaven/shared build
+
+# Copy full app source and build
+COPY apps/api/src ./apps/api/src/
+COPY apps/api/tsconfig.json ./apps/api/
+COPY tsconfig.json ./
+
+RUN pnpm --filter api build
+
+ENV NODE_ENV=production
+
+# Cloud Run provides PORT automatically
+EXPOSE 8080
+
+# Run prisma migrate deploy then start server
+CMD ["sh", "-c", "npx --yes prisma migrate deploy --schema=packages/database/prisma/schema.prisma 2>/dev/null || true && node apps/api/dist/src/server.js"]

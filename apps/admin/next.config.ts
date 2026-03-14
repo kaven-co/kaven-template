@@ -66,20 +66,31 @@ const nextConfig: NextConfig = {
     ];
   },
   async rewrites() {
-    return [
-      {
-        source: '/api/:path*',
-        destination: process.env.NEXT_PUBLIC_API_URL
-          ? `${process.env.NEXT_PUBLIC_API_URL}/api/:path*`
-          : 'http://localhost:8000/api/:path*',
-      },
-      {
-        source: '/uploads/:path*',
-        destination: process.env.NEXT_PUBLIC_API_URL
-          ? `${process.env.NEXT_PUBLIC_API_URL}/uploads/:path*`
-          : 'http://localhost:8000/uploads/:path*',
-      },
-    ];
+    return {
+      // beforeFiles: run before filesystem/page checks.
+      // We keep NextAuth routes (/api/auth/*) handled locally by Next.js
+      // by NOT including them in the afterFiles proxy rule.
+      beforeFiles: [],
+      // afterFiles: run after filesystem checks. These only apply when no
+      // local Next.js route (page or API route) matches the request.
+      // Since app/api/auth/[...nextauth]/route.ts exists, /api/auth/* is
+      // handled locally and never reaches the proxy below.
+      afterFiles: [
+        {
+          source: '/api/:path*',
+          destination: process.env.NEXT_PUBLIC_API_URL
+            ? `${process.env.NEXT_PUBLIC_API_URL}/api/:path*`
+            : 'http://localhost:8000/api/:path*',
+        },
+        {
+          source: '/uploads/:path*',
+          destination: process.env.NEXT_PUBLIC_API_URL
+            ? `${process.env.NEXT_PUBLIC_API_URL}/uploads/:path*`
+            : 'http://localhost:8000/uploads/:path*',
+        },
+      ],
+      fallback: [],
+    };
   },
 };
 

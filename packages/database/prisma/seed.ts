@@ -72,7 +72,7 @@ export const INTERNAL_ROLE_PERMISSIONS: Record<InternalRole, string[]> = {
 
 const SEED_CONFIG = {
   companyName: "Kaven HQ",
-  adminEmail: "admin@kaven.dev",
+  adminEmail: "admin@kaven.site",
   adminPassword: process.env.ADMIN_INIT_PASSWORD || "",
   modules: {
     createFinance: true,
@@ -385,7 +385,7 @@ async function main() {
   const personas = [
     {
       if: SEED_CONFIG.modules.createFinance,
-      email: "finance@admin.com",
+      email: "finance@kaven.site",
       name: "CFO - Finance Team",
       role: "FINANCE",
       pass: process.env.FINANCE_INIT_PASSWORD || "ChangeMe123!",
@@ -393,7 +393,7 @@ async function main() {
     },
     {
       if: SEED_CONFIG.modules.createSupport,
-      email: "support@admin.com",
+      email: "support@kaven.site",
       name: "Customer Success Team",
       role: "SUPPORT",
       pass: process.env.SUPPORT_INIT_PASSWORD || "ChangeMe123!",
@@ -401,7 +401,7 @@ async function main() {
     },
     {
       if: SEED_CONFIG.modules.createMarketing,
-      email: "marketing@admin.com",
+      email: "marketing@kaven.site",
       name: "Growth - Marketing Team",
       role: "MARKETING",
       pass: process.env.MARKETING_INIT_PASSWORD || "ChangeMe123!",
@@ -409,7 +409,7 @@ async function main() {
     },
     {
       if: SEED_CONFIG.modules.createDevOps,
-      email: "devops@admin.com",
+      email: "devops@kaven.site",
       name: "DevOps - System Health",
       role: "DEVOPS",
       pass: process.env.DEVOPS_INIT_PASSWORD || "ChangeMe123!",
@@ -593,7 +593,7 @@ async function main() {
     if (["FINANCE", "SUPPORT", "MARKETING", "DEVOPS"].includes(targetRole)) {
       // Find the user for this role
       const personaUser = await prisma.user.findFirst({
-        where: { email: `${targetRole.toLowerCase()}@admin.com` },
+        where: { email: `${targetRole.toLowerCase()}@kaven.site` },
       });
 
       if (personaUser) {
