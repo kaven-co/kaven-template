@@ -68,12 +68,22 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return {
       beforeFiles: [],
+      // afterFiles: run after filesystem checks.
+      // /api/auth/* excluded — handled by NextAuth Pages Router.
       afterFiles: [
+        // /api/:section — top-level API path, no sub-segments
         {
-          source: '/api/:path*',
+          source: '/api/:section((?!auth(?:/|$))[^/]+)',
           destination: process.env.NEXT_PUBLIC_API_URL
-            ? `${process.env.NEXT_PUBLIC_API_URL}/api/:path*`
-            : 'http://localhost:8000/api/:path*',
+            ? `${process.env.NEXT_PUBLIC_API_URL}/api/:section`
+            : 'http://localhost:8000/api/:section',
+        },
+        // /api/:section/:path* — API paths with sub-segments
+        {
+          source: '/api/:section((?!auth(?:/|$))[^/]+)/:path*',
+          destination: process.env.NEXT_PUBLIC_API_URL
+            ? `${process.env.NEXT_PUBLIC_API_URL}/api/:section/:path*`
+            : 'http://localhost:8000/api/:section/:path*',
         },
         {
           source: '/uploads/:path*',

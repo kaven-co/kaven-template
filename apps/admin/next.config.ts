@@ -67,20 +67,25 @@ const nextConfig: NextConfig = {
   },
   async rewrites() {
     return {
-      // beforeFiles: run before filesystem/page checks.
-      // We keep NextAuth routes (/api/auth/*) handled locally by Next.js
-      // by NOT including them in the afterFiles proxy rule.
       beforeFiles: [],
-      // afterFiles: run after filesystem checks. These only apply when no
-      // local Next.js route (page or API route) matches the request.
-      // Since app/api/auth/[...nextauth]/route.ts exists, /api/auth/* is
-      // handled locally and never reaches the proxy below.
+      // afterFiles: run after filesystem checks.
+      // /api/auth/* is intentionally excluded — handled by NextAuth Pages Router
+      // (pages/api/auth/[...nextauth].ts). We use two rules to cover paths with
+      // and without sub-segments while keeping auth routes local.
       afterFiles: [
+        // /api/:section — top-level API path, no sub-segments (e.g. /api/health)
         {
-          source: '/api/:path*',
+          source: '/api/:section((?!auth(?:/|$))[^/]+)',
           destination: process.env.NEXT_PUBLIC_API_URL
-            ? `${process.env.NEXT_PUBLIC_API_URL}/api/:path*`
-            : 'http://localhost:8000/api/:path*',
+            ? `${process.env.NEXT_PUBLIC_API_URL}/api/:section`
+            : 'http://localhost:8000/api/:section',
+        },
+        // /api/:section/:path* — API paths with sub-segments (e.g. /api/users/123)
+        {
+          source: '/api/:section((?!auth(?:/|$))[^/]+)/:path*',
+          destination: process.env.NEXT_PUBLIC_API_URL
+            ? `${process.env.NEXT_PUBLIC_API_URL}/api/:section/:path*`
+            : 'http://localhost:8000/api/:section/:path*',
         },
         {
           source: '/uploads/:path*',
