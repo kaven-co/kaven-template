@@ -118,7 +118,7 @@ function useActivationPoller(sessionId: string | null): ActivationStatus {
 
 export default function CheckoutSuccessPage() {
   const searchParams = useSearchParams();
-  const sessionId = searchParams.get('session_id');
+  const sessionId = searchParams?.get('session_id') ?? null;
   const activationStatus = useActivationPoller(sessionId);
 
   return (

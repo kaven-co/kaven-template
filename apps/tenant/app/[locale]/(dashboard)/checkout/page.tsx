@@ -147,8 +147,8 @@ function OrderSummary({ plan, price, interval }: OrderSummaryProps) {
 export default function CheckoutPage() {
   const searchParams = useSearchParams();
 
-  const planId = searchParams.get('planId') ?? '';
-  const interval = (searchParams.get('interval') ?? 'MONTHLY') as BillingInterval;
+  const planId = searchParams?.get('planId') ?? '';
+  const interval = (searchParams?.get('interval') ?? 'MONTHLY') as BillingInterval;
 
   const { data: plan, isLoading: isPlanLoading, error: planError } = usePlan(planId);
   const { tenant } = useTenant();

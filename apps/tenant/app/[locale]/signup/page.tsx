@@ -11,7 +11,7 @@ import { Loader2 } from 'lucide-react';
 
 export default function SignupPage() {
   const searchParams = useSearchParams();
-  const token = searchParams.get('token');
+  const token = searchParams?.get('token') ?? null;
 
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
