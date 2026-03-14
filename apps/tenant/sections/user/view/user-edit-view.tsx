@@ -123,7 +123,7 @@ export function UserEditView({ userId }: UserEditViewProps) {
         // Adiciona URL base do backend se não estiver presente
         const avatarUrl = user.avatar.startsWith('http') 
           ? user.avatar 
-          : `http://localhost:8000${user.avatar}`;
+          : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${user.avatar}`;
         console.log('🖼️ [USER EDIT] Setting avatar preview:', avatarUrl);
         setAvatarPreview(avatarUrl);
       }

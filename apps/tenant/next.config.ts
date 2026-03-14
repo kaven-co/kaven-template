@@ -38,7 +38,7 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline'",
       imgSrcDirective,
       "font-src 'self'",
-      "connect-src 'self' http://localhost:8000",
+      `connect-src 'self' ${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}`,
       "frame-ancestors 'none'",
     ].join('; '),
   },
@@ -69,14 +69,14 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: process.env.API_URL
-          ? `${process.env.API_URL}/api/:path*`
+        destination: process.env.NEXT_PUBLIC_API_URL
+          ? `${process.env.NEXT_PUBLIC_API_URL}/api/:path*`
           : 'http://localhost:8000/api/:path*',
       },
       {
         source: '/uploads/:path*',
-        destination: process.env.API_URL
-          ? `${process.env.API_URL}/uploads/:path*`
+        destination: process.env.NEXT_PUBLIC_API_URL
+          ? `${process.env.NEXT_PUBLIC_API_URL}/uploads/:path*`
           : 'http://localhost:8000/uploads/:path*',
       }
     ];

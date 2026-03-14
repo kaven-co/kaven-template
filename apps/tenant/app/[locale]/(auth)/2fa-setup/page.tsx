@@ -25,7 +25,7 @@ export default function Setup2FAPage() {
     const setup2FA = async () => {
       try {
         const token = localStorage.getItem('accessToken');
-        const response = await fetch('http://localhost:8000/api/auth/2fa/setup', {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/2fa/setup`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -72,7 +72,7 @@ export default function Setup2FAPage() {
 
     try {
       const token = localStorage.getItem('accessToken');
-      const response = await fetch('http://localhost:8000/api/auth/2fa/verify', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/2fa/verify`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

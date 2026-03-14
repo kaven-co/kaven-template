@@ -45,7 +45,7 @@ export function UserMenu() {
 
   // Avatar URL
   const avatarUrl = user?.avatar 
-    ? (user.avatar.startsWith('http') ? user.avatar : `http://localhost:8000${user.avatar}`)
+    ? (user.avatar.startsWith('http') ? user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${user.avatar}`)
     : undefined;
 
   const menuItems = [
