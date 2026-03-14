@@ -1,8 +1,8 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalEnv": ["DATABASE_URL", "NODE_ENV", "CI"],
+  "globalEnv": ["DATABASE_URL", "NODE_ENV", "CI", "NEXTAUTH_URL", "NEXTAUTH_SECRET", "API_URL", "JWT_SECRET", "STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET", "REDIS_URL", "REDIS_HOST", "REDIS_PORT"],
   "tasks": {
-    "build": {"dependsOn": ["^build"], "outputs": [".next/**", "!.next/cache/**"]},
+    "build": {"dependsOn": ["^build"], "outputs": [".next/**", "!.next/cache/**", "dist/**"]},
     "dev": {"cache": false, "persistent": true},
     "lint": {},
     "typecheck": {"dependsOn": ["^build"]},

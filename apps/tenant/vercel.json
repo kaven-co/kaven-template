@@ -1,5 +1,6 @@
 {
-  "buildCommand": "cd ../.. && pnpm build --filter @kaven/tenant",
-  "installCommand": "cd ../.. && pnpm install",
+  "buildCommand": "cd ../.. && pnpm db:generate && NODE_ENV=production pnpm build --filter tenant",
+  "installCommand": "cd ../.. && NODE_ENV=development pnpm install --ignore-scripts",
+  "outputDirectory": ".next",
   "framework": "nextjs"
 }

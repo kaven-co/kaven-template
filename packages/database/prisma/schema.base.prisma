@@ -334,6 +334,9 @@ model PlatformConfig {
   twitterHandle String?
   ogImageUrl    String?
 
+  // Theme Overrides (JSON blob — custom tokens per tenant/platform)
+  themeOverrides Json?
+
   // Configurações de Email/SMTP
   smtpHost     String? @default("localhost")
   smtpPort     Int?    @default(1025)
