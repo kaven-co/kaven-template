@@ -1,0 +1,48 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy to Vercel
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Run database migrations (framework)
+        run: pnpm --filter @kaven/database exec prisma migrate deploy
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_FRAMEWORK }}
+
+      - name: Deploy kaven-admin
+        run: |
+          VERCEL_ORG_ID=${{ secrets.VERCEL_ORG_ID }} \
+          VERCEL_PROJECT_ID=${{ secrets.VERCEL_PROJECT_ID_ADMIN }} \
+          npx vercel deploy --prod --token ${{ secrets.VERCEL_TOKEN }} --yes --scope christians-projects-623587aa
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy kaven-tenant
+        run: |
+          VERCEL_ORG_ID=${{ secrets.VERCEL_ORG_ID }} \
+          VERCEL_PROJECT_ID=${{ secrets.VERCEL_PROJECT_ID_TENANT }} \
+          npx vercel deploy --prod --token ${{ secrets.VERCEL_TOKEN }} --yes --scope christians-projects-623587aa
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}

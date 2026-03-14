@@ -43,12 +43,14 @@ export async function GET() {
 
   } catch (error) {
     console.error('[API] ❌ CRITICAL ERROR in GET:', error);
-    const apiError = error as Error;
-    return NextResponse.json({ 
-        error: 'Internal Server Error', 
-        message: apiError?.message, 
-        details: String(error)
-    }, { status: 500 });
+    // Return defaults instead of 500 so the UI remains functional
+    return NextResponse.json({
+      companyName: 'Kaven SaaS',
+      primaryColor: '#10B981',
+      language: 'pt-BR',
+      currency: 'BRL',
+      numberFormat: '1.000,00',
+    });
   }
 }
 

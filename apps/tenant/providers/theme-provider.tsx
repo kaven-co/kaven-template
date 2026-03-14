@@ -3,7 +3,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import type { ThemeConfig } from '@/lib/theme/theme-config';
 import { createTheme, mergeTheme } from '@/lib/theme/theme-config';
-import { api } from '@/lib/api';
 import { generatePalette } from '@/utils/color';
 
 // ============================================
@@ -271,11 +270,10 @@ export async function saveThemeToDatabase(theme: Partial<ThemeConfig>): Promise<
   }
 
   try {
-    await api.put('/api/tenant/theme', {
-      name,
-      primaryColor,
-      logoUrl: null,
-      faviconUrl: null,
+    await fetch('/api/tenant/theme', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, primaryColor, logoUrl: null, faviconUrl: null }),
     });
     localStorage.setItem('kaven-theme-primary-color', primaryColor);
   } catch (error) {
@@ -287,7 +285,8 @@ export async function saveThemeToDatabase(theme: Partial<ThemeConfig>): Promise<
 
 export async function loadThemeFromDatabase(): Promise<Partial<ThemeConfig> | null> {
   try {
-    const { data } = await api.get<TenantThemePayload>('/api/tenant/theme');
+    const res = await fetch('/api/tenant/theme');
+    const data: TenantThemePayload | null = res.ok ? await res.json() : null;
     const primaryColor = data?.primaryColor;
 
     if (!primaryColor || !/^#[0-9A-Fa-f]{6}$/.test(primaryColor)) {
@@ -328,11 +327,10 @@ export async function loadThemeFromDatabase(): Promise<Partial<ThemeConfig> | nu
 export async function clearThemeFromDatabase(): Promise<void> {
   try {
     const name = localStorage.getItem('kaven-theme-name') || DEFAULT_THEME_NAME;
-    await api.put('/api/tenant/theme', {
-      name,
-      primaryColor: DEFAULT_PRIMARY_COLOR,
-      logoUrl: null,
-      faviconUrl: null,
+    await fetch('/api/tenant/theme', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, primaryColor: DEFAULT_PRIMARY_COLOR, logoUrl: null, faviconUrl: null }),
     });
   } catch (error) {
     console.error('Error clearing theme from database:', error);

@@ -21,15 +21,8 @@ export async function GET() {
     return NextResponse.json(config.themeOverrides);
   } catch (error) {
     console.error('[API] ❌ CRITICAL ERROR in GET /api/settings/theme:', error);
-    const apiError = error as Error;
-    return NextResponse.json(
-      {
-        error: 'Internal Server Error',
-        message: apiError?.message,
-        details: String(error),
-      },
-      { status: 500 }
-    );
+    // Return null instead of 500 so the UI falls back to default theme
+    return NextResponse.json(null);
   }
 }
 
