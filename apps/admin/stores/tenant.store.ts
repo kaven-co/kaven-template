@@ -28,8 +28,20 @@ export const useTenantStore = create<TenantState>()(
         set({ isLoading: true, error: null });
 
         try {
-          // Alinha com o contrato atual do app router.
-          const response = await fetch('/api/tenant');
+          // Read Fastify access token from localStorage (login flow bypasses NextAuth)
+          const accessToken =
+            typeof window !== 'undefined'
+              ? window.localStorage.getItem('access_token')
+              : null;
+
+          if (!accessToken) {
+            set({ tenant: null, isLoading: false, error: 'unauthorized' });
+            return;
+          }
+
+          const response = await fetch('/api/tenant', {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          });
 
           if (!response.ok) {
             if (response.status === 401) {

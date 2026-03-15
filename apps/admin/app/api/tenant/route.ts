@@ -1,27 +1,40 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getToken } from 'next-auth/jwt';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 /**
  * GET /api/tenant
  * Retorna dados do tenant atual do usuário logado.
- * Uses getToken (reads JWT cookie directly) instead of getServerSession
- * for reliable App Router compatibility in Next.js 15/16.
+ *
+ * Auth strategy: the admin login uses Fastify directly (stores JWT in localStorage),
+ * so the client sends Authorization: Bearer <fastify-token>.
+ * We forward that token to Fastify /api/users/me to validate and get tenantId.
  */
 export async function GET(req: NextRequest) {
   try {
-    const token = await getToken({
-      req,
-      secret: process.env.NEXTAUTH_SECRET ?? process.env.JWT_SECRET,
-    });
+    // Read Fastify Bearer token from Authorization header
+    const authHeader = req.headers.get('authorization');
+    const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
 
-    if (!token?.id) {
+    if (!bearerToken) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Use tenantId from JWT token; fall back to first tenant for admin backwards compat
-    const tenantId = token.tenantId as string | undefined;
+    // Validate token against Fastify API
+    const meResponse = await fetch(`${API_URL}/api/users/me`, {
+      headers: { Authorization: `Bearer ${bearerToken}` },
+      // Don't cache — always fresh
+      cache: 'no-store',
+    });
+
+    if (!meResponse.ok) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const me = await meResponse.json();
+    const tenantId = me?.tenantId as string | undefined;
 
     const tenant = tenantId
       ? await prisma.tenant.findUnique({

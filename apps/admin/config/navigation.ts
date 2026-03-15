@@ -71,8 +71,8 @@ export const MASTER_NAVIGATION: NavSection[] = [
     title: 'FINANCE',
     items: [
       { icon: DollarSign, label: 'Revenue', href: '/coming-soon', requiredCapability: 'revenue.view' },
-      { icon: ShoppingCart, label: 'Orders', href: '/orders', requiredCapability: 'orders.read' },
-      { icon: FileText, label: 'Invoices', href: '/invoices', requiredCapability: 'invoices.read' },
+      { icon: ShoppingCart, label: 'Orders', href: '/coming-soon', requiredCapability: 'orders.read' },
+      { icon: FileText, label: 'Invoices', href: '/coming-soon', requiredCapability: 'invoices.read' },
       { icon: CreditCard, label: 'Payments', href: '/coming-soon', requiredCapability: 'payments.read' },
       { icon: Receipt, label: 'Billing', href: '/coming-soon', requiredCapability: 'billing.read' },
       { icon: Coins, label: 'Currencies', href: '/currencies', requiredCapability: 'currencies.read' }
