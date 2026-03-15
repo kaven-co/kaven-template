@@ -8,10 +8,11 @@ export function useTenant() {
   const { tenant, isLoading, error, fetchTenant } = useTenantStore();
   
   useEffect(() => {
-    if (!tenant && !isLoading) {
+    // Don't retry if already loading or if auth failed (prevents infinite loop on 401)
+    if (!tenant && !isLoading && error !== 'unauthorized') {
       fetchTenant();
     }
-  }, [tenant, isLoading, fetchTenant]);
+  }, [tenant, isLoading, error, fetchTenant]);
   
   return { tenant, isLoading, error };
 }

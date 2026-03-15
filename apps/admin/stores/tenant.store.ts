@@ -33,7 +33,8 @@ export const useTenantStore = create<TenantState>()(
 
           if (!response.ok) {
             if (response.status === 401) {
-              set({ tenant: null, isLoading: false, error: null });
+              // Mark as unauthorized so the useEffect guard won't retry indefinitely
+              set({ tenant: null, isLoading: false, error: 'unauthorized' });
               return;
             }
             const payload = await response.json().catch(() => null);

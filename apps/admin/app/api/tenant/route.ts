@@ -1,22 +1,27 @@
 import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getToken } from 'next-auth/jwt';
 
 /**
  * GET /api/tenant
- * Retorna dados do tenant atual do usuário logado
+ * Retorna dados do tenant atual do usuário logado.
+ * Uses getToken (reads JWT cookie directly) instead of getServerSession
+ * for reliable App Router compatibility in Next.js 15/16.
  */
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const token = await getToken({
+      req,
+      secret: process.env.NEXTAUTH_SECRET ?? process.env.JWT_SECRET,
+    });
 
-    if (!session?.user?.id) {
+    if (!token?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Use tenantId from JWT session; fall back to first tenant for admin backwards compat
-    const tenantId = session.user.tenantId;
+    // Use tenantId from JWT token; fall back to first tenant for admin backwards compat
+    const tenantId = token.tenantId as string | undefined;
 
     const tenant = tenantId
       ? await prisma.tenant.findUnique({
