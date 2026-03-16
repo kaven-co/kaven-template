@@ -50,7 +50,7 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
         <ImpersonationBanner />
         <Header />
 
-        <main className="flex-1 relative overflow-hidden">
+        <main className="flex-1 relative">
           <Scrollbar className="h-full p-4 md:p-6">
             <div className="mx-auto max-w-7xl">{children}</div>
           </Scrollbar>
