@@ -452,6 +452,13 @@ model Tenant {
   lgpdRetentionPolicies  LgpdRetentionPolicy[]   @relation("TenantLgpdRetentionPolicies")
   peopleAuditLogs        PeopleAuditLog[]        @relation("TenantPeopleAuditLogs")
 
+  // Operations Module (SOPs & Vendors)
+  sops                   SOP[]                   @relation("TenantSOPs")
+  sopExecutions          SOPExecution[]          @relation("TenantSOPExecutions")
+  vendors                Vendor[]                @relation("TenantVendors")
+  vendorContracts        VendorContract[]        @relation("TenantVendorContracts")
+  toolRegistryItems      ToolRegistryItem[]      @relation("TenantToolRegistryItems")
+
   // Finance Module
   chartOfAccounts        ChartOfAccount[]        @relation("TenantChartOfAccounts")
   bankAccounts           BankAccount[]           @relation("TenantBankAccounts")
@@ -568,6 +575,13 @@ model User {
 
   // People + HR Module
   employeeProfile Employee? @relation("EmployeeUser")
+
+  // Operations Module (SOPs & Vendors)
+  ownedSOPs              SOP[]                @relation("SOPOwner")
+  sopStepAssignments     SOPStep[]            @relation("SOPStepAssignee")
+  sopExecutions          SOPExecution[]       @relation("SOPExecutor")
+  sopStepExecutions      SOPStepExecution[]   @relation("SOPStepExecutor")
+  ownedTools             ToolRegistryItem[]   @relation("ToolOwner")
 
   // Finance Module
   createdFinancialEntries FinancialEntry[] @relation("FinancialEntryCreator")

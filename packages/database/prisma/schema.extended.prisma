@@ -2509,3 +2509,512 @@ model PeopleAuditLog {
 }
 
 // [KAVEN_MODULE:PEOPLE_HR END]
+
+// ===========================
+// OPERATIONS MODULE (SOPs & Vendors)
+// ===========================
+// SOP management with versioning, execution tracking, vendor management
+// with contracts and scoring, tool registry with ROI analysis.
+// Multi-tenant isolated via tenantId.
+
+// [KAVEN_MODULE:OPERATIONS BEGIN]
+
+// ---------- Enums ----------
+
+enum SOPCategory {
+  FINANCIAL
+  COMMERCIAL
+  OPERATIONAL
+  HR
+  IT
+  LEGAL
+  COMPLIANCE
+  QUALITY
+  SECURITY
+  CUSTOMER_SUCCESS
+  MARKETING
+  OTHER
+
+  @@map("sop_category")
+}
+
+enum SOPStatus {
+  DRAFT
+  REVIEW
+  APPROVED
+  ACTIVE
+  DEPRECATED
+  ARCHIVED
+
+  @@map("sop_status")
+}
+
+enum SOPExecutionStatus {
+  IN_PROGRESS
+  COMPLETED
+  COMPLETED_WITH_DEVIATIONS
+  ABANDONED
+  BLOCKED
+
+  @@map("sop_execution_status")
+}
+
+enum SOPStepStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  SKIPPED
+  BLOCKED
+
+  @@map("sop_step_status")
+}
+
+enum SOPTriggerType {
+  MANUAL
+  SCHEDULED
+  EVENT_TRIGGERED
+  API
+
+  @@map("sop_trigger_type")
+}
+
+enum VendorCategory {
+  TECHNOLOGY
+  PROFESSIONAL_SERVICES
+  INFRASTRUCTURE
+  MARKETING
+  LOGISTICS
+  LEGAL
+  FINANCIAL
+  HR_BENEFITS
+  FACILITIES
+  SUPPLIERS
+  OTHER
+
+  @@map("vendor_category")
+}
+
+enum VendorStatus {
+  PROSPECT
+  ONBOARDING
+  ACTIVE
+  SUSPENDED
+  TERMINATED
+  BLACKLISTED
+
+  @@map("vendor_status")
+}
+
+enum VendorTier {
+  STRATEGIC
+  PREFERRED
+  STANDARD
+  OCCASIONAL
+
+  @@map("vendor_tier")
+}
+
+enum ContractType {
+  RECURRING
+  ONE_TIME
+  RETAINER
+  PROJECT_BASED
+  MASTER_SERVICE_AGREEMENT
+
+  @@map("contract_type")
+}
+
+enum ContractStatus {
+  DRAFT
+  ACTIVE
+  SUSPENDED
+  EXPIRED
+  CANCELLED
+  RENEWED
+
+  @@map("contract_status")
+}
+
+enum PaymentFrequency {
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+  QUARTERLY
+  SEMIANNUAL
+  ANNUAL
+  ONE_TIME
+
+  @@map("payment_frequency")
+}
+
+enum VendorInvoiceStatus {
+  PENDING
+  APPROVED
+  PAID
+  OVERDUE
+  DISPUTED
+  CANCELLED
+
+  @@map("vendor_invoice_status")
+}
+
+enum ToolCategory {
+  PRODUCTIVITY
+  COMMUNICATION
+  PROJECT_MANAGEMENT
+  DESIGN
+  DEVELOPMENT
+  ANALYTICS
+  CRM
+  FINANCE
+  HR
+  SECURITY
+  INFRASTRUCTURE
+  AI
+  MARKETING
+  LEGAL
+  OTHER
+
+  @@map("tool_category")
+}
+
+enum BillingType {
+  MONTHLY
+  ANNUAL
+  ONE_TIME
+  USAGE_BASED
+
+  @@map("billing_type")
+}
+
+enum ToolStatus {
+  ACTIVE
+  TRIAL
+  SUSPENDED
+  CANCELLED
+  EVALUATING
+
+  @@map("tool_status")
+}
+
+// ---------- SOP Management ----------
+
+model SOP {
+  id                String   @id @default(cuid())
+  tenantId          String
+  tenant            Tenant   @relation("TenantSOPs", fields: [tenantId], references: [id])
+
+  title             String
+  slug              String
+  description       String?
+  category          SOPCategory
+  department        String?
+
+  version           String   @default("1.0")
+  previousVersionId String?
+  previousVersion   SOP?     @relation("SOPVersionChain", fields: [previousVersionId], references: [id])
+  nextVersions      SOP[]    @relation("SOPVersionChain")
+  ownerId           String
+  owner             User     @relation("SOPOwner", fields: [ownerId], references: [id])
+
+  status            SOPStatus @default(DRAFT)
+  publishedAt       DateTime?
+  lastReviewedAt    DateTime?
+  nextReviewDate    DateTime?
+  reviewCycleDays   Int       @default(365)
+
+  estimatedMinutes  Int?
+  steps             SOPStep[]
+  executions        SOPExecution[]
+
+  tags              String[]
+  attachments       String[]
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  createdBy         String
+  updatedBy         String?
+
+  @@unique([tenantId, slug, version])
+  @@index([tenantId, status])
+  @@index([tenantId, category])
+  @@index([tenantId, department])
+  @@index([ownerId])
+  @@map("sops")
+}
+
+model SOPStep {
+  id               String   @id @default(cuid())
+  sopId            String
+  sop              SOP      @relation(fields: [sopId], references: [id], onDelete: Cascade)
+
+  order            Int
+  parentStepId     String?
+  parentStep       SOPStep? @relation("SOPStepHierarchy", fields: [parentStepId], references: [id])
+  subSteps         SOPStep[] @relation("SOPStepHierarchy")
+
+  title            String
+  description      String?
+  instructions     String
+  expectedOutput   String?
+  estimatedMinutes Int?
+
+  roleRequired     String?
+  assigneeId       String?
+  assignee         User?    @relation("SOPStepAssignee", fields: [assigneeId], references: [id])
+
+  isConditional    Boolean  @default(false)
+  conditionField   String?
+  conditionValue   String?
+
+  attachments      String[]
+  checklistItems   String[]
+
+  stepExecutions   SOPStepExecution[]
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([sopId, order])
+  @@map("sop_steps")
+}
+
+model SOPExecution {
+  id               String   @id @default(cuid())
+  tenantId         String
+  tenant           Tenant   @relation("TenantSOPExecutions", fields: [tenantId], references: [id])
+  sopId            String
+  sop              SOP      @relation(fields: [sopId], references: [id])
+
+  executorId       String
+  executor         User     @relation("SOPExecutor", fields: [executorId], references: [id])
+  triggerType      SOPTriggerType @default(MANUAL)
+
+  status           SOPExecutionStatus @default(IN_PROGRESS)
+  startedAt        DateTime           @default(now())
+  completedAt      DateTime?
+  durationMinutes  Int?
+
+  totalSteps       Int
+  completedSteps   Int               @default(0)
+  skippedSteps     Int               @default(0)
+  completionRate   Float?
+
+  stepExecutions   SOPStepExecution[]
+
+  notes            String?
+  blockers         String[]
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([tenantId, sopId])
+  @@index([tenantId, status])
+  @@index([executorId])
+  @@map("sop_executions")
+}
+
+model SOPStepExecution {
+  id               String   @id @default(cuid())
+  executionId      String
+  execution        SOPExecution @relation(fields: [executionId], references: [id], onDelete: Cascade)
+  stepId           String
+  step             SOPStep  @relation(fields: [stepId], references: [id])
+
+  status           SOPStepStatus @default(PENDING)
+  startedAt        DateTime?
+  completedAt      DateTime?
+  durationMinutes  Int?
+  executorId       String?
+  executor         User?    @relation("SOPStepExecutor", fields: [executorId], references: [id])
+
+  notes            String?
+  attachments      String[]
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([executionId])
+  @@index([stepId])
+  @@map("sop_step_executions")
+}
+
+// ---------- Vendor Management ----------
+
+model Vendor {
+  id                  String   @id @default(cuid())
+  tenantId            String
+  tenant              Tenant   @relation("TenantVendors", fields: [tenantId], references: [id])
+
+  name                String
+  legalName           String?
+  taxId               String?
+  website             String?
+  category            VendorCategory
+  subcategory         String?
+
+  primaryContactName  String?
+  primaryContactEmail String?
+  primaryContactPhone String?
+  contacts            VendorContact[]
+
+  status              VendorStatus   @default(ACTIVE)
+  tier                VendorTier     @default(STANDARD)
+  onboardedAt         DateTime?
+
+  paymentTermsDays    Int            @default(30)
+  currency            String         @default("BRL")
+
+  scoreOverall        Float?
+  scoreQuality        Float?
+  scorePontuality     Float?
+  scoreCost           Float?
+  scoreSupport        Float?
+  lastScoredAt        DateTime?
+  scorecardHistory    VendorScorecardEntry[]
+
+  contracts           VendorContract[]
+  toolItems           ToolRegistryItem[]
+
+  notes               String?
+  tags                String[]
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  createdBy           String
+  updatedBy           String?
+
+  @@unique([tenantId, taxId])
+  @@index([tenantId, status])
+  @@index([tenantId, category])
+  @@index([tenantId, tier])
+  @@map("vendors")
+}
+
+model VendorContact {
+  id        String  @id @default(cuid())
+  vendorId  String
+  vendor    Vendor  @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  name      String
+  email     String?
+  phone     String?
+  role      String?
+  isPrimary Boolean @default(false)
+  notes     String?
+
+  @@index([vendorId])
+  @@map("vendor_contacts")
+}
+
+model VendorContract {
+  id                    String   @id @default(cuid())
+  tenantId              String
+  tenant                Tenant   @relation("TenantVendorContracts", fields: [tenantId], references: [id])
+  vendorId              String
+  vendor                Vendor   @relation(fields: [vendorId], references: [id])
+
+  title                 String
+  contractNumber        String?
+  documentUrl           String?
+
+  contractType          ContractType     @default(RECURRING)
+  currency              String           @default("BRL")
+  totalValue            Decimal?         @db.Decimal(15, 2)
+  monthlyValue          Decimal?         @db.Decimal(15, 2)
+  paymentFrequency      PaymentFrequency @default(MONTHLY)
+
+  startDate             DateTime
+  endDate               DateTime?
+  autoRenew             Boolean          @default(false)
+  renewalNoticeDays     Int?             @default(30)
+
+  status                ContractStatus   @default(ACTIVE)
+  cancelledAt           DateTime?
+  cancelReason          String?
+
+  slaDescription        String?
+  notes                 String?
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  createdBy             String
+  updatedBy             String?
+
+  @@index([tenantId, vendorId])
+  @@index([tenantId, status])
+  @@index([tenantId, endDate])
+  @@map("vendor_contracts")
+}
+
+model VendorScorecardEntry {
+  id              String   @id @default(cuid())
+  vendorId        String
+  vendor          Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  scoredAt        DateTime @default(now())
+  scoredBy        String
+
+  scoreOverall    Float
+  scoreQuality    Float
+  scorePontuality Float
+  scoreCost       Float
+  scoreSupport    Float
+
+  period          String
+  notes           String?
+  incidents       Int      @default(0)
+
+  @@index([vendorId, scoredAt])
+  @@map("vendor_scorecard_entries")
+}
+
+// ---------- Tool Registry ----------
+
+model ToolRegistryItem {
+  id                String   @id @default(cuid())
+  tenantId          String
+  tenant            Tenant   @relation("TenantToolRegistryItems", fields: [tenantId], references: [id])
+
+  name              String
+  vendorName        String?
+  vendorId          String?
+  vendorRecord      Vendor?  @relation(fields: [vendorId], references: [id])
+  category          ToolCategory
+  subcategory       String?
+  website           String?
+  description       String?
+
+  billingType       BillingType @default(MONTHLY)
+  currency          String      @default("BRL")
+  costPerMonth      Decimal     @db.Decimal(10, 2)
+  seats             Int?
+  costPerSeat       Decimal?    @db.Decimal(10, 2)
+
+  ownerId           String
+  owner             User     @relation("ToolOwner", fields: [ownerId], references: [id])
+  department        String?
+  activeUsers       Int?
+  totalSeats        Int?
+
+  status            ToolStatus @default(ACTIVE)
+  contractStartDate DateTime?
+  contractEndDate   DateTime?
+  autoRenew         Boolean    @default(false)
+  renewalNoticeDays Int?       @default(30)
+
+  tags              String[]
+  notes             String?
+  lastAuditDate     DateTime?
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  createdBy         String
+  updatedBy         String?
+
+  @@unique([tenantId, name])
+  @@index([tenantId, category])
+  @@index([tenantId, status])
+  @@index([ownerId])
+  @@map("tool_registry_items")
+}
+
+// [KAVEN_MODULE:OPERATIONS END]

@@ -18,6 +18,8 @@ import { seedProjectsPM } from "./seeds/projects-pm-seed";
 import { seedProjectFeatureFlags } from "./seeds/feature-flags-projects";
 import { seedPeopleHR } from "./seeds/people-hr-seed";
 import { seedPeopleFeatureFlags } from "./seeds/feature-flags-people";
+import { seedOperations } from "./seeds/operations-seed";
+import { seedOperationsFeatureFlags } from "./seeds/feature-flags-operations";
 
 const prisma = new PrismaClient({
   datasources: {
@@ -661,6 +663,12 @@ async function main() {
 
   // 16. People + HR Feature Flags
   await seedPeopleFeatureFlags();
+
+  // 17. Operations Module Seed Data (SOPs, vendors, tool registry)
+  await seedOperations(adminTenant.id, architect.id);
+
+  // 18. Operations Feature Flags
+  await seedOperationsFeatureFlags();
 
   console.log("\n=============================================");
   console.log("✅ Seed Finished Successfully");
