@@ -459,6 +459,22 @@ model Tenant {
   vendorContracts        VendorContract[]        @relation("TenantVendorContracts")
   toolRegistryItems      ToolRegistryItem[]      @relation("TenantToolRegistryItems")
 
+  // Marketing Module
+  campaigns              Campaign[]              @relation("TenantCampaigns")
+  campaignVariants       CampaignVariant[]       @relation("TenantCampaignVariants")
+  campaignEvents         CampaignEvent[]         @relation("TenantCampaignEvents")
+  consentRecords         ConsentRecord[]         @relation("TenantConsentRecords")
+  leadScores             LeadScore[]             @relation("TenantLeadScores")
+  leadScoreHistories     LeadScoreHistory[]      @relation("TenantLeadScoreHistories")
+  mktEmailTemplates      MktEmailTemplate[]      @relation("TenantMktEmailTemplates")
+  automations            Automation[]            @relation("TenantAutomations")
+  automationEnrollments  AutomationEnrollment[]  @relation("TenantAutomationEnrollments")
+  mktForms               MktForm[]               @relation("TenantMktForms")
+  mktFormSubmissions     MktFormSubmission[]      @relation("TenantMktFormSubmissions")
+  campaignUtms           CampaignUtm[]           @relation("TenantCampaignUtms")
+  marketingCalendars     MarketingCalendar[]     @relation("TenantMarketingCalendars")
+  campaignTags           CampaignTag[]           @relation("TenantCampaignTags")
+
   // Finance Module
   chartOfAccounts        ChartOfAccount[]        @relation("TenantChartOfAccounts")
   bankAccounts           BankAccount[]           @relation("TenantBankAccounts")
@@ -582,6 +598,13 @@ model User {
   sopExecutions          SOPExecution[]       @relation("SOPExecutor")
   sopStepExecutions      SOPStepExecution[]   @relation("SOPStepExecutor")
   ownedTools             ToolRegistryItem[]   @relation("ToolOwner")
+
+  // Marketing Module
+  ownedCampaigns         Campaign[]            @relation("CampaignOwner")
+  ownedAutomations       Automation[]          @relation("AutomationOwner")
+  createdMktEmailTemplates MktEmailTemplate[]  @relation("MktEmailTemplateCreator")
+  createdMktForms        MktForm[]             @relation("MktFormCreator")
+  createdMarketingCalendars MarketingCalendar[] @relation("MarketingCalendarCreator")
 
   // Finance Module
   createdFinancialEntries FinancialEntry[] @relation("FinancialEntryCreator")

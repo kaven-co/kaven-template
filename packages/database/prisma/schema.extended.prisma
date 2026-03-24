@@ -1025,6 +1025,14 @@ model Contact {
   financialEntries  FinancialEntry[]  @relation("FinancialEntryClient")
   projects          Project[]         @relation("ProjectContact")
 
+  // Marketing Module
+  campaignEvents          CampaignEvent[]          @relation("ContactCampaignEvents")
+  consentRecords          ConsentRecord[]          @relation("ContactConsentRecords")
+  leadScoreRecord         LeadScore?               @relation("ContactLeadScore")
+  automationEnrollments   AutomationEnrollment[]   @relation("ContactAutomationEnrollments")
+  mktFormSubmissions      MktFormSubmission[]       @relation("ContactMktFormSubmissions")
+  campaignUtms            CampaignUtm[]            @relation("ContactCampaignUtms")
+
   @@index([tenantId, lifecycleStage])
   @@index([tenantId, status])
   @@index([tenantId, email])
@@ -1092,8 +1100,9 @@ model Tag {
   createdAt DateTime @default(now()) @map("created_at")
 
   // Relations
-  tenant    Tenant       @relation("TenantTags", fields: [tenantId], references: [id], onDelete: Cascade)
-  contacts  ContactTag[]
+  tenant       Tenant        @relation("TenantTags", fields: [tenantId], references: [id], onDelete: Cascade)
+  contacts     ContactTag[]
+  campaignTags CampaignTag[] @relation("TagCampaigns")
 
   @@unique([tenantId, name, areaSlug])
   @@index([tenantId])
@@ -1142,6 +1151,7 @@ model Segment {
   tenant          Tenant           @relation("TenantSegments", fields: [tenantId], references: [id], onDelete: Cascade)
   createdBy       User             @relation("SegmentCreator", fields: [createdById], references: [id])
   contacts        ContactSegment[]
+  campaigns       Campaign[]       @relation("CampaignSegment")
 
   @@index([tenantId, areaSlug])
   @@index([tenantId, createdById])
@@ -3018,3 +3028,548 @@ model ToolRegistryItem {
 }
 
 // [KAVEN_MODULE:OPERATIONS END]
+
+// ===========================
+// MARKETING MODULE
+// ===========================
+// Campaigns, automation, lead scoring, consent management, forms,
+// UTM tracking, email templates, calendar. Multi-tenant isolated via tenantId.
+// Cross-module FKs: contactId → clients.Contact, segmentId → clients.Segment, tagId → clients.Tag
+
+// [KAVEN_MODULE:MARKETING BEGIN]
+
+// ---------- Enums ----------
+
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  SENDING
+  SENT
+  PAUSED
+  CANCELLED
+  COMPLETED
+  ARCHIVED
+
+  @@map("campaign_status")
+}
+
+enum CampaignChannel {
+  EMAIL
+  SMS
+  WHATSAPP
+  PUSH
+
+  @@map("campaign_channel")
+}
+
+enum CampaignEventType {
+  SENT
+  DELIVERED
+  OPENED
+  CLICKED
+  BOUNCED
+  UNSUBSCRIBED
+  CONVERTED
+  COMPLAINED
+
+  @@map("campaign_event_type")
+}
+
+enum ConsentType {
+  MARKETING
+  TRANSACTIONAL
+  ANALYTICS
+  THIRD_PARTY
+
+  @@map("consent_type")
+}
+
+enum ConsentSource {
+  FORM
+  IMPORT
+  API
+  MANUAL
+  DOUBLE_OPT_IN
+
+  @@map("consent_source")
+}
+
+enum LeadScoreEventType {
+  EMAIL_OPENED
+  EMAIL_CLICKED
+  FORM_SUBMITTED
+  PAGE_VISITED
+  DEMO_REQUESTED
+  CONTENT_DOWNLOADED
+  WEBINAR_ATTENDED
+  PROFILE_UPDATED
+  MANUAL_ADJUSTMENT
+
+  @@map("lead_score_event_type")
+}
+
+enum AutomationTriggerType {
+  CONTACT_CREATED
+  LIFECYCLE_CHANGED
+  LEAD_SCORE_THRESHOLD
+  FORM_SUBMITTED
+  TAG_ADDED
+  CAMPAIGN_EVENT
+  MANUAL
+
+  @@map("automation_trigger_type")
+}
+
+enum AutomationActionType {
+  SEND_EMAIL
+  ADD_TAG
+  REMOVE_TAG
+  UPDATE_FIELD
+  UPDATE_LIFECYCLE
+  NOTIFY_ASSIGNEE
+  WAIT
+  BRANCH
+  WEBHOOK
+
+  @@map("automation_action_type")
+}
+
+enum AutomationStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ARCHIVED
+
+  @@map("automation_status")
+}
+
+// ----------------------------
+// 1. Campaign — Marketing campaign (email, SMS, WhatsApp, push)
+// ----------------------------
+
+model Campaign {
+  id               String          @id @default(cuid())
+  tenantId         String          @map("tenant_id")
+  name             String
+  slug             String
+  description      String?
+  type             String?
+  channel          CampaignChannel @default(EMAIL)
+  status           CampaignStatus  @default(DRAFT)
+  scheduledAt      DateTime?       @map("scheduled_at")
+  sentAt           DateTime?       @map("sent_at")
+  completedAt      DateTime?       @map("completed_at")
+  timezone         String?         @default("UTC")
+  budget           Float?
+  goalMetric       String?         @map("goal_metric")
+  goalValue        Float?          @map("goal_value")
+  subject          String?
+  body             String?
+  htmlContent      String?         @map("html_content")
+  templateId       String?         @map("template_id")
+  segmentId        String?         @map("segment_id")
+  audienceSize     Int?            @map("audience_size")
+  audienceSnapshot Json?           @map("audience_snapshot")
+  isAbTest         Boolean         @default(false) @map("is_ab_test")
+  winnerVariantId  String?         @map("winner_variant_id")
+  sentCount        Int             @default(0) @map("sent_count")
+  deliveredCount   Int             @default(0) @map("delivered_count")
+  openedCount      Int             @default(0) @map("opened_count")
+  clickedCount     Int             @default(0) @map("clicked_count")
+  bouncedCount     Int             @default(0) @map("bounced_count")
+  unsubCount       Int             @default(0) @map("unsub_count")
+  convertedCount   Int             @default(0) @map("converted_count")
+  tags             String[]        @default([])
+  ownerId          String          @map("owner_id")
+  createdAt        DateTime        @default(now()) @map("created_at")
+  updatedAt        DateTime        @updatedAt @map("updated_at")
+  deletedAt        DateTime?       @map("deleted_at")
+
+  // Relations
+  tenant           Tenant             @relation("TenantCampaigns", fields: [tenantId], references: [id], onDelete: Cascade)
+  owner            User               @relation("CampaignOwner", fields: [ownerId], references: [id])
+  segment          Segment?           @relation("CampaignSegment", fields: [segmentId], references: [id], onDelete: SetNull)
+  variants         CampaignVariant[]
+  events           CampaignEvent[]
+  utms             CampaignUtm[]
+  calendarEntries  MarketingCalendar[]
+  campaignTags     CampaignTag[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, status])
+  @@index([tenantId, channel])
+  @@index([tenantId, scheduledAt])
+  @@index([tenantId, deletedAt])
+  @@map("campaigns")
+}
+
+// ----------------------------
+// 2. CampaignVariant — A/B test variants
+// ----------------------------
+
+model CampaignVariant {
+  id          String   @id @default(cuid())
+  tenantId    String   @map("tenant_id")
+  campaignId  String   @map("campaign_id")
+  name        String
+  subject     String?
+  body        String?
+  htmlContent String?  @map("html_content")
+  weight      Int      @default(50)
+  isWinner    Boolean  @default(false) @map("is_winner")
+  sentCount   Int      @default(0) @map("sent_count")
+  openedCount Int      @default(0) @map("opened_count")
+  clickedCount Int     @default(0) @map("clicked_count")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  tenant   Tenant   @relation("TenantCampaignVariants", fields: [tenantId], references: [id], onDelete: Cascade)
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, campaignId])
+  @@map("campaign_variants")
+}
+
+// ----------------------------
+// 3. CampaignEvent — Campaign interaction events (open, click, bounce, etc.)
+// ----------------------------
+
+model CampaignEvent {
+  id         String            @id @default(cuid())
+  tenantId   String            @map("tenant_id")
+  campaignId String            @map("campaign_id")
+  contactId  String?           @map("contact_id")
+  eventType  CampaignEventType @map("event_type")
+  metadata   Json?
+  occurredAt DateTime          @default(now()) @map("occurred_at")
+
+  // Relations
+  tenant   Tenant   @relation("TenantCampaignEvents", fields: [tenantId], references: [id], onDelete: Cascade)
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  contact  Contact? @relation("ContactCampaignEvents", fields: [contactId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, campaignId])
+  @@index([tenantId, contactId])
+  @@index([tenantId, eventType])
+  @@index([occurredAt])
+  @@map("campaign_events")
+}
+
+// ----------------------------
+// 4. ConsentRecord — GDPR/LGPD consent tracking
+// ----------------------------
+
+model ConsentRecord {
+  id            String          @id @default(cuid())
+  tenantId      String          @map("tenant_id")
+  contactId     String          @map("contact_id")
+  consentType   ConsentType     @map("consent_type")
+  channel       CampaignChannel
+  source        ConsentSource
+  ipAddress     String?         @map("ip_address")
+  userAgent     String?         @map("user_agent")
+  grantedAt     DateTime        @default(now()) @map("granted_at")
+  revokedAt     DateTime?       @map("revoked_at")
+  revokedReason String?         @map("revoked_reason")
+  doubleOptInAt DateTime?       @map("double_opt_in_at")
+  expiresAt     DateTime?       @map("expires_at")
+
+  // Relations
+  tenant  Tenant  @relation("TenantConsentRecords", fields: [tenantId], references: [id], onDelete: Cascade)
+  contact Contact @relation("ContactConsentRecords", fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, contactId, consentType, channel])
+  @@index([tenantId, contactId])
+  @@index([tenantId, revokedAt])
+  @@map("consent_records")
+}
+
+// ----------------------------
+// 5. LeadScore — Composite lead scoring per contact
+// ----------------------------
+
+model LeadScore {
+  id              String    @id @default(cuid())
+  tenantId        String    @map("tenant_id")
+  contactId       String    @unique @map("contact_id")
+  engagementScore Int       @default(0) @map("engagement_score")
+  profileScore    Int       @default(0) @map("profile_score")
+  behavioralScore Int       @default(0) @map("behavioral_score")
+  demographicScore Int      @default(0) @map("demographic_score")
+  totalScore      Int       @default(0) @map("total_score")
+  isQualified     Boolean   @default(false) @map("is_qualified")
+  qualifiedAt     DateTime? @map("qualified_at")
+  mqlThreshold    Int       @default(70) @map("mql_threshold")
+  lastEventAt     DateTime? @map("last_event_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  tenant  Tenant             @relation("TenantLeadScores", fields: [tenantId], references: [id], onDelete: Cascade)
+  contact Contact            @relation("ContactLeadScore", fields: [contactId], references: [id], onDelete: Cascade)
+  history LeadScoreHistory[]
+
+  @@index([tenantId, totalScore])
+  @@index([tenantId, isQualified])
+  @@map("lead_scores")
+}
+
+// ----------------------------
+// 6. LeadScoreHistory — Score change audit trail
+// ----------------------------
+
+model LeadScoreHistory {
+  id            String             @id @default(cuid())
+  tenantId      String             @map("tenant_id")
+  leadScoreId   String             @map("lead_score_id")
+  eventType     LeadScoreEventType @map("event_type")
+  dimension     String
+  delta         Int
+  previousScore Int                @map("previous_score")
+  newScore      Int                @map("new_score")
+  metadata      Json?
+  createdAt     DateTime           @default(now()) @map("created_at")
+
+  // Relations
+  tenant    Tenant    @relation("TenantLeadScoreHistories", fields: [tenantId], references: [id], onDelete: Cascade)
+  leadScore LeadScore @relation(fields: [leadScoreId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, leadScoreId])
+  @@index([createdAt])
+  @@map("lead_score_histories")
+}
+
+// ----------------------------
+// 7. MktEmailTemplate — Reusable marketing email templates
+// ----------------------------
+
+model MktEmailTemplate {
+  id          String   @id @default(cuid())
+  tenantId    String   @map("tenant_id")
+  name        String
+  slug        String
+  subject     String
+  htmlContent String   @map("html_content")
+  textContent String?  @map("text_content")
+  variables   String[] @default([])
+  category    String?
+  thumbnail   String?
+  isSystem    Boolean  @default(false) @map("is_system")
+  createdById String   @map("created_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  // Relations
+  tenant    Tenant @relation("TenantMktEmailTemplates", fields: [tenantId], references: [id], onDelete: Cascade)
+  createdBy User   @relation("MktEmailTemplateCreator", fields: [createdById], references: [id])
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, category])
+  @@map("mkt_email_templates")
+}
+
+// ----------------------------
+// 8. Automation — Marketing automation workflows
+// ----------------------------
+
+model Automation {
+  id             String                @id @default(cuid())
+  tenantId       String                @map("tenant_id")
+  name           String
+  description    String?
+  status         AutomationStatus      @default(DRAFT)
+  triggerType    AutomationTriggerType @map("trigger_type")
+  triggerConfig  Json?                 @map("trigger_config")
+  steps          Json                  @default("[]")
+  enrolledCount  Int                   @default(0) @map("enrolled_count")
+  completedCount Int                   @default(0) @map("completed_count")
+  exitedCount    Int                   @default(0) @map("exited_count")
+  ownerId        String                @map("owner_id")
+  createdAt      DateTime              @default(now()) @map("created_at")
+  updatedAt      DateTime              @updatedAt @map("updated_at")
+  deletedAt      DateTime?             @map("deleted_at")
+
+  // Relations
+  tenant      Tenant                  @relation("TenantAutomations", fields: [tenantId], references: [id], onDelete: Cascade)
+  owner       User                    @relation("AutomationOwner", fields: [ownerId], references: [id])
+  enrollments AutomationEnrollment[]
+
+  @@index([tenantId, status])
+  @@index([tenantId, triggerType])
+  @@map("automations")
+}
+
+// ----------------------------
+// 9. AutomationEnrollment — Contacts enrolled in automations
+// ----------------------------
+
+model AutomationEnrollment {
+  id           String    @id @default(cuid())
+  tenantId     String    @map("tenant_id")
+  automationId String    @map("automation_id")
+  contactId    String    @map("contact_id")
+  status       String    @default("active")
+  currentStep  Int       @default(0) @map("current_step")
+  stepData     Json?     @map("step_data")
+  enrolledAt   DateTime  @default(now()) @map("enrolled_at")
+  completedAt  DateTime? @map("completed_at")
+  exitedAt     DateTime? @map("exited_at")
+  exitReason   String?   @map("exit_reason")
+
+  // Relations
+  tenant     Tenant     @relation("TenantAutomationEnrollments", fields: [tenantId], references: [id], onDelete: Cascade)
+  automation Automation @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  contact    Contact    @relation("ContactAutomationEnrollments", fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@unique([automationId, contactId])
+  @@index([tenantId, automationId])
+  @@index([tenantId, contactId])
+  @@index([tenantId, status])
+  @@map("automation_enrollments")
+}
+
+// ----------------------------
+// 10. MktForm — Lead capture forms
+// ----------------------------
+
+model MktForm {
+  id              String    @id @default(cuid())
+  tenantId        String    @map("tenant_id")
+  name            String
+  slug            String
+  description     String?
+  fields          Json      @default("[]")
+  settings        Json?
+  thankYouMessage String?   @map("thank_you_message")
+  redirectUrl     String?   @map("redirect_url")
+  isActive        Boolean   @default(true) @map("is_active")
+  submissionCount Int       @default(0) @map("submission_count")
+  createdById     String    @map("created_by_id")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
+
+  // Relations
+  tenant      Tenant              @relation("TenantMktForms", fields: [tenantId], references: [id], onDelete: Cascade)
+  createdBy   User                @relation("MktFormCreator", fields: [createdById], references: [id])
+  submissions MktFormSubmission[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, isActive])
+  @@map("mkt_forms")
+}
+
+// ----------------------------
+// 11. MktFormSubmission — Form submission data
+// ----------------------------
+
+model MktFormSubmission {
+  id          String   @id @default(cuid())
+  tenantId    String   @map("tenant_id")
+  formId      String   @map("form_id")
+  contactId   String?  @map("contact_id")
+  data        Json
+  ipAddress   String?  @map("ip_address")
+  userAgent   String?  @map("user_agent")
+  utmSource   String?  @map("utm_source")
+  utmMedium   String?  @map("utm_medium")
+  utmCampaign String?  @map("utm_campaign")
+  submittedAt DateTime @default(now()) @map("submitted_at")
+
+  // Relations
+  tenant  Tenant   @relation("TenantMktFormSubmissions", fields: [tenantId], references: [id], onDelete: Cascade)
+  form    MktForm  @relation(fields: [formId], references: [id], onDelete: Cascade)
+  contact Contact? @relation("ContactMktFormSubmissions", fields: [contactId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, formId])
+  @@index([tenantId, contactId])
+  @@index([submittedAt])
+  @@map("mkt_form_submissions")
+}
+
+// ----------------------------
+// 12. CampaignUtm — UTM tracking per campaign/contact
+// ----------------------------
+
+model CampaignUtm {
+  id          String    @id @default(cuid())
+  tenantId    String    @map("tenant_id")
+  campaignId  String?   @map("campaign_id")
+  contactId   String?   @map("contact_id")
+  source      String
+  medium      String
+  utmCampaign String?   @map("utm_campaign")
+  content     String?
+  term        String?
+  landingPage String?   @map("landing_page")
+  referrer    String?
+  convertedAt DateTime? @map("converted_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  tenant   Tenant    @relation("TenantCampaignUtms", fields: [tenantId], references: [id], onDelete: Cascade)
+  campaign Campaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  contact  Contact?  @relation("ContactCampaignUtms", fields: [contactId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, source, medium])
+  @@index([tenantId, campaignId])
+  @@index([tenantId, contactId])
+  @@map("campaign_utms")
+}
+
+// ----------------------------
+// 13. MarketingCalendar — Calendar entries for campaigns & events
+// ----------------------------
+
+model MarketingCalendar {
+  id          String           @id @default(cuid())
+  tenantId    String           @map("tenant_id")
+  title       String
+  description String?
+  type        String           @default("campaign")
+  scheduledAt DateTime         @map("scheduled_at")
+  endAt       DateTime?        @map("end_at")
+  status      String           @default("scheduled")
+  channel     CampaignChannel?
+  campaignId  String?          @map("campaign_id")
+  color       String?
+  isAllDay    Boolean          @default(false) @map("is_all_day")
+  createdById String           @map("created_by_id")
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  // Relations
+  tenant    Tenant    @relation("TenantMarketingCalendars", fields: [tenantId], references: [id], onDelete: Cascade)
+  campaign  Campaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  createdBy User      @relation("MarketingCalendarCreator", fields: [createdById], references: [id])
+
+  @@index([tenantId, scheduledAt])
+  @@index([tenantId, campaignId])
+  @@index([tenantId, type])
+  @@map("marketing_calendars")
+}
+
+// ----------------------------
+// 14. CampaignTag — Many-to-many campaign <-> tag
+// ----------------------------
+
+model CampaignTag {
+  id         String   @id @default(cuid())
+  tenantId   String   @map("tenant_id")
+  campaignId String   @map("campaign_id")
+  tagId      String   @map("tag_id")
+  addedAt    DateTime @default(now()) @map("added_at")
+
+  // Relations
+  tenant   Tenant   @relation("TenantCampaignTags", fields: [tenantId], references: [id], onDelete: Cascade)
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  tag      Tag      @relation("TagCampaigns", fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, tagId])
+  @@index([tenantId, campaignId])
+  @@map("campaign_tags")
+}
+
+// [KAVEN_MODULE:MARKETING END]
