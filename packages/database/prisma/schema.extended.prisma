@@ -697,7 +697,8 @@ model Contact {
   lifecycleHistory LifecycleHistory[]
   healthScores     ClientHealthScore[]
   healthHistory    ClientHealthHistory[]
-  sharedContacts   SharedContact[]
+  sharedContacts    SharedContact[]
+  financialEntries  FinancialEntry[]  @relation("FinancialEntryClient")
 
   @@index([tenantId, lifecycleStage])
   @@index([tenantId, status])
@@ -1052,3 +1053,503 @@ model SharedContact {
 }
 
 // [KAVEN_MODULE:CLIENTS_CRM END]
+
+// ===========================
+// FINANCE MODULE
+// ===========================
+// Gestao financeira completa: plano de contas, contas bancarias,
+// lancamentos com dual-date (caixa/competencia), orcamento,
+// recorrencias, parcelamento, relatorios DRE/DFC, KPIs.
+// Multi-tenant isolado via tenantId em todos os models.
+
+// [KAVEN_MODULE:FINANCE BEGIN]
+
+enum FinancialEntryStatus {
+  SCHEDULED
+  PENDING
+  CONFIRMED
+  RECONCILED
+}
+
+enum FinanceProjectStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+  CANCELLED
+}
+
+// ----------------------------
+// 1. ChartOfAccount — Hierarchical chart of accounts
+// ----------------------------
+
+model ChartOfAccount {
+  id          String   @id @default(cuid())
+  tenantId    String   @map("tenant_id")
+
+  parentId    String?  @map("parent_id")
+  code        String   // "1", "1.1", "1.1.1" — ordering and export
+  name        String
+  type        String   // 'revenue' | 'fixed_expense' | 'variable_expense' | 'investment' | 'financial_movement'
+  subtype     String?  // 'recurring' | 'non_recurring'
+
+  // Report mapping
+  appearsInDFC Boolean @default(true) @map("appears_in_dfc")
+  appearsInDRE Boolean @default(true) @map("appears_in_dre")
+
+  // Balance sheet (future-proof, nullable)
+  bsCategory  String?  @map("bs_category") // 'current_asset' | 'non_current_asset' | 'current_liability' | 'non_current_liability' | 'equity'
+
+  isSystem    Boolean  @default(false) @map("is_system")
+  isActive    Boolean  @default(true)  @map("is_active")
+  sortOrder   Int      @default(0)     @map("sort_order")
+
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt      @map("updated_at")
+  deletedAt   DateTime?               @map("deleted_at")
+
+  // Relations
+  tenant      Tenant             @relation("TenantChartOfAccounts", fields: [tenantId], references: [id], onDelete: Cascade)
+  parent      ChartOfAccount?    @relation("AccountHierarchy", fields: [parentId], references: [id])
+  children    ChartOfAccount[]   @relation("AccountHierarchy")
+  entryLines  FinancialEntryLine[]
+  budgetLines BudgetLine[]
+
+  @@index([tenantId, type])
+  @@index([tenantId, parentId])
+  @@index([tenantId, code])
+  @@map("chart_of_accounts")
+}
+
+// ----------------------------
+// 2. BankAccount — Bank accounts and credit cards
+// ----------------------------
+
+model BankAccount {
+  id             String   @id @default(cuid())
+  tenantId       String   @map("tenant_id")
+
+  name           String
+  bankCode       String?  @map("bank_code")
+  bankName       String?  @map("bank_name")
+  agency         String?
+  accountNumber  String?  @map("account_number")
+  type           String   // 'checking' | 'savings' | 'cash' | 'investment' | 'credit_card'
+  currency       String   @default("BRL")
+  initialBalance Decimal  @db.Decimal(15, 2) @default(0) @map("initial_balance")
+  initialDate    DateTime @map("initial_date")
+  isActive       Boolean  @default(true) @map("is_active")
+
+  // Credit card specific fields (null for other types)
+  creditLimit    Decimal?  @db.Decimal(15, 2) @map("credit_limit")
+  closingDay     Int?      @map("closing_day")  // 1-31
+  dueDay         Int?      @map("due_day")      // 1-31
+
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt      @map("updated_at")
+
+  // Relations
+  tenant         Tenant               @relation("TenantBankAccounts", fields: [tenantId], references: [id], onDelete: Cascade)
+  entryLines     FinancialEntryLine[]
+  statements     CreditCardStatement[]
+
+  @@index([tenantId, type, isActive])
+  @@map("bank_accounts")
+}
+
+// ----------------------------
+// 3. CreditCardStatement — Monthly credit card statement
+// ----------------------------
+
+model CreditCardStatement {
+  id             String   @id @default(cuid())
+  tenantId       String   @map("tenant_id")
+  bankAccountId  String   @map("bank_account_id")
+
+  referenceMonth Int      @map("reference_month")  // 1-12
+  referenceYear  Int      @map("reference_year")
+  closingDate    DateTime @map("closing_date")
+  dueDate        DateTime @map("due_date")
+
+  totalAmount    Decimal  @db.Decimal(15, 2) @map("total_amount")
+  status         String   @default("open")  // 'open' | 'closed' | 'paid'
+  paidAt         DateTime? @map("paid_at")
+  paidEntryId    String?  @map("paid_entry_id")
+
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt      @map("updated_at")
+
+  // Relations
+  tenant         Tenant          @relation("TenantCreditCardStatements", fields: [tenantId], references: [id], onDelete: Cascade)
+  bankAccount    BankAccount     @relation(fields: [bankAccountId], references: [id])
+  entryLines     FinancialEntryLine[]
+
+  @@unique([tenantId, bankAccountId, referenceYear, referenceMonth])
+  @@index([tenantId, status, dueDate])
+  @@map("credit_card_statements")
+}
+
+// ----------------------------
+// 4. CostCenter — Cost/Profit center
+// ----------------------------
+
+model CostCenter {
+  id        String   @id @default(cuid())
+  tenantId  String   @map("tenant_id")
+
+  name      String
+  type      String   // 'cost' | 'profit'
+  isActive  Boolean  @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt      @map("updated_at")
+
+  // Relations
+  tenant     Tenant              @relation("TenantCostCenters", fields: [tenantId], references: [id], onDelete: Cascade)
+  entryLines FinancialEntryLine[]
+
+  @@index([tenantId, isActive])
+  @@map("cost_centers")
+}
+
+// ----------------------------
+// 5. FinanceProject — Financial project with lifecycle
+// ----------------------------
+
+model FinanceProject {
+  id            String               @id @default(cuid())
+  tenantId      String               @map("tenant_id")
+  name          String
+  description   String?
+  startDate     DateTime             @map("start_date")
+  endDate       DateTime?            @map("end_date")
+  status        FinanceProjectStatus @default(ACTIVE)
+  budgetAmount  Decimal?             @db.Decimal(15, 2) @map("budget_amount")
+  actualAmount  Decimal?             @db.Decimal(15, 2) @map("actual_amount")
+  createdAt     DateTime             @default(now()) @map("created_at")
+  updatedAt     DateTime             @updatedAt      @map("updated_at")
+  deletedAt     DateTime?            @map("deleted_at")
+
+  // Relations
+  tenant    Tenant           @relation("TenantFinanceProjects", fields: [tenantId], references: [id], onDelete: Cascade)
+  entries   FinancialEntry[] @relation("EntryFinanceProject")
+
+  @@index([tenantId, status])
+  @@index([tenantId, startDate, endDate])
+  @@map("finance_projects")
+}
+
+// ----------------------------
+// 6. FinancialEntry — Root financial event
+// ----------------------------
+
+model FinancialEntry {
+  id              String   @id @default(cuid())
+  tenantId        String   @map("tenant_id")
+
+  // Dual-date: cash vs accrual
+  dateDFC         DateTime @map("date_dfc")  // when money enters/leaves
+  dateDRE         DateTime @map("date_dre")  // when revenue/expense is recognized
+
+  type            String   // 'revenue' | 'expense' | 'investment' | 'financial_movement'
+
+  // Transfer linking
+  transferPairId  String?  @map("transfer_pair_id")
+
+  description     String?
+  totalAmount     Decimal  @db.Decimal(15, 2) @map("total_amount")
+  currency        String   @default("BRL")
+  exchangeRate    Decimal? @db.Decimal(10, 6) @map("exchange_rate")
+  totalAmountBRL  Decimal? @db.Decimal(15, 2) @map("total_amount_brl")
+
+  // Split payment (tax reform)
+  taxRetained     Decimal? @db.Decimal(15, 2) @map("tax_retained")
+  netAmount       Decimal? @db.Decimal(15, 2) @map("net_amount")
+
+  // Interest/penalty and partial payments
+  interestRate    Decimal? @db.Decimal(5, 4)  @map("interest_rate")
+  penaltyAmount   Decimal? @db.Decimal(15, 2) @map("penalty_amount")
+  paidAmount      Decimal? @db.Decimal(15, 2) @map("paid_amount")
+
+  // Status
+  status          FinancialEntryStatus @default(SCHEDULED)
+  dueDate         DateTime?            @map("due_date")
+  paidAt          DateTime?            @map("paid_at")
+
+  // Period lock
+  periodLocked    Boolean  @default(false) @map("period_locked")
+
+  // Balance sheet type (future-proof)
+  balanceSheetType String? @map("balance_sheet_type")
+
+  // Recurrence/installment origin
+  recurringEntryId  String? @map("recurring_entry_id")
+  installmentPlanId String? @map("installment_plan_id")
+  installmentNumber Int?    @map("installment_number")
+
+  // Source (cross-module integration)
+  sourceType      String?  @map("source_type")
+  sourceId        String?  @map("source_id")
+
+  // OFX import reference
+  externalRef     String?  @map("external_ref")
+  importedAt      DateTime? @map("imported_at")
+
+  // Links
+  clientId        String?  @map("client_id")
+  entityId        String?  @map("entity_id")
+  projectId       String?  @map("project_id")
+
+  tags            String[]
+  attachmentUrl   String?  @map("attachment_url")
+  notes           String?
+
+  createdById     String   @map("created_by_id")
+  updatedById     String?  @map("updated_by_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt      @map("updated_at")
+  deletedAt       DateTime?               @map("deleted_at")
+
+  // Relations
+  tenant          Tenant               @relation("TenantFinancialEntries", fields: [tenantId], references: [id], onDelete: Cascade)
+  lines           FinancialEntryLine[]
+  client          Contact?             @relation("FinancialEntryClient", fields: [clientId], references: [id])
+  project         FinanceProject?      @relation("EntryFinanceProject", fields: [projectId], references: [id])
+  createdBy       User                 @relation("FinancialEntryCreator", fields: [createdById], references: [id])
+
+  @@index([tenantId, dateDFC])
+  @@index([tenantId, dateDRE])
+  @@index([tenantId, type, status])
+  @@index([tenantId, status, dueDate])
+  @@index([tenantId, clientId])
+  @@index([tenantId, sourceType, sourceId])
+  @@index([tenantId, transferPairId])
+  @@index([tenantId, installmentPlanId])
+  @@map("financial_entries")
+}
+
+// ----------------------------
+// 7. FinancialEntryLine — Split entry line
+// ----------------------------
+
+model FinancialEntryLine {
+  id                String   @id @default(cuid())
+  tenantId          String   @map("tenant_id")
+  entryId           String   @map("entry_id")
+
+  chartOfAccountId  String   @map("chart_of_account_id")
+  bankAccountId     String?  @map("bank_account_id")
+  costCenterId      String?  @map("cost_center_id")
+  statementId       String?  @map("statement_id")
+
+  amount            Decimal  @db.Decimal(15, 2)
+  description       String?
+
+  // Relations
+  entry         FinancialEntry       @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  chartOfAccount ChartOfAccount     @relation(fields: [chartOfAccountId], references: [id])
+  bankAccount   BankAccount?        @relation(fields: [bankAccountId], references: [id])
+  costCenter    CostCenter?         @relation(fields: [costCenterId], references: [id])
+  statement     CreditCardStatement? @relation(fields: [statementId], references: [id])
+
+  @@index([tenantId, entryId])
+  @@index([tenantId, chartOfAccountId])
+  @@index([tenantId, bankAccountId])
+  @@index([tenantId, statementId])
+  @@map("financial_entry_lines")
+}
+
+// ----------------------------
+// 8. InstallmentPlan — Installment plan template
+// ----------------------------
+
+model InstallmentPlan {
+  id                String   @id @default(cuid())
+  tenantId          String   @map("tenant_id")
+
+  description       String
+  totalAmount       Decimal  @db.Decimal(15, 2) @map("total_amount")
+  installmentCount  Int      @map("installment_count")
+  installmentAmount Decimal  @db.Decimal(15, 2) @map("installment_amount")
+  firstDueDate      DateTime @map("first_due_date")
+  frequency         String   @default("monthly") // 'weekly' | 'monthly' | 'bimonthly'
+
+  chartOfAccountId  String   @map("chart_of_account_id")
+  bankAccountId     String?  @map("bank_account_id")
+  clientId          String?  @map("client_id")
+
+  status            String   @default("active") // 'active' | 'completed' | 'cancelled'
+
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt      @map("updated_at")
+
+  // Relations
+  tenant            Tenant   @relation("TenantInstallmentPlans", fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, status])
+  @@map("installment_plans")
+}
+
+// ----------------------------
+// 9. RecurringEntry — Recurring entry template
+// ----------------------------
+
+model RecurringEntry {
+  id               String    @id @default(cuid())
+  tenantId         String    @map("tenant_id")
+
+  description      String
+  type             String    // 'revenue' | 'expense'
+  amount           Decimal   @db.Decimal(15, 2)
+  chartOfAccountId String    @map("chart_of_account_id")
+  bankAccountId    String?   @map("bank_account_id")
+  costCenterId     String?   @map("cost_center_id")
+  clientId         String?   @map("client_id")
+  frequency        String    // 'daily' | 'weekly' | 'monthly' | 'bimonthly' | 'quarterly' | 'annual'
+  startDate        DateTime  @map("start_date")
+  endDate          DateTime? @map("end_date")
+
+  isActive         Boolean   @default(true) @map("is_active")
+  lastGeneratedAt  DateTime? @map("last_generated_at")
+  nextDueDate      DateTime? @map("next_due_date")
+
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt      @map("updated_at")
+
+  // Relations
+  tenant           Tenant    @relation("TenantRecurringEntries", fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, isActive, nextDueDate])
+  @@map("recurring_entries")
+}
+
+// ----------------------------
+// 10. Budget — Annual budget with scenarios
+// ----------------------------
+
+model Budget {
+  id        String   @id @default(cuid())
+  tenantId  String   @map("tenant_id")
+
+  year      Int
+  name      String   @default("Annual Budget")
+  scenario  String   @default("base") // 'base' | 'conservative' | 'optimistic'
+  isActive  Boolean  @default(true)   @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt      @map("updated_at")
+
+  // Relations
+  tenant    Tenant       @relation("TenantBudgets", fields: [tenantId], references: [id], onDelete: Cascade)
+  lines     BudgetLine[]
+
+  @@unique([tenantId, year, name, scenario])
+  @@index([tenantId, year, isActive])
+  @@map("budgets")
+}
+
+// ----------------------------
+// 11. BudgetLine — Monthly budget per account
+// ----------------------------
+
+model BudgetLine {
+  id               String   @id @default(cuid())
+  budgetId         String   @map("budget_id")
+  tenantId         String   @map("tenant_id")
+  chartOfAccountId String   @map("chart_of_account_id")
+
+  month            Int      // 1-12
+  amount           Decimal  @db.Decimal(15, 2)
+
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  budget           Budget         @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  chartOfAccount   ChartOfAccount @relation(fields: [chartOfAccountId], references: [id])
+
+  @@unique([budgetId, chartOfAccountId, month])
+  @@index([tenantId, budgetId])
+  @@index([tenantId, chartOfAccountId])
+  @@map("budget_lines")
+}
+
+// ----------------------------
+// 12. FinancialProjection — Strategic 3-5 year projection
+// ----------------------------
+
+model FinancialProjection {
+  id          String   @id @default(cuid())
+  tenantId    String   @map("tenant_id")
+
+  name        String
+  startYear   Int      @map("start_year")
+  endYear     Int      @map("end_year")
+  isActive    Boolean  @default(true) @map("is_active")
+
+  assumptions Json     // { revenueGrowthRate, headcountGrowth, fixedCostInflation, marginTarget }
+  projections Json     // { "2026": { revenue, ebitda }, "2027": {...} }
+
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt      @map("updated_at")
+
+  // Relations
+  tenant      Tenant   @relation("TenantFinancialProjections", fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, isActive])
+  @@map("financial_projections")
+}
+
+// ----------------------------
+// 13. ClosedPeriod — Closed accounting period
+// ----------------------------
+
+model ClosedPeriod {
+  id          String   @id @default(cuid())
+  tenantId    String   @map("tenant_id")
+
+  month       Int      // 1-12
+  year        Int
+  closedAt    DateTime @default(now()) @map("closed_at")
+  closedById  String   @map("closed_by_id")
+
+  // Relations
+  tenant      Tenant   @relation("TenantClosedPeriods", fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, year, month])
+  @@index([tenantId, year])
+  @@map("closed_periods")
+}
+
+// ----------------------------
+// 14. KPIDefinition — KPI template and custom definitions
+// ----------------------------
+
+model KPIDefinition {
+  id          String   @id @default(cuid())
+  tenantId    String?  @map("tenant_id")  // null = global platform KPI
+
+  name        String
+  slug        String
+  description String?
+  unit        String   // 'percent' | 'currency_brl' | 'days' | 'ratio' | 'count'
+  formula     String   // expression in simple DSL
+  industry    String?  // 'agency' | 'real_estate' | 'ecommerce' | 'law_firm' | 'saas'
+
+  // Threshold alerts
+  thresholdGood    Decimal? @db.Decimal(15, 4) @map("threshold_good")
+  thresholdWarning Decimal? @db.Decimal(15, 4) @map("threshold_warning")
+
+  isActive    Boolean  @default(true) @map("is_active")
+  sortOrder   Int      @default(0)    @map("sort_order")
+
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt      @map("updated_at")
+
+  // Relations
+  tenant      Tenant?  @relation("TenantKPIDefinitions", fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([industry, isActive])
+  @@index([tenantId, isActive])
+  @@map("kpi_definitions")
+}
+
+// [KAVEN_MODULE:FINANCE END]

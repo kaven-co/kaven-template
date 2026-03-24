@@ -426,6 +426,20 @@ model Tenant {
   sharedContacts         SharedContact[]         @relation("TenantSharedContacts")
   receivedSharedContacts SharedContact[]         @relation("SharedWithTenantContacts")
 
+  // Finance Module
+  chartOfAccounts        ChartOfAccount[]        @relation("TenantChartOfAccounts")
+  bankAccounts           BankAccount[]           @relation("TenantBankAccounts")
+  creditCardStatements   CreditCardStatement[]   @relation("TenantCreditCardStatements")
+  costCenters            CostCenter[]            @relation("TenantCostCenters")
+  financeProjects        FinanceProject[]        @relation("TenantFinanceProjects")
+  financialEntries       FinancialEntry[]        @relation("TenantFinancialEntries")
+  installmentPlans       InstallmentPlan[]       @relation("TenantInstallmentPlans")
+  recurringEntries       RecurringEntry[]        @relation("TenantRecurringEntries")
+  budgets                Budget[]                @relation("TenantBudgets")
+  financialProjections   FinancialProjection[]   @relation("TenantFinancialProjections")
+  closedPeriods          ClosedPeriod[]          @relation("TenantClosedPeriods")
+  kpiDefinitions         KPIDefinition[]         @relation("TenantKPIDefinitions")
+
   @@index([slug])
   @@index([domain])
   @@index([status])
@@ -517,6 +531,9 @@ model User {
   createdSegments     Segment[]            @relation("SegmentCreator")
   lifecycleChanges    LifecycleHistory[]   @relation("LifecycleChangedBy")
   sharedContactsBy    SharedContact[]      @relation("SharedContactBy")
+
+  // Finance Module
+  createdFinancialEntries FinancialEntry[] @relation("FinancialEntryCreator")
 
   // Email Relations
   emailEvents EmailEvent[]
