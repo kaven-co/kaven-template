@@ -555,6 +555,31 @@ model Tenant {
   insurancePolicies      InsurancePolicy[]       @relation("TenantInsurancePolicies")
   securityAssessments    SecurityAssessment[]    @relation("TenantSecurityAssessments")
 
+  // Ads Management Module
+  adAccounts             AdAccount[]             @relation("TenantAdAccounts")
+  adCampaigns            AdCampaign[]            @relation("TenantAdCampaigns")
+  adSets                 AdSet[]                 @relation("TenantAdSets")
+  ads                    Ad[]                    @relation("TenantAds")
+  creatives              Creative[]              @relation("TenantCreatives")
+  creativeVariants       CreativeVariant[]       @relation("TenantCreativeVariants")
+  creativePerformance    CreativePerformance[]   @relation("TenantCreativePerformance")
+  adsMetrics             AdsMetric[]             @relation("TenantAdsMetrics")
+  adRules                AdRule[]                @relation("TenantAdRules")
+  adRuleExecutions       AdRuleExecution[]       @relation("TenantAdRuleExecutions")
+  attributionEvents      AttributionEvent[]      @relation("TenantAttributionEvents")
+
+  // AI Automation Module
+  domainEvents           DomainEvent[]           @relation("TenantDomainEvents")
+  triggerDefinitions     TriggerDefinition[]     @relation("TenantTriggerDefinitions")
+  actionDefinitions      ActionDefinition[]      @relation("TenantActionDefinitions")
+  automationRules        AutomationRule[]        @relation("TenantAutomationRules")
+  automationRuleSteps    AutomationRuleStep[]    @relation("TenantAutomationRuleSteps")
+  automationRuns         AutomationRun[]         @relation("TenantAutomationRuns")
+  automationStepRuns     AutomationStepRun[]     @relation("TenantAutomationStepRuns")
+  agentTelemetry         AgentTelemetry[]        @relation("TenantAgentTelemetry")
+  agentActions           AgentAction[]           @relation("TenantAgentActions")
+  costBudgets            CostBudget[]            @relation("TenantCostBudgets")
+
   @@index([slug])
   @@index([domain])
   @@index([status])
@@ -752,6 +777,17 @@ model User {
   uploadedContractAttachments ContractAttachment[] @relation("ContractAttachmentUploader")
   contractNotes2          ContractNote[]         @relation("ContractNoteAuthor")
   contractStatusChanges   ContractStatusHistory[] @relation("ContractStatusChanger")
+
+  // Ads Management Module
+  createdAdAccounts       AdAccount[]            @relation("AdAccountCreator")
+  createdAdCampaigns      AdCampaign[]           @relation("AdCampaignCreator")
+  createdCreatives        Creative[]             @relation("CreativeCreator")
+  createdAdRules          AdRule[]               @relation("AdRuleCreator")
+
+  // AI Automation Module
+  createdAutomationRules  AutomationRule[]        @relation("AutomationRuleCreator")
+  agentActionsTriggered   AgentAction[]           @relation("AgentActionUser")
+  createdCostBudgets      CostBudget[]            @relation("CostBudgetCreator")
 
   @@index([email])
   @@index([tenantId])

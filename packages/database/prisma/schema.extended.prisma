@@ -5364,3 +5364,736 @@ model SecurityAssessment {
 }
 
 // [KAVEN_MODULE:COMPLIANCE_SECURITY END]
+
+// ===========================
+// ADS MANAGEMENT MODULE
+// ===========================
+// Cross-platform ad operations: campaigns, ad sets, ads, creatives,
+// metrics, rules, attribution. Multi-tenant isolated via tenantId.
+// Adapter pattern: Meta, Google, TikTok, LinkedIn abstracted behind AdPlatformAdapter.
+
+// [KAVEN_MODULE:ADS_MANAGEMENT BEGIN]
+
+// ---------- Enums ----------
+
+enum AdPlatform {
+  META
+  GOOGLE
+  TIKTOK
+  LINKEDIN
+
+  @@map("ad_platform")
+}
+
+enum AdStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ARCHIVED
+  DELETED
+  ERROR
+
+  @@map("ad_status")
+}
+
+enum CampaignObjective {
+  AWARENESS
+  TRAFFIC
+  ENGAGEMENT
+  LEADS
+  APP_PROMOTION
+  SALES
+  CONVERSIONS
+
+  @@map("campaign_objective")
+}
+
+enum RuleConditionType {
+  CPA_ABOVE
+  CPA_BELOW
+  ROAS_ABOVE
+  ROAS_BELOW
+  CTR_ABOVE
+  CTR_BELOW
+  SPEND_ABOVE
+  SPEND_BELOW
+  IMPRESSIONS_ABOVE
+  CLICKS_BELOW
+  CUSTOM
+
+  @@map("rule_condition_type")
+}
+
+enum RuleActionType {
+  PAUSE
+  ENABLE
+  INCREASE_BUDGET
+  DECREASE_BUDGET
+  SEND_ALERT
+  CUSTOM
+
+  @@map("rule_action_type")
+}
+
+enum AttributionModel {
+  FIRST_TOUCH
+  LAST_TOUCH
+  LINEAR
+  TIME_DECAY
+  DATA_DRIVEN
+
+  @@map("attribution_model")
+}
+
+// ---------- Models ----------
+
+// 1. AdAccount — connected ad platform account
+model AdAccount {
+  id              String      @id @default(cuid())
+  tenantId        String      @map("tenant_id")
+  platform        AdPlatform
+  accountName     String      @map("account_name")
+  externalId      String      @map("external_id") // Platform account ID
+  accessToken     String?     @map("access_token") // Encrypted OAuth token
+  refreshToken    String?     @map("refresh_token") // Encrypted refresh token
+  tokenExpiresAt  DateTime?   @map("token_expires_at")
+  currency        String      @default("USD") // Account currency
+  timezone        String      @default("UTC") // Account timezone
+  isActive        Boolean     @default(true) @map("is_active")
+  lastSyncAt      DateTime?   @map("last_sync_at")
+  syncError       String?     @map("sync_error")
+  metadata        Json?       // Platform-specific metadata
+  createdById     String      @map("created_by_id")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  tenant     Tenant       @relation("TenantAdAccounts", fields: [tenantId], references: [id], onDelete: Cascade)
+  createdBy  User         @relation("AdAccountCreator", fields: [createdById], references: [id])
+  campaigns  AdCampaign[]
+  rules      AdRule[]
+  metrics    AdsMetric[]
+
+  @@unique([tenantId, platform, externalId])
+  @@index([tenantId, platform])
+  @@index([tenantId, isActive])
+  @@map("ad_accounts")
+}
+
+// 2. AdCampaign — campaign from any platform
+model AdCampaign {
+  id              String             @id @default(cuid())
+  tenantId        String             @map("tenant_id")
+  accountId       String             @map("account_id")
+  externalId      String?            @map("external_id") // Platform campaign ID
+  name            String
+  objective       CampaignObjective?
+  status          AdStatus           @default(DRAFT)
+  dailyBudget     Decimal?           @map("daily_budget") @db.Decimal(12, 2)
+  totalBudget     Decimal?           @map("total_budget") @db.Decimal(12, 2)
+  startDate       DateTime?          @map("start_date")
+  endDate         DateTime?          @map("end_date")
+  targetAudience  Json?              @map("target_audience") // Audience targeting config
+  metadata        Json?              // Platform-specific fields
+  createdById     String             @map("created_by_id")
+  createdAt       DateTime           @default(now()) @map("created_at")
+  updatedAt       DateTime           @updatedAt @map("updated_at")
+
+  // Relations
+  tenant    Tenant    @relation("TenantAdCampaigns", fields: [tenantId], references: [id], onDelete: Cascade)
+  account   AdAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  createdBy User      @relation("AdCampaignCreator", fields: [createdById], references: [id])
+  adSets    AdSet[]
+  metrics   AdsMetric[]
+  rules     AdRule[]
+
+  @@index([tenantId, accountId])
+  @@index([tenantId, status])
+  @@index([tenantId, objective])
+  @@map("ad_campaigns")
+}
+
+// 3. AdSet — ad set / ad group
+model AdSet {
+  id             String    @id @default(cuid())
+  tenantId       String    @map("tenant_id")
+  campaignId     String    @map("campaign_id")
+  externalId     String?   @map("external_id")
+  name           String
+  status         AdStatus  @default(DRAFT)
+  dailyBudget    Decimal?  @map("daily_budget") @db.Decimal(12, 2)
+  bidAmount      Decimal?  @map("bid_amount") @db.Decimal(12, 4)
+  bidStrategy    String?   @map("bid_strategy")
+  targeting      Json?     // Detailed targeting config
+  placements     Json?     // Placement config (feed, stories, reels, etc.)
+  schedule       Json?     // Scheduling config
+  metadata       Json?     // Platform-specific fields
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  tenant   Tenant     @relation("TenantAdSets", fields: [tenantId], references: [id], onDelete: Cascade)
+  campaign AdCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  ads      Ad[]
+
+  @@index([tenantId, campaignId])
+  @@index([tenantId, status])
+  @@map("ad_sets")
+}
+
+// 4. Ad — individual ad
+model Ad {
+  id            String    @id @default(cuid())
+  tenantId      String    @map("tenant_id")
+  adSetId       String    @map("ad_set_id")
+  creativeId    String?   @map("creative_id")
+  externalId    String?   @map("external_id")
+  name          String
+  status        AdStatus  @default(DRAFT)
+  headline      String?
+  description   String?
+  callToAction  String?   @map("call_to_action")
+  destinationUrl String?  @map("destination_url")
+  metadata      Json?     // Platform-specific fields
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  tenant   Tenant    @relation("TenantAds", fields: [tenantId], references: [id], onDelete: Cascade)
+  adSet    AdSet     @relation(fields: [adSetId], references: [id], onDelete: Cascade)
+  creative Creative? @relation(fields: [creativeId], references: [id], onDelete: SetNull)
+  metrics  AdsMetric[]
+
+  @@index([tenantId, adSetId])
+  @@index([tenantId, status])
+  @@map("ads")
+}
+
+// 5. Creative — creative asset in library
+model Creative {
+  id              String    @id @default(cuid())
+  tenantId        String    @map("tenant_id")
+  name            String
+  type            String    // image, video, carousel, stories
+  fileUrl         String?   @map("file_url")
+  thumbnailUrl    String?   @map("thumbnail_url")
+  width           Int?
+  height          Int?
+  durationMs      Int?      @map("duration_ms") // For video
+  fileSize        Int?      @map("file_size") // Bytes
+  mimeType        String?   @map("mime_type")
+  tags            String[]  // Organizational tags
+  metadata        Json?     // Extra metadata
+  createdById     String    @map("created_by_id")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  tenant    Tenant             @relation("TenantCreatives", fields: [tenantId], references: [id], onDelete: Cascade)
+  createdBy User               @relation("CreativeCreator", fields: [createdById], references: [id])
+  ads       Ad[]
+  variants  CreativeVariant[]
+  performance CreativePerformance[]
+
+  @@index([tenantId, type])
+  @@index([tenantId, createdById])
+  @@map("creatives")
+}
+
+// 6. CreativeVariant — A/B creative variants
+model CreativeVariant {
+  id          String    @id @default(cuid())
+  tenantId    String    @map("tenant_id")
+  creativeId  String    @map("creative_id")
+  name        String    // e.g., "Version A", "Version B"
+  fileUrl     String?   @map("file_url")
+  headline    String?
+  description String?
+  callToAction String?  @map("call_to_action")
+  metadata    Json?
+  isControl   Boolean   @default(false) @map("is_control") // Is this the control variant?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  tenant   Tenant   @relation("TenantCreativeVariants", fields: [tenantId], references: [id], onDelete: Cascade)
+  creative Creative @relation(fields: [creativeId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, creativeId])
+  @@map("creative_variants")
+}
+
+// 7. CreativePerformance — per-creative metrics
+model CreativePerformance {
+  id            String    @id @default(cuid())
+  tenantId      String    @map("tenant_id")
+  creativeId    String    @map("creative_id")
+  platform      AdPlatform
+  impressions   Int       @default(0)
+  clicks        Int       @default(0)
+  conversions   Int       @default(0)
+  spend         Decimal   @default(0) @db.Decimal(12, 2)
+  ctr           Decimal?  @db.Decimal(8, 4) // Click-through rate
+  cpa           Decimal?  @db.Decimal(12, 2) // Cost per acquisition
+  roas          Decimal?  @db.Decimal(8, 2)  // Return on ad spend
+  score         Decimal?  @db.Decimal(5, 2)  // AI-generated performance score
+  scoreDetails  Json?     @map("score_details") // AI scoring breakdown
+  periodStart   DateTime  @map("period_start")
+  periodEnd     DateTime  @map("period_end")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  tenant   Tenant   @relation("TenantCreativePerformance", fields: [tenantId], references: [id], onDelete: Cascade)
+  creative Creative @relation(fields: [creativeId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, creativeId, periodStart])
+  @@index([tenantId, platform])
+  @@map("creative_performance")
+}
+
+// 8. AdsMetric — normalized daily metrics
+model AdsMetric {
+  id            String      @id @default(cuid())
+  tenantId      String      @map("tenant_id")
+  accountId     String      @map("account_id")
+  campaignId    String?     @map("campaign_id")
+  adId          String?     @map("ad_id")
+  platform      AdPlatform
+  date          DateTime    @db.Date
+  impressions   Int         @default(0)
+  clicks        Int         @default(0)
+  conversions   Int         @default(0)
+  spend         Decimal     @default(0) @db.Decimal(12, 2)
+  revenue       Decimal     @default(0) @db.Decimal(12, 2)
+  reach         Int         @default(0)
+  cpm           Decimal?    @db.Decimal(12, 4) // Cost per mille
+  cpc           Decimal?    @db.Decimal(12, 4) // Cost per click
+  ctr           Decimal?    @db.Decimal(8, 4)  // Click-through rate
+  cpa           Decimal?    @db.Decimal(12, 2) // Cost per acquisition
+  roas          Decimal?    @db.Decimal(8, 2)  // Return on ad spend
+  videoViews    Int?        @default(0) @map("video_views")
+  engagements   Int?        @default(0)
+  metadata      Json?       // Platform-specific extra metrics
+  createdAt     DateTime    @default(now()) @map("created_at")
+
+  // Relations
+  tenant   Tenant      @relation("TenantAdsMetrics", fields: [tenantId], references: [id], onDelete: Cascade)
+  account  AdAccount   @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  campaign AdCampaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  ad       Ad?         @relation(fields: [adId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, date])
+  @@index([tenantId, accountId, date])
+  @@index([tenantId, campaignId, date])
+  @@index([tenantId, platform, date])
+  @@map("ads_metrics")
+}
+
+// 9. AdRule — ECA automation rule for ads
+model AdRule {
+  id            String          @id @default(cuid())
+  tenantId      String          @map("tenant_id")
+  accountId     String?         @map("account_id")
+  campaignId    String?         @map("campaign_id")
+  name          String
+  description   String?
+  isActive      Boolean         @default(true) @map("is_active")
+  conditionType RuleConditionType @map("condition_type")
+  conditionValue Decimal        @map("condition_value") @db.Decimal(12, 4)
+  actionType    RuleActionType  @map("action_type")
+  actionValue   Json?           @map("action_value") // e.g., { percentage: 20 } for budget increase
+  frequency     String          @default("HOURLY") // HOURLY, DAILY, WEEKLY
+  lastEvaluatedAt DateTime?     @map("last_evaluated_at")
+  createdById   String          @map("created_by_id")
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+
+  // Relations
+  tenant    Tenant      @relation("TenantAdRules", fields: [tenantId], references: [id], onDelete: Cascade)
+  account   AdAccount?  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  campaign  AdCampaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  createdBy User        @relation("AdRuleCreator", fields: [createdById], references: [id])
+  executions AdRuleExecution[]
+
+  @@index([tenantId, isActive])
+  @@index([tenantId, accountId])
+  @@map("ad_rules")
+}
+
+// 10. AdRuleExecution — rule execution log
+model AdRuleExecution {
+  id           String    @id @default(cuid())
+  tenantId     String    @map("tenant_id")
+  ruleId       String    @map("rule_id")
+  conditionMet Boolean   @map("condition_met")
+  conditionData Json?    @map("condition_data") // Evaluated metric values
+  actionTaken  Boolean   @map("action_taken")
+  actionResult Json?     @map("action_result") // Result of action execution
+  error        String?
+  executedAt   DateTime  @default(now()) @map("executed_at")
+
+  // Relations
+  tenant Tenant @relation("TenantAdRuleExecutions", fields: [tenantId], references: [id], onDelete: Cascade)
+  rule   AdRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, ruleId])
+  @@index([tenantId, executedAt])
+  @@map("ad_rule_executions")
+}
+
+// 11. AttributionEvent — conversion attribution tracking
+model AttributionEvent {
+  id              String           @id @default(cuid())
+  tenantId        String           @map("tenant_id")
+  eventType       String           @map("event_type") // purchase, lead, signup, etc.
+  eventId         String           @unique @map("event_id") // Dedup key (UUID)
+  platform        AdPlatform?
+  campaignId      String?          @map("campaign_id")
+  adId            String?          @map("ad_id")
+  model           AttributionModel @default(LAST_TOUCH)
+  attributionWeight Decimal        @default(1.0) @map("attribution_weight") @db.Decimal(5, 4)
+  revenue         Decimal?         @db.Decimal(12, 2)
+  conversionData  Json?            @map("conversion_data") // Extra conversion payload
+  sourceUrl       String?          @map("source_url")
+  ipHash          String?          @map("ip_hash") // Hashed IP for privacy
+  userAgent       String?          @map("user_agent")
+  occurredAt      DateTime         @map("occurred_at")
+  createdAt       DateTime         @default(now()) @map("created_at")
+
+  // Relations
+  tenant Tenant @relation("TenantAttributionEvents", fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, eventType])
+  @@index([tenantId, platform])
+  @@index([tenantId, campaignId])
+  @@index([tenantId, occurredAt])
+  @@map("attribution_events")
+}
+
+// [KAVEN_MODULE:ADS_MANAGEMENT END]
+
+// ===========================
+// AI AUTOMATION MODULE
+// ===========================
+// Event bus, ECA automation rules, AI telemetry, cost guardrails.
+// The "nervous system" — cross-module event bus + AI observability.
+// Multi-tenant isolated via tenantId.
+
+// [KAVEN_MODULE:AI_AUTOMATION BEGIN]
+
+// ---------- Enums ----------
+
+enum EventStatus {
+  PENDING
+  PROCESSING
+  DELIVERED
+  FAILED
+  DEAD_LETTER
+
+  @@map("event_status")
+}
+
+enum RuleStatus {
+  ACTIVE
+  PAUSED
+  DRAFT
+  ARCHIVED
+  ERROR
+
+  @@map("rule_status")
+}
+
+enum StepExecutionType {
+  SEND_NOTIFICATION
+  CREATE_RECORD
+  UPDATE_FIELD
+  CALL_WEBHOOK
+  AI_GENERATION
+  AI_AGENT
+
+  @@map("step_execution_type")
+}
+
+enum BudgetPeriod {
+  DAILY
+  WEEKLY
+  MONTHLY
+
+  @@map("budget_period")
+}
+
+enum TelemetryProvider {
+  GEMINI
+  OPENAI
+  ANTHROPIC
+  CUSTOM
+
+  @@map("telemetry_provider")
+}
+
+// ---------- Models ----------
+
+// 1. DomainEvent — cross-module event record (transactional outbox)
+model DomainEvent {
+  id           String      @id @default(cuid())
+  tenantId     String      @map("tenant_id")
+  eventType    String      @map("event_type") // e.g., "finance.entry.created"
+  eventId      String      @unique @map("event_id") // Idempotency key (UUID)
+  payload      Json        // Event data
+  metadata     Json?       // Extra context (userId, module, correlationId)
+  status       EventStatus @default(PENDING)
+  retryCount   Int         @default(0) @map("retry_count")
+  maxRetries   Int         @default(3) @map("max_retries")
+  lastError    String?     @map("last_error")
+  processedAt  DateTime?   @map("processed_at")
+  scheduledFor DateTime?   @map("scheduled_for") // Delayed events
+  createdAt    DateTime    @default(now()) @map("created_at")
+
+  // Relations
+  tenant Tenant @relation("TenantDomainEvents", fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, eventType])
+  @@index([status, scheduledFor])
+  @@index([tenantId, createdAt])
+  @@map("domain_events")
+}
+
+// 2. TriggerDefinition — catalog of available triggers
+model TriggerDefinition {
+  id           String   @id @default(cuid())
+  tenantId     String?  @map("tenant_id") // null = system-level trigger
+  eventType    String   @map("event_type") // e.g., "finance.entry.created"
+  name         String
+  description  String?
+  module       String   // Source module: finance, clients, projects, etc.
+  payloadSchema Json?   @map("payload_schema") // JSON Schema for validation
+  isSystem     Boolean  @default(false) @map("is_system") // System triggers are read-only
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  tenant Tenant? @relation("TenantTriggerDefinitions", fields: [tenantId], references: [id], onDelete: Cascade)
+  rules  AutomationRule[]
+
+  @@unique([eventType])
+  @@index([module])
+  @@map("trigger_definitions")
+}
+
+// 3. ActionDefinition — catalog of available actions
+model ActionDefinition {
+  id            String   @id @default(cuid())
+  tenantId      String?  @map("tenant_id")
+  actionKey     String   @unique @map("action_key") // e.g., "send_notification"
+  name          String
+  description   String?
+  executionType StepExecutionType @map("execution_type")
+  configSchema  Json?    @map("config_schema") // JSON Schema for action config
+  isSystem      Boolean  @default(false) @map("is_system")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  tenant Tenant? @relation("TenantActionDefinitions", fields: [tenantId], references: [id], onDelete: Cascade)
+  steps  AutomationRuleStep[]
+
+  @@index([executionType])
+  @@map("action_definitions")
+}
+
+// 4. AutomationRule — ECA rule definition
+model AutomationRule {
+  id           String     @id @default(cuid())
+  tenantId     String     @map("tenant_id")
+  triggerId    String     @map("trigger_id")
+  name         String
+  description  String?
+  status       RuleStatus @default(DRAFT)
+  conditions   Json?      // ConditionNode tree (AND/OR/NOT operators)
+  priority     Int        @default(0) // Higher = evaluated first
+  isEnabled    Boolean    @default(true) @map("is_enabled")
+  maxExecutions Int?      @map("max_executions") // null = unlimited
+  executionCount Int      @default(0) @map("execution_count")
+  cooldownMs   Int?       @map("cooldown_ms") // Min time between executions
+  lastFiredAt  DateTime?  @map("last_fired_at")
+  createdById  String     @map("created_by_id")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  // Relations
+  tenant    Tenant             @relation("TenantAutomationRules", fields: [tenantId], references: [id], onDelete: Cascade)
+  trigger   TriggerDefinition  @relation(fields: [triggerId], references: [id])
+  createdBy User               @relation("AutomationRuleCreator", fields: [createdById], references: [id])
+  steps     AutomationRuleStep[]
+  runs      AutomationRun[]
+
+  @@index([tenantId, status])
+  @@index([tenantId, triggerId])
+  @@index([tenantId, isEnabled])
+  @@map("automation_rules")
+}
+
+// 5. AutomationRuleStep — individual steps within a rule
+model AutomationRuleStep {
+  id            String            @id @default(cuid())
+  tenantId      String            @map("tenant_id")
+  ruleId        String            @map("rule_id")
+  actionId      String            @map("action_id")
+  order         Int               // Execution order
+  config        Json?             // Step-specific configuration
+  retryOnFail   Boolean           @default(false) @map("retry_on_fail")
+  maxRetries    Int               @default(3) @map("max_retries")
+  timeoutMs     Int               @default(30000) @map("timeout_ms")
+  createdAt     DateTime          @default(now()) @map("created_at")
+  updatedAt     DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  tenant   Tenant           @relation("TenantAutomationRuleSteps", fields: [tenantId], references: [id], onDelete: Cascade)
+  rule     AutomationRule   @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  action   ActionDefinition @relation(fields: [actionId], references: [id])
+  stepRuns AutomationStepRun[]
+
+  @@index([tenantId, ruleId])
+  @@map("automation_rule_steps")
+}
+
+// 6. AutomationRun — rule execution instance
+model AutomationRun {
+  id            String    @id @default(cuid())
+  tenantId      String    @map("tenant_id")
+  ruleId        String    @map("rule_id")
+  eventId       String?   @map("event_id") // DomainEvent that triggered this run
+  status        String    @default("PENDING") // PENDING, RUNNING, COMPLETED, FAILED
+  triggerData   Json?     @map("trigger_data") // Event payload snapshot
+  error         String?
+  startedAt     DateTime  @default(now()) @map("started_at")
+  completedAt   DateTime? @map("completed_at")
+  durationMs    Int?      @map("duration_ms")
+  isDryRun      Boolean   @default(false) @map("is_dry_run")
+
+  // Relations
+  tenant   Tenant             @relation("TenantAutomationRuns", fields: [tenantId], references: [id], onDelete: Cascade)
+  rule     AutomationRule     @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  stepRuns AutomationStepRun[]
+
+  @@index([tenantId, ruleId])
+  @@index([tenantId, status])
+  @@index([tenantId, startedAt])
+  @@map("automation_runs")
+}
+
+// 7. AutomationStepRun — individual step execution log
+model AutomationStepRun {
+  id            String             @id @default(cuid())
+  tenantId      String             @map("tenant_id")
+  runId         String             @map("run_id")
+  stepId        String             @map("step_id")
+  status        String             @default("PENDING") // PENDING, RUNNING, COMPLETED, FAILED, SKIPPED
+  inputData     Json?              @map("input_data")
+  outputData    Json?              @map("output_data")
+  error         String?
+  retryAttempt  Int                @default(0) @map("retry_attempt")
+  startedAt     DateTime           @default(now()) @map("started_at")
+  completedAt   DateTime?          @map("completed_at")
+  durationMs    Int?               @map("duration_ms")
+
+  // Relations
+  tenant Tenant             @relation("TenantAutomationStepRuns", fields: [tenantId], references: [id], onDelete: Cascade)
+  run    AutomationRun      @relation(fields: [runId], references: [id], onDelete: Cascade)
+  step   AutomationRuleStep @relation(fields: [stepId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, runId])
+  @@index([tenantId, stepId])
+  @@map("automation_step_runs")
+}
+
+// 8. AgentTelemetry — AI call telemetry (tokens, cost, latency)
+model AgentTelemetry {
+  id              String            @id @default(cuid())
+  tenantId        String            @map("tenant_id")
+  provider        TelemetryProvider
+  model           String            // e.g., "gemini-2.5-flash"
+  agentId         String?           @map("agent_id") // Logical agent identifier
+  module          String?           // Source module (finance, ads, etc.)
+  traceId         String?           @map("trace_id") // Distributed tracing
+  parentSpanId    String?           @map("parent_span_id")
+  inputTokens     Int               @map("input_tokens")
+  outputTokens    Int               @map("output_tokens")
+  totalTokens     Int               @map("total_tokens")
+  estimatedCostUsd Decimal          @map("estimated_cost_usd") @db.Decimal(10, 6)
+  latencyMs       Int               @map("latency_ms")
+  firstTokenMs    Int?              @map("first_token_ms")
+  promptHash      String?           @map("prompt_hash") // SHA-256 of prompt for dedup
+  success         Boolean           @default(true)
+  error           String?
+  metadata        Json?             // Extra context
+  createdAt       DateTime          @default(now()) @map("created_at")
+
+  // Relations
+  tenant Tenant @relation("TenantAgentTelemetry", fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, provider])
+  @@index([tenantId, module])
+  @@index([tenantId, agentId])
+  @@index([tenantId, createdAt])
+  @@index([traceId])
+  @@map("agent_telemetry")
+}
+
+// 9. AgentAction — AI action audit log
+model AgentAction {
+  id           String   @id @default(cuid())
+  tenantId     String   @map("tenant_id")
+  agentId      String   @map("agent_id")
+  actionType   String   @map("action_type") // e.g., "generate_copy", "analyze_metrics"
+  module       String   // Source module
+  entityType   String?  @map("entity_type") // e.g., "AdCampaign", "ContentPiece"
+  entityId     String?  @map("entity_id")
+  inputSummary String?  @map("input_summary") // Truncated input for audit
+  outputSummary String? @map("output_summary") // Truncated output for audit
+  telemetryId  String?  @map("telemetry_id") // Link to AgentTelemetry
+  userId       String?  @map("user_id") // User who triggered the action
+  success      Boolean  @default(true)
+  error        String?
+  durationMs   Int?     @map("duration_ms")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  // Relations
+  tenant Tenant @relation("TenantAgentActions", fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User?  @relation("AgentActionUser", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, agentId])
+  @@index([tenantId, module])
+  @@index([tenantId, actionType])
+  @@index([tenantId, createdAt])
+  @@map("agent_actions")
+}
+
+// 10. CostBudget — monthly AI budget per module
+model CostBudget {
+  id            String       @id @default(cuid())
+  tenantId      String       @map("tenant_id")
+  module        String?      // null = global budget
+  period        BudgetPeriod @default(MONTHLY)
+  budgetUsd     Decimal      @map("budget_usd") @db.Decimal(10, 2)
+  spentUsd      Decimal      @default(0) @map("spent_usd") @db.Decimal(10, 2)
+  alertThreshold Decimal     @default(0.8) @map("alert_threshold") @db.Decimal(3, 2) // 0.8 = 80%
+  alertSentAt   DateTime?    @map("alert_sent_at")
+  periodStart   DateTime     @map("period_start")
+  periodEnd     DateTime     @map("period_end")
+  isActive      Boolean      @default(true) @map("is_active")
+  createdById   String       @map("created_by_id")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+
+  // Relations
+  tenant    Tenant @relation("TenantCostBudgets", fields: [tenantId], references: [id], onDelete: Cascade)
+  createdBy User   @relation("CostBudgetCreator", fields: [createdById], references: [id])
+
+  @@unique([tenantId, module, periodStart])
+  @@index([tenantId, isActive])
+  @@index([tenantId, periodStart, periodEnd])
+  @@map("cost_budgets")
+}
+
+// [KAVEN_MODULE:AI_AUTOMATION END]
