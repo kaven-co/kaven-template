@@ -617,6 +617,38 @@ model Tenant {
   purchaseOrders         PurchaseOrder[]         @relation("TenantPurchaseOrders")
   purchaseOrderItems     PurchaseOrderItem[]     @relation("TenantPurchaseOrderItems")
 
+  // Remote / Hybrid Work Module
+  remoteTimeEntries      RemoteTimeEntry[]       @relation("TenantRemoteTimeEntries")
+  billingRates           BillingRate[]           @relation("TenantBillingRates")
+  timesheetPeriods       TimesheetPeriod[]       @relation("TenantTimesheetPeriods")
+  workSchedules          WorkSchedule[]          @relation("TenantWorkSchedules")
+  meetingFreeBlocks      MeetingFreeBlock[]      @relation("TenantMeetingFreeBlocks")
+  timezoneConfigs        TimezoneConfig[]        @relation("TenantTimezoneConfigs")
+  asyncStandups          AsyncStandup[]          @relation("TenantAsyncStandups")
+  standupResponses       StandupResponse[]       @relation("TenantStandupResponses")
+
+  // Team Collaboration Module
+  teamChannels           TeamChannel[]           @relation("TenantTeamChannels")
+  teamChannelMembers     TeamChannelMember[]     @relation("TenantTeamChannelMembers")
+  teamUpdates            TeamUpdate[]            @relation("TenantTeamUpdates")
+  teamMeetings           TeamMeeting[]           @relation("TenantTeamMeetings")
+  teamMeetingParticipants TeamMeetingParticipant[] @relation("TenantTeamMeetingParticipants")
+
+  // Finances Tracking BI Module
+  dreSnapshots           DRESnapshot[]           @relation("TenantDRESnapshots")
+  cashFlowSnapshots      CashFlowSnapshot[]      @relation("TenantCashFlowSnapshots")
+  financialIndicators    FinancialIndicator[]    @relation("TenantFinancialIndicators")
+
+  // SaaS Analytics Module (extends SaaS Ops)
+  healthScoreAlertRules  HealthScoreAlertRule[]  @relation("TenantHealthScoreAlertRules")
+  healthScoreAlerts      HealthScoreAlert[]      @relation("TenantHealthScoreAlerts")
+  expansionOpportunities ExpansionOpportunity[]  @relation("TenantExpansionOpportunities")
+
+  // Asset Management Module (Admin Extensions)
+  equipment              Equipment[]             @relation("TenantEquipment")
+  assetRegistries        AssetRegistry[]         @relation("TenantAssetRegistries")
+  assetAssignments       AssetAssignment[]       @relation("TenantAssetAssignments")
+
   @@index([slug])
   @@index([domain])
   @@index([status])
@@ -843,6 +875,17 @@ model User {
   createdStockMovements   StockMovement[]         @relation("StockMovementCreator")
   createdSalesOrders      SalesOrder[]            @relation("SalesOrderCreator")
   createdPurchaseOrders   PurchaseOrder[]         @relation("PurchaseOrderCreator")
+
+  // Team Collaboration Module
+  createdTeamChannels     TeamChannel[]           @relation("ChannelCreator")
+  channelMemberships      TeamChannelMember[]     @relation("ChannelMemberships")
+  teamUpdates             TeamUpdate[]            @relation("TeamUpdateAuthor")
+  createdTeamMeetings     TeamMeeting[]           @relation("TeamMeetingCreator")
+  teamMeetingParticipations TeamMeetingParticipant[] @relation("TeamMeetingParticipations")
+
+  // Asset Management Module
+  assetAssignments          AssetAssignment[]       @relation("AssetAssignee")
+  createdAssetRegistries    AssetRegistry[]         @relation("AssetRegistryCreator")
 
   @@index([email])
   @@index([tenantId])

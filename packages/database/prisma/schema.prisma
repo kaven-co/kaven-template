@@ -617,6 +617,38 @@ model Tenant {
   purchaseOrders         PurchaseOrder[]         @relation("TenantPurchaseOrders")
   purchaseOrderItems     PurchaseOrderItem[]     @relation("TenantPurchaseOrderItems")
 
+  // Remote / Hybrid Work Module
+  remoteTimeEntries      RemoteTimeEntry[]       @relation("TenantRemoteTimeEntries")
+  billingRates           BillingRate[]           @relation("TenantBillingRates")
+  timesheetPeriods       TimesheetPeriod[]       @relation("TenantTimesheetPeriods")
+  workSchedules          WorkSchedule[]          @relation("TenantWorkSchedules")
+  meetingFreeBlocks      MeetingFreeBlock[]      @relation("TenantMeetingFreeBlocks")
+  timezoneConfigs        TimezoneConfig[]        @relation("TenantTimezoneConfigs")
+  asyncStandups          AsyncStandup[]          @relation("TenantAsyncStandups")
+  standupResponses       StandupResponse[]       @relation("TenantStandupResponses")
+
+  // Team Collaboration Module
+  teamChannels           TeamChannel[]           @relation("TenantTeamChannels")
+  teamChannelMembers     TeamChannelMember[]     @relation("TenantTeamChannelMembers")
+  teamUpdates            TeamUpdate[]            @relation("TenantTeamUpdates")
+  teamMeetings           TeamMeeting[]           @relation("TenantTeamMeetings")
+  teamMeetingParticipants TeamMeetingParticipant[] @relation("TenantTeamMeetingParticipants")
+
+  // Finances Tracking BI Module
+  dreSnapshots           DRESnapshot[]           @relation("TenantDRESnapshots")
+  cashFlowSnapshots      CashFlowSnapshot[]      @relation("TenantCashFlowSnapshots")
+  financialIndicators    FinancialIndicator[]    @relation("TenantFinancialIndicators")
+
+  // SaaS Analytics Module (extends SaaS Ops)
+  healthScoreAlertRules  HealthScoreAlertRule[]  @relation("TenantHealthScoreAlertRules")
+  healthScoreAlerts      HealthScoreAlert[]      @relation("TenantHealthScoreAlerts")
+  expansionOpportunities ExpansionOpportunity[]  @relation("TenantExpansionOpportunities")
+
+  // Asset Management Module (Admin Extensions)
+  equipment              Equipment[]             @relation("TenantEquipment")
+  assetRegistries        AssetRegistry[]         @relation("TenantAssetRegistries")
+  assetAssignments       AssetAssignment[]       @relation("TenantAssetAssignments")
+
   @@index([slug])
   @@index([domain])
   @@index([status])
@@ -843,6 +875,17 @@ model User {
   createdStockMovements   StockMovement[]         @relation("StockMovementCreator")
   createdSalesOrders      SalesOrder[]            @relation("SalesOrderCreator")
   createdPurchaseOrders   PurchaseOrder[]         @relation("PurchaseOrderCreator")
+
+  // Team Collaboration Module
+  createdTeamChannels     TeamChannel[]           @relation("ChannelCreator")
+  channelMemberships      TeamChannelMember[]     @relation("ChannelMemberships")
+  teamUpdates             TeamUpdate[]            @relation("TeamUpdateAuthor")
+  createdTeamMeetings     TeamMeeting[]           @relation("TeamMeetingCreator")
+  teamMeetingParticipations TeamMeetingParticipant[] @relation("TeamMeetingParticipations")
+
+  // Asset Management Module
+  assetAssignments          AssetAssignment[]       @relation("AssetAssignee")
+  createdAssetRegistries    AssetRegistry[]         @relation("AssetRegistryCreator")
 
   @@index([email])
   @@index([tenantId])
@@ -4737,6 +4780,15 @@ model Employee {
   applications        Application[]
   onboardingPlans     OnboardingPlan[]
   managedJobs         HiringJob[]         @relation("JobHiringManager")
+
+  // Remote Work Module
+  remoteTimeEntries   RemoteTimeEntry[]   @relation("EmployeeRemoteTimeEntries")
+  billingRates        BillingRate[]       @relation("EmployeeBillingRates")
+  timesheetPeriods    TimesheetPeriod[]   @relation("EmployeeTimesheetPeriods")
+  workSchedules       WorkSchedule[]      @relation("EmployeeWorkSchedules")
+  meetingFreeBlocks   MeetingFreeBlock[]  @relation("EmployeeMeetingFreeBlocks")
+  timezoneConfig      TimezoneConfig?     @relation("EmployeeTimezoneConfig")
+  standupResponses    StandupResponse[]   @relation("EmployeeStandupResponses")
 
   @@index([tenantId])
   @@index([tenantId, status])
@@ -10082,3 +10134,784 @@ model PurchaseOrderItem {
 }
 
 // [KAVEN_MODULE:INVENTORY_FULFILLMENT END]
+
+// [KAVEN_MODULE:REMOTE_WORK BEGIN]
+
+// ===========================
+// REMOTE / HYBRID WORK MODULE
+// ===========================
+// Time tracking (timer + manual + timesheet approval), async standups,
+// work schedules, timezone management. Async-first, zero surveillance.
+// Integrates: people_hr (Employee), projects (Project/Task)
+
+// ---------- Enums ----------
+
+enum TimesheetStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+
+  @@map("timesheet_status")
+}
+
+enum WorkScheduleType {
+  FULL_TIME
+  PART_TIME
+  FLEXIBLE
+
+  @@map("work_schedule_type")
+}
+
+enum StandupStatus {
+  SUBMITTED
+  SKIPPED
+
+  @@map("standup_status")
+}
+
+// ---------- Models ----------
+
+// 1. RemoteTimeEntry — Time tracking for remote workers (timer + manual)
+model RemoteTimeEntry {
+  id              String    @id @default(cuid())
+  tenantId        String    @map("tenant_id")
+  employeeId      String    @map("employee_id")
+  projectId       String?   @map("project_id")
+  taskId          String?   @map("task_id")
+  description     String?
+  startTime       DateTime  @map("start_time")
+  endTime         DateTime? @map("end_time")
+  durationMinutes Int       @default(0) @map("duration_minutes")
+  isRunning       Boolean   @default(false) @map("is_running")
+  billable        Boolean   @default(true)
+  notes           String?
+
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  tenant          Tenant    @relation("TenantRemoteTimeEntries", fields: [tenantId], references: [id], onDelete: Cascade)
+  employee        Employee  @relation("EmployeeRemoteTimeEntries", fields: [employeeId], references: [id])
+
+  @@index([tenantId, employeeId])
+  @@index([tenantId, projectId])
+  @@index([tenantId, isRunning])
+  @@index([tenantId, startTime])
+  @@map("remote_time_entries")
+}
+
+// 2. BillingRate — Hourly rate per employee/project combination
+model BillingRate {
+  id            String   @id @default(cuid())
+  tenantId      String   @map("tenant_id")
+  employeeId    String   @map("employee_id")
+  projectId     String?  @map("project_id")
+  hourlyRate    Decimal  @db.Decimal(10, 2) @map("hourly_rate")
+  currency      String   @default("BRL")
+  effectiveFrom DateTime @map("effective_from")
+  effectiveTo   DateTime? @map("effective_to")
+
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  tenant        Tenant   @relation("TenantBillingRates", fields: [tenantId], references: [id], onDelete: Cascade)
+  employee      Employee @relation("EmployeeBillingRates", fields: [employeeId], references: [id])
+
+  @@index([tenantId, employeeId])
+  @@index([tenantId, employeeId, effectiveFrom])
+  @@map("billing_rates")
+}
+
+// 3. TimesheetPeriod — Weekly timesheet with approval workflow
+model TimesheetPeriod {
+  id            String          @id @default(cuid())
+  tenantId      String          @map("tenant_id")
+  employeeId    String          @map("employee_id")
+  startDate     DateTime        @map("start_date") @db.Date
+  endDate       DateTime        @map("end_date") @db.Date
+  status        TimesheetStatus @default(DRAFT)
+  totalMinutes  Int             @default(0) @map("total_minutes")
+  submittedAt   DateTime?       @map("submitted_at")
+  approvedById  String?         @map("approved_by_id")
+  approvedAt    DateTime?       @map("approved_at")
+  rejectedAt    DateTime?       @map("rejected_at")
+  rejectionNote String?         @map("rejection_note")
+
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+
+  // Relations
+  tenant        Tenant          @relation("TenantTimesheetPeriods", fields: [tenantId], references: [id], onDelete: Cascade)
+  employee      Employee        @relation("EmployeeTimesheetPeriods", fields: [employeeId], references: [id])
+
+  @@unique([tenantId, employeeId, startDate])
+  @@index([tenantId, status])
+  @@index([tenantId, employeeId])
+  @@map("timesheet_periods")
+}
+
+// 4. WorkSchedule — Employee work schedule configuration
+model WorkSchedule {
+  id            String           @id @default(cuid())
+  tenantId      String           @map("tenant_id")
+  employeeId    String           @map("employee_id")
+  type          WorkScheduleType @default(FULL_TIME)
+  effectiveFrom DateTime         @map("effective_from") @db.Date
+  effectiveTo   DateTime?        @map("effective_to") @db.Date
+
+  createdAt     DateTime         @default(now()) @map("created_at")
+  updatedAt     DateTime         @updatedAt @map("updated_at")
+
+  // Relations
+  tenant        Tenant           @relation("TenantWorkSchedules", fields: [tenantId], references: [id], onDelete: Cascade)
+  employee      Employee         @relation("EmployeeWorkSchedules", fields: [employeeId], references: [id])
+  workDays      WorkDay[]
+
+  @@index([tenantId, employeeId])
+  @@map("work_schedules")
+}
+
+// 5. WorkDay — Per-day availability within a schedule
+model WorkDay {
+  id             String   @id @default(cuid())
+  workScheduleId String   @map("work_schedule_id")
+  dayOfWeek      Int      @map("day_of_week") // 0=Sunday, 6=Saturday
+  isWorkDay      Boolean  @default(true) @map("is_work_day")
+  availableFrom  String?  @map("available_from") // HH:mm format
+  availableTo    String?  @map("available_to")   // HH:mm format
+
+  // Relations
+  workSchedule   WorkSchedule @relation(fields: [workScheduleId], references: [id], onDelete: Cascade)
+
+  @@unique([workScheduleId, dayOfWeek])
+  @@map("work_days")
+}
+
+// 6. MeetingFreeBlock — Deep work protected blocks
+model MeetingFreeBlock {
+  id             String   @id @default(cuid())
+  tenantId       String   @map("tenant_id")
+  employeeId     String   @map("employee_id")
+  dayOfWeek      Int      @map("day_of_week") // 0=Sunday, 6=Saturday
+  startTime      String   @map("start_time") // HH:mm format
+  endTime        String   @map("end_time")   // HH:mm format
+  label          String?  // e.g., "Deep Work", "Focus Time"
+
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  // Relations
+  tenant         Tenant   @relation("TenantMeetingFreeBlocks", fields: [tenantId], references: [id], onDelete: Cascade)
+  employee       Employee @relation("EmployeeMeetingFreeBlocks", fields: [employeeId], references: [id])
+
+  @@index([tenantId, employeeId])
+  @@map("meeting_free_blocks")
+}
+
+// 7. TimezoneConfig — Employee timezone for overlap calculation
+model TimezoneConfig {
+  id          String   @id @default(cuid())
+  tenantId    String   @map("tenant_id")
+  employeeId  String   @unique @map("employee_id")
+  timezone    String   // IANA timezone (e.g., "America/Sao_Paulo")
+  utcOffset   String   @map("utc_offset") // e.g., "-03:00"
+
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  tenant      Tenant   @relation("TenantTimezoneConfigs", fields: [tenantId], references: [id], onDelete: Cascade)
+  employee    Employee @relation("EmployeeTimezoneConfig", fields: [employeeId], references: [id])
+
+  @@index([tenantId])
+  @@map("timezone_configs")
+}
+
+// 8. AsyncStandup — Async standup prompt configuration
+model AsyncStandup {
+  id          String   @id @default(cuid())
+  tenantId    String   @map("tenant_id")
+  name        String
+  cronExpr    String   @map("cron_expr") // e.g., "0 9 * * 1-5"
+  isActive    Boolean  @default(true) @map("is_active")
+  prompts     Json     @default("[]") // JSON array of question strings
+  channelId   String?  @map("channel_id") // FK to TeamChannel (optional)
+
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  tenant      Tenant   @relation("TenantAsyncStandups", fields: [tenantId], references: [id], onDelete: Cascade)
+  responses   StandupResponse[]
+
+  @@index([tenantId])
+  @@map("async_standups")
+}
+
+// 9. StandupResponse — Individual standup submission
+model StandupResponse {
+  id           String       @id @default(cuid())
+  tenantId     String       @map("tenant_id")
+  standupId    String       @map("standup_id")
+  employeeId   String       @map("employee_id")
+  yesterday    String?
+  today        String?
+  blockers     String?
+  videoUrl     String?      @map("video_url") // Loom link
+  status       StandupStatus @default(SUBMITTED)
+  submittedAt  DateTime     @default(now()) @map("submitted_at")
+
+  createdAt    DateTime     @default(now()) @map("created_at")
+
+  // Relations
+  tenant       Tenant       @relation("TenantStandupResponses", fields: [tenantId], references: [id], onDelete: Cascade)
+  standup      AsyncStandup @relation(fields: [standupId], references: [id], onDelete: Cascade)
+  employee     Employee     @relation("EmployeeStandupResponses", fields: [employeeId], references: [id])
+
+  @@index([tenantId, standupId])
+  @@index([tenantId, employeeId])
+  @@index([standupId, submittedAt])
+  @@map("standup_responses")
+}
+
+// [KAVEN_MODULE:REMOTE_WORK END]
+
+// [KAVEN_MODULE:TEAM_COLLABORATION BEGIN]
+
+// ===========================
+// TEAM COLLABORATION MODULE
+// ===========================
+// Semantic channels, async standups, meeting scheduling.
+// Integration-first: messaging deferred to Slack/Teams.
+// Native fallback: channels + threading + RSVP.
+
+// ---------- Enums ----------
+
+enum ChannelType {
+  PROJECT
+  DEPARTMENT
+  GENERAL
+  CUSTOM
+
+  @@map("channel_type")
+}
+
+enum ChannelMemberRole {
+  OWNER
+  ADMIN
+  MEMBER
+
+  @@map("channel_member_role")
+}
+
+enum RSVPStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  TENTATIVE
+
+  @@map("rsvp_status")
+}
+
+enum TeamMeetingType {
+  STANDUP
+  PLANNING
+  RETRO
+  ONE_ON_ONE
+  REVIEW
+  CUSTOM
+
+  @@map("team_meeting_type")
+}
+
+// ---------- Models ----------
+
+// 1. TeamChannel — Semantic channel linked to project/department
+model TeamChannel {
+  id          String      @id @default(cuid())
+  tenantId    String      @map("tenant_id")
+  name        String
+  description String?
+  type        ChannelType @default(GENERAL)
+  projectId   String?     @map("project_id") // Optional FK to Project
+  isArchived  Boolean     @default(false) @map("is_archived")
+
+  createdById String      @map("created_by_id")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  tenant      Tenant            @relation("TenantTeamChannels", fields: [tenantId], references: [id], onDelete: Cascade)
+  createdBy   User              @relation("ChannelCreator", fields: [createdById], references: [id])
+  members     TeamChannelMember[]
+  updates     TeamUpdate[]
+  meetings    TeamMeeting[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId, type])
+  @@index([tenantId, projectId])
+  @@map("team_channels")
+}
+
+// 2. TeamChannelMember — Channel membership with roles
+model TeamChannelMember {
+  id        String            @id @default(cuid())
+  tenantId  String            @map("tenant_id")
+  channelId String            @map("channel_id")
+  userId    String            @map("user_id")
+  role      ChannelMemberRole @default(MEMBER)
+  joinedAt  DateTime          @default(now()) @map("joined_at")
+
+  // Relations
+  tenant    Tenant      @relation("TenantTeamChannelMembers", fields: [tenantId], references: [id], onDelete: Cascade)
+  channel   TeamChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  user      User        @relation("ChannelMemberships", fields: [userId], references: [id])
+
+  @@unique([channelId, userId])
+  @@index([tenantId, userId])
+  @@map("team_channel_members")
+}
+
+// 3. TeamUpdate — Async standup/update entries
+model TeamUpdate {
+  id          String   @id @default(cuid())
+  tenantId    String   @map("tenant_id")
+  channelId   String   @map("channel_id")
+  authorId    String   @map("author_id")
+  yesterday   String?
+  today       String?
+  blockers    String?
+  videoUrl    String?  @map("video_url") // Loom link
+  mood        String?  // emoji or keyword
+
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  tenant      Tenant      @relation("TenantTeamUpdates", fields: [tenantId], references: [id], onDelete: Cascade)
+  channel     TeamChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  author      User        @relation("TeamUpdateAuthor", fields: [authorId], references: [id])
+
+  @@index([tenantId, channelId])
+  @@index([channelId, createdAt])
+  @@map("team_updates")
+}
+
+// 4. TeamMeeting — Meeting metadata with external video link
+model TeamMeeting {
+  id              String          @id @default(cuid())
+  tenantId        String          @map("tenant_id")
+  title           String
+  description     String?
+  type            TeamMeetingType @default(CUSTOM)
+  scheduledAt     DateTime        @map("scheduled_at")
+  durationMinutes Int             @default(30) @map("duration_minutes")
+  externalLink    String?         @map("external_link") // Meet/Zoom/Teams URL
+  channelId       String?         @map("channel_id")
+  createdById     String          @map("created_by_id")
+
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  // Relations
+  tenant          Tenant              @relation("TenantTeamMeetings", fields: [tenantId], references: [id], onDelete: Cascade)
+  channel         TeamChannel?        @relation(fields: [channelId], references: [id], onDelete: SetNull)
+  createdBy       User                @relation("TeamMeetingCreator", fields: [createdById], references: [id])
+  participants    TeamMeetingParticipant[]
+
+  @@index([tenantId, scheduledAt])
+  @@index([tenantId, channelId])
+  @@map("team_meetings")
+}
+
+// 5. TeamMeetingParticipant — RSVP per participant
+model TeamMeetingParticipant {
+  id         String     @id @default(cuid())
+  tenantId   String     @map("tenant_id")
+  meetingId  String     @map("meeting_id")
+  userId     String     @map("user_id")
+  rsvpStatus RSVPStatus @default(PENDING) @map("rsvp_status")
+
+  createdAt  DateTime   @default(now()) @map("created_at")
+  updatedAt  DateTime   @updatedAt @map("updated_at")
+
+  // Relations
+  tenant     Tenant      @relation("TenantTeamMeetingParticipants", fields: [tenantId], references: [id], onDelete: Cascade)
+  meeting    TeamMeeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  user       User        @relation("TeamMeetingParticipations", fields: [userId], references: [id])
+
+  @@unique([meetingId, userId])
+  @@index([tenantId, userId])
+  @@map("team_meeting_participants")
+}
+
+// [KAVEN_MODULE:TEAM_COLLABORATION END]
+
+// [KAVEN_MODULE:FINANCES_BI BEGIN]
+
+// ===========================
+// FINANCES TRACKING BI MODULE
+// ===========================
+// BI/reporting layer on top of Finance module. DRE (income statement),
+// DFC (cash flow statement), and financial KPI dashboards.
+// Does NOT store transactions — transforms FinancialEntry data into intelligence.
+
+// ---------- Enums ----------
+
+enum DREBasis {
+  ACCRUAL
+  CASH
+
+  @@map("dre_basis")
+}
+
+enum CashFlowCategory {
+  OPERATING
+  INVESTING
+  FINANCING
+
+  @@map("cash_flow_category")
+}
+
+enum IndicatorStatus {
+  GREEN
+  AMBER
+  RED
+
+  @@map("indicator_status")
+}
+
+// ---------- Models ----------
+
+// 1. DRESnapshot — Income statement snapshot
+model DRESnapshot {
+  id                String   @id @default(cuid())
+  tenantId          String   @map("tenant_id")
+  period            DateTime @db.Date // Month reference (YYYY-MM-01)
+  basis             DREBasis @default(ACCRUAL)
+  grossRevenue      Decimal  @db.Decimal(15, 2) @map("gross_revenue")
+  deductions        Decimal  @db.Decimal(15, 2) @default(0)
+  netRevenue        Decimal  @db.Decimal(15, 2) @map("net_revenue")
+  cogs              Decimal  @db.Decimal(15, 2) @default(0) // Cost of goods sold
+  grossProfit       Decimal  @db.Decimal(15, 2) @map("gross_profit")
+  operatingExpenses Decimal  @db.Decimal(15, 2) @default(0) @map("operating_expenses")
+  ebitda            Decimal  @db.Decimal(15, 2) @default(0)
+  depreciation      Decimal  @db.Decimal(15, 2) @default(0)
+  financialResult   Decimal  @db.Decimal(15, 2) @default(0) @map("financial_result")
+  taxExpenses       Decimal  @db.Decimal(15, 2) @default(0) @map("tax_expenses")
+  netIncome         Decimal  @db.Decimal(15, 2) @map("net_income")
+  metadata          Json?
+
+  calculatedAt      DateTime @default(now()) @map("calculated_at")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  // Relations
+  tenant            Tenant   @relation("TenantDRESnapshots", fields: [tenantId], references: [id], onDelete: Cascade)
+  breakdowns        DRECategoryBreakdown[]
+
+  @@unique([tenantId, period, basis])
+  @@index([tenantId, period])
+  @@map("dre_snapshots")
+}
+
+// 2. DRECategoryBreakdown — Per-account breakdown within DRE
+model DRECategoryBreakdown {
+  id            String   @id @default(cuid())
+  dreSnapshotId String   @map("dre_snapshot_id")
+  accountId     String   @map("account_id")
+  accountName   String   @map("account_name")
+  accountCode   String   @map("account_code")
+  level         Int      @default(1) // Hierarchy depth (1, 2, 3)
+  amount        Decimal  @db.Decimal(15, 2)
+  percentage    Decimal? @db.Decimal(5, 2) // % of net revenue
+
+  // Relations
+  dreSnapshot   DRESnapshot @relation(fields: [dreSnapshotId], references: [id], onDelete: Cascade)
+
+  @@index([dreSnapshotId, level])
+  @@map("dre_category_breakdowns")
+}
+
+// 3. CashFlowSnapshot — Cash flow statement (FCO/FCI/FCF)
+model CashFlowSnapshot {
+  id                String   @id @default(cuid())
+  tenantId          String   @map("tenant_id")
+  period            DateTime @db.Date // Month reference
+  operatingCashFlow Decimal  @db.Decimal(15, 2) @map("operating_cash_flow")
+  investingCashFlow Decimal  @db.Decimal(15, 2) @map("investing_cash_flow")
+  financingCashFlow Decimal  @db.Decimal(15, 2) @map("financing_cash_flow")
+  netCashFlow       Decimal  @db.Decimal(15, 2) @map("net_cash_flow")
+  openingBalance    Decimal  @db.Decimal(15, 2) @map("opening_balance")
+  closingBalance    Decimal  @db.Decimal(15, 2) @map("closing_balance")
+  metadata          Json?
+
+  calculatedAt      DateTime @default(now()) @map("calculated_at")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  // Relations
+  tenant            Tenant   @relation("TenantCashFlowSnapshots", fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, period])
+  @@index([tenantId, period])
+  @@map("cash_flow_snapshots")
+}
+
+// 4. FinancialIndicator — Cached KPI indicator
+model FinancialIndicator {
+  id            String          @id @default(cuid())
+  tenantId      String          @map("tenant_id")
+  period        DateTime        @db.Date
+  indicatorKey  String          @map("indicator_key") // e.g., "gross_margin", "ebitda", "burn_rate"
+  value         Decimal         @db.Decimal(15, 4)
+  previousValue Decimal?        @db.Decimal(15, 4) @map("previous_value")
+  delta         Decimal?        @db.Decimal(15, 4)
+  status        IndicatorStatus @default(GREEN)
+  unit          String          @default("percentage") // percentage, currency, months
+
+  calculatedAt  DateTime        @default(now()) @map("calculated_at")
+
+  // Relations
+  tenant        Tenant          @relation("TenantFinancialIndicators", fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, period, indicatorKey])
+  @@index([tenantId, indicatorKey])
+  @@map("financial_indicators")
+}
+
+// [KAVEN_MODULE:FINANCES_BI END]
+
+// [KAVEN_MODULE:SAAS_ANALYTICS BEGIN]
+
+// ===========================
+// SAAS ANALYTICS MODULE (extends SaaS Ops)
+// ===========================
+// Additional analytics views: cohort retention heatmap data,
+// health score alert rules, expansion opportunity detection.
+// Extends existing CohortAnalysis, CustomerHealthScore, FeatureAdoptionLog.
+
+// ---------- Models ----------
+
+// 1. HealthScoreAlertRule — Configurable alert rules for health scores
+model HealthScoreAlertRule {
+  id              String   @id @default(cuid())
+  tenantId        String   @map("tenant_id")
+  name            String
+  condition       String   // e.g., "no_login_14d", "payment_overdue_7d", "single_feature_use"
+  threshold       Int      @default(0)
+  severity        String   @default("warning") // info, warning, critical
+  isActive        Boolean  @default(true) @map("is_active")
+  notifyChannel   String?  @map("notify_channel") // email, slack, in-app
+  metadata        Json?
+
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  tenant          Tenant   @relation("TenantHealthScoreAlertRules", fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, isActive])
+  @@map("health_score_alert_rules")
+}
+
+// 2. HealthScoreAlert — Triggered alert instances
+model HealthScoreAlert {
+  id              String   @id @default(cuid())
+  tenantId        String   @map("tenant_id")
+  alertedTenantId String   @map("alerted_tenant_id") // The tenant being alerted about
+  ruleId          String   @map("rule_id")
+  ruleName        String   @map("rule_name")
+  healthScore     Int      @map("health_score")
+  category        String   // HEALTHY, AT_RISK, CRITICAL
+  resolvedAt      DateTime? @map("resolved_at")
+  metadata        Json?
+
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  // Relations
+  tenant          Tenant   @relation("TenantHealthScoreAlerts", fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, createdAt])
+  @@index([alertedTenantId])
+  @@index([ruleId])
+  @@map("health_score_alerts")
+}
+
+// 3. ExpansionOpportunity — Detected expansion/upsell opportunity
+model ExpansionOpportunity {
+  id                   String   @id @default(cuid())
+  tenantId             String   @map("tenant_id")
+  targetTenantId       String   @map("target_tenant_id") // Tenant that could expand
+  currentPlanName      String   @map("current_plan_name")
+  suggestedPlanName    String   @map("suggested_plan_name")
+  expansionSignalScore Int      @map("expansion_signal_score")
+  featuresThatDrove    Json?    @map("features_that_drove")
+  estimatedMrrIncrease Decimal? @db.Decimal(10, 2) @map("estimated_mrr_increase")
+  status               String   @default("detected") // detected, contacted, converted, dismissed
+  convertedAt          DateTime? @map("converted_at")
+  metadata             Json?
+
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  tenant               Tenant   @relation("TenantExpansionOpportunities", fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, status])
+  @@index([targetTenantId])
+  @@index([expansionSignalScore])
+  @@map("expansion_opportunities")
+}
+
+// [KAVEN_MODULE:SAAS_ANALYTICS END]
+
+// [KAVEN_MODULE:ASSET_MANAGEMENT BEGIN]
+
+// ===========================
+// ASSET MANAGEMENT MODULE (Admin Extensions)
+// ===========================
+// Company equipment and asset tracking with assignment to employees.
+// Extends the existing Admin module with physical/digital asset management.
+
+// ---------- Enums ----------
+
+enum EquipmentStatus {
+  AVAILABLE
+  IN_USE
+  MAINTENANCE
+  RETIRED
+  LOST
+
+  @@map("equipment_status")
+}
+
+enum EquipmentCategory {
+  LAPTOP
+  DESKTOP
+  MONITOR
+  PHONE
+  TABLET
+  PERIPHERAL
+  FURNITURE
+  VEHICLE
+  SOFTWARE_LICENSE
+  OTHER
+
+  @@map("equipment_category")
+}
+
+enum AssetCondition {
+  NEW
+  GOOD
+  FAIR
+  POOR
+  DAMAGED
+
+  @@map("asset_condition")
+}
+
+enum AssignmentStatus {
+  ACTIVE
+  RETURNED
+  LOST
+  DAMAGED
+
+  @@map("assignment_status")
+}
+
+// ---------- Models ----------
+
+// 1. Equipment — Company equipment catalog
+model Equipment {
+  id              String            @id @default(cuid())
+  tenantId        String            @map("tenant_id")
+  name            String
+  description     String?
+  category        EquipmentCategory @default(OTHER)
+  brand           String?
+  model           String?
+  serialNumber    String?           @map("serial_number")
+  status          EquipmentStatus   @default(AVAILABLE)
+  condition       AssetCondition    @default(NEW)
+  purchaseDate    DateTime?         @map("purchase_date")
+  purchasePrice   Decimal?          @db.Decimal(10, 2) @map("purchase_price")
+  warrantyExpiry  DateTime?         @map("warranty_expiry")
+  notes           String?
+  metadata        Json?
+
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+  deletedAt       DateTime?         @map("deleted_at")
+
+  // Relations
+  tenant          Tenant            @relation("TenantEquipment", fields: [tenantId], references: [id], onDelete: Cascade)
+  assignments     AssetAssignment[]
+
+  @@index([tenantId])
+  @@index([tenantId, status])
+  @@index([tenantId, category])
+  @@index([tenantId, serialNumber])
+  @@map("equipment")
+}
+
+// 2. AssetRegistry — Central asset register for tracking all company assets
+model AssetRegistry {
+  id              String          @id @default(cuid())
+  tenantId        String          @map("tenant_id")
+  assetTag        String          @map("asset_tag") // Unique internal tag (e.g., "KVN-0042")
+  name            String
+  description     String?
+  category        String          // Free-form category for non-equipment assets
+  location        String?
+  responsibleId   String?         @map("responsible_id") // Person responsible (not necessarily assigned to)
+  acquisitionDate DateTime?       @map("acquisition_date")
+  acquisitionCost Decimal?        @db.Decimal(10, 2) @map("acquisition_cost")
+  currentValue    Decimal?        @db.Decimal(10, 2) @map("current_value")
+  depreciationRate Decimal?       @db.Decimal(5, 2) @map("depreciation_rate") // Annual %
+  isActive        Boolean         @default(true) @map("is_active")
+  metadata        Json?
+
+  createdById     String          @map("created_by_id")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  // Relations
+  tenant          Tenant          @relation("TenantAssetRegistries", fields: [tenantId], references: [id], onDelete: Cascade)
+  createdBy       User            @relation("AssetRegistryCreator", fields: [createdById], references: [id])
+
+  @@unique([tenantId, assetTag])
+  @@index([tenantId])
+  @@index([tenantId, category])
+  @@index([tenantId, isActive])
+  @@map("asset_registries")
+}
+
+// 3. AssetAssignment — Assignment of equipment to employees
+model AssetAssignment {
+  id              String           @id @default(cuid())
+  tenantId        String           @map("tenant_id")
+  equipmentId     String           @map("equipment_id")
+  assignedToId    String           @map("assigned_to_id")
+  status          AssignmentStatus @default(ACTIVE)
+  assignedAt      DateTime         @default(now()) @map("assigned_at")
+  returnedAt      DateTime?        @map("returned_at")
+  expectedReturn  DateTime?        @map("expected_return")
+  notes           String?
+  condition       AssetCondition   @default(GOOD) @map("condition_at_assignment")
+
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+
+  // Relations
+  tenant          Tenant           @relation("TenantAssetAssignments", fields: [tenantId], references: [id], onDelete: Cascade)
+  equipment       Equipment        @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  assignedTo      User             @relation("AssetAssignee", fields: [assignedToId], references: [id])
+
+  @@index([tenantId])
+  @@index([tenantId, equipmentId])
+  @@index([tenantId, assignedToId])
+  @@index([tenantId, status])
+  @@map("asset_assignments")
+}
+
+// [KAVEN_MODULE:ASSET_MANAGEMENT END]
