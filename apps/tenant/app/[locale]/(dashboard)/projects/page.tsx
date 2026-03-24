@@ -1,187 +1,248 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useDeferredValue } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTenant } from '@/lib/hooks/use-tenant';
-import { useSpace } from '@/lib/hooks/use-space';
 import { api } from '@/lib/api';
-import { Button } from '@kaven/ui-base';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@kaven/ui-base';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@kaven/ui-base';
-import { Input } from '@kaven/ui-base';
-import { Label } from '@kaven/ui-base';
-import { Badge } from '@kaven/ui-base';
-import { Plus, Folder, Calendar } from 'lucide-react';
-import { format } from 'date-fns';
+import {
+  Button,
+  Card,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@kaven/ui-base';
+import {
+  Plus,
+  Search,
+  LayoutGrid,
+  List,
+  FolderKanban,
+} from 'lucide-react';
 import { toast } from 'sonner';
-import Link from 'next/link';
+import { ProjectCard } from '@/components/projects/ProjectCard';
+import type { Project, ProjectStatus } from '@/types/projects';
 
-interface Project {
-  id: string;
-  name: string;
-  description?: string;
-  status: 'ACTIVE' | 'ARCHIVED' | 'COMPLETED';
-  tenantId: string;
-  createdAt: string;
-  createdBy: {
-    name: string;
-  };
-  updatedAt: string;
-  _count?: {
-      tasks: number;
-  }
-}
+type ViewMode = 'grid' | 'list';
+type StatusFilter = 'ALL' | ProjectStatus;
 
 export default function ProjectsPage() {
   const { tenant } = useTenant();
-  const { activeSpaceId } = useSpace(); // Removed activeSpace unused var
   const queryClient = useQueryClient();
-  const [isOpen, setIsOpen] = useState(false);
-  const [newProjectName, setNewProjectName] = useState('');
-  const [newProjectDesc, setNewProjectDesc] = useState('');
 
-  const { data: projects, isLoading } = useQuery({
-    queryKey: ['projects', tenant?.id, activeSpaceId],
+  const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [searchQuery, setSearchQuery] = useState('');
+  const deferredSearch = useDeferredValue(searchQuery);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
+
+  // Create project dialog
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [newDesc, setNewDesc] = useState('');
+  const [newType, setNewType] = useState('FIXED_SCOPE');
+
+  // Fetch projects
+  const { data, isLoading } = useQuery({
+    queryKey: ['projects', tenant?.id, deferredSearch, statusFilter],
     queryFn: async () => {
       const params: Record<string, string> = {};
-      if (activeSpaceId) params.spaceId = activeSpaceId;
-      
-      const res = await api.get('/api/app/projects', { params });
+      if (deferredSearch) params.search = deferredSearch;
+      if (statusFilter !== 'ALL') params.status = statusFilter;
+
+      const res = await api.get('/api/v1/projects', { params });
       return res.data;
     },
     enabled: !!tenant?.id,
   });
 
+  const projects: Project[] = data?.data || [];
+
+  // Create project mutation
   const createMutation = useMutation({
-    mutationFn: async (data: { name: string; description?: string }) => {
-      // Include current spaceId in creation payload
-      const payload: Record<string, unknown> = { ...data };
-      if (activeSpaceId) payload.spaceId = activeSpaceId;
-      
-      const res = await api.post('/api/app/projects', payload);
+    mutationFn: async (body: { name: string; description?: string; type: string }) => {
+      const res = await api.post('/api/v1/projects', body);
       return res.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
-      setIsOpen(false);
-      setNewProjectName('');
-      setNewProjectDesc('');
-      toast.success('Project created successfully');
+      setIsCreateOpen(false);
+      setNewName('');
+      setNewDesc('');
+      setNewType('FIXED_SCOPE');
+      toast.success('Project created');
     },
-    onError: () => {
-      toast.error('Failed to create project');
-    }
+    onError: () => toast.error('Failed to create project'),
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    createMutation.mutate({ name: newProjectName, description: newProjectDesc });
-  };
-
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-6 p-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-2xl font-bold tracking-tight">Projects</h3>
+          <h1 className="text-2xl font-bold">Projects</h1>
           <p className="text-muted-foreground">
-            Manage your tenant&apos;s ongoing initiatives.
+            Manage your projects, tasks, and team workload
           </p>
         </div>
-        
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" /> New Project
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create Project</DialogTitle>
-              <DialogDescription>
-                Add a new project to your workspace.
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
-                <Input 
-                  id="name" 
-                  value={newProjectName} 
-                  onChange={(e) => setNewProjectName(e.target.value)}
-                  required 
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Input 
-                  id="description" 
-                  value={newProjectDesc} 
-                  onChange={(e) => setNewProjectDesc(e.target.value)} 
-                />
-              </div>
-              <DialogFooter>
-                <Button type="submit" disabled={createMutation.isPending}>
-                  {createMutation.isPending ? 'Creating...' : 'Create Project'}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <Button onClick={() => setIsCreateOpen(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          New Project
+        </Button>
       </div>
 
+      {/* Filters */}
+      <div className="flex items-center gap-4">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search projects..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+
+        <Select
+          value={statusFilter}
+          onValueChange={(v) => setStatusFilter(v as StatusFilter)}
+        >
+          <SelectTrigger className="w-[160px]">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ALL">All Status</SelectItem>
+            <SelectItem value="PLANNING">Planning</SelectItem>
+            <SelectItem value="ACTIVE">Active</SelectItem>
+            <SelectItem value="ON_HOLD">On Hold</SelectItem>
+            <SelectItem value="COMPLETED">Completed</SelectItem>
+            <SelectItem value="ARCHIVED">Archived</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <div className="flex items-center border rounded-md">
+          <Button
+            variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
+            size="sm"
+            onClick={() => setViewMode('grid')}
+          >
+            <LayoutGrid className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+            size="sm"
+            onClick={() => setViewMode('list')}
+          >
+            <List className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      {/* Projects grid/list */}
       {isLoading ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-           {[1,2,3].map(i => <div key={i} className="h-40 rounded-xl bg-muted/50 animate-pulse" />)}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <Card key={i} className="h-48 animate-pulse bg-muted" />
+          ))}
+        </div>
+      ) : projects.length === 0 ? (
+        <div className="text-center py-20">
+          <FolderKanban className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+          <h3 className="text-lg font-medium">No projects yet</h3>
+          <p className="text-muted-foreground mt-1">
+            Create your first project to start managing tasks and tracking time.
+          </p>
+          <Button className="mt-4" onClick={() => setIsCreateOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Create Project
+          </Button>
+        </div>
+      ) : viewMode === 'grid' ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {projects.map((project) => (
+            <ProjectCard key={project.id} project={project} />
+          ))}
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {projects?.data?.map((project: Project) => (
-            <Card key={project.id} className="hover:shadow-md transition-shadow">
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <div className="bg-primary/10 p-2 rounded-lg text-primary">
-                    <Folder className="h-5 w-5" />
-                  </div>
-                  <Badge variant={project.status === 'ACTIVE' ? 'default' : 'secondary'}>
-                    {project.status}
-                  </Badge>
-                </div>
-                <CardTitle className="mt-4">{project.name}</CardTitle>
-                <CardDescription className="line-clamp-2 min-h-[40px]">
-                  {project.description || 'No description provided.'}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center text-sm text-muted-foreground gap-4">
-                   <div className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3" />
-                      <span>{format(new Date(project.updatedAt), 'PP')}</span>
-                   </div>
-                   {/* If backend returns task count */}
-                   {project._count?.tasks !== undefined && (
-                      <div className="text-xs bg-secondary px-2 py-0.5 rounded">
-                        {project._count.tasks} Tasks
-                      </div>
-                   )}
-                </div>
-              </CardContent>
-              <CardFooter className="border-t pt-4 text-xs text-muted-foreground justify-between">
-                <span>By {project.createdBy?.name || 'Unknown'}</span>
-                <Link href={`/projects/${project.id}`}>
-                  <Button variant="ghost" size="sm" className="h-6">View Details</Button>
-                </Link>
-              </CardFooter>
-            </Card>
+        <div className="space-y-2">
+          {projects.map((project) => (
+            <ProjectCard key={project.id} project={project} />
           ))}
-          
-          {projects?.data?.length === 0 && (
-             <div className="col-span-full flex flex-col items-center justify-center p-12 border-2 border-dashed rounded-lg text-muted-foreground">
-                <Folder className="h-10 w-10 mb-4 opacity-20" />
-                <p>No projects found. Create one to get started.</p>
-             </div>
-          )}
         </div>
       )}
+
+      {/* Create Project Dialog */}
+      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create Project</DialogTitle>
+            <DialogDescription>
+              Add a new project to manage tasks and track progress.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="name">Project Name</Label>
+              <Input
+                id="name"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                placeholder="Website Redesign"
+              />
+            </div>
+            <div>
+              <Label htmlFor="desc">Description</Label>
+              <Input
+                id="desc"
+                value={newDesc}
+                onChange={(e) => setNewDesc(e.target.value)}
+                placeholder="Brief description of the project"
+              />
+            </div>
+            <div>
+              <Label htmlFor="type">Project Type</Label>
+              <Select value={newType} onValueChange={setNewType}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="FIXED_SCOPE">Fixed Scope</SelectItem>
+                  <SelectItem value="TIME_AND_MATERIAL">Time & Material</SelectItem>
+                  <SelectItem value="RETAINER">Retainer</SelectItem>
+                  <SelectItem value="MILESTONE_BASED">Milestone Based</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() =>
+                createMutation.mutate({
+                  name: newName,
+                  description: newDesc || undefined,
+                  type: newType,
+                })
+              }
+              disabled={!newName.trim() || createMutation.isPending}
+            >
+              Create
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -426,6 +426,16 @@ model Tenant {
   sharedContacts         SharedContact[]         @relation("TenantSharedContacts")
   receivedSharedContacts SharedContact[]         @relation("SharedWithTenantContacts")
 
+  // Projects + PM Module
+  projectStatusHistories ProjectStatusHistory[]  @relation("TenantProjectStatusHistories")
+  projectMembers         ProjectMember[]         @relation("TenantProjectMembers")
+  taskComments           TaskComment[]           @relation("TenantTaskComments")
+  taskAttachments        TaskAttachment[]        @relation("TenantTaskAttachments")
+  milestones             Milestone[]             @relation("TenantMilestones")
+  timeEntries            TimeEntry[]             @relation("TenantTimeEntries")
+  projectExpenses        ProjectExpense[]        @relation("TenantProjectExpenses")
+  projectDocuments       ProjectDocument[]       @relation("TenantProjectDocuments")
+
   // Finance Module
   chartOfAccounts        ChartOfAccount[]        @relation("TenantChartOfAccounts")
   bankAccounts           BankAccount[]           @relation("TenantBankAccounts")
@@ -513,10 +523,18 @@ model User {
   sentInvites               TenantInvite[] @relation("SentInvites")
   userSpaces                UserSpace[]    @relation("UserSpaces")
 
-  // Project & Task Relations (Demo Features)
-  createdProjects Project[] @relation("ProjectCreator")
-  createdTasks    Task[]    @relation("TaskCreator")
-  assignedTasks   Task[]    @relation("TaskAssignee")
+  // Projects + PM Module
+  createdProjects    Project[]            @relation("ProjectCreator")
+  managedProjects    Project[]            @relation("ProjectManager")
+  createdTasks       Task[]               @relation("TaskCreator")
+  assignedTasks      Task[]               @relation("TaskAssignee")
+  projectMemberships ProjectMember[]      @relation("ProjectMemberships")
+  taskComments       TaskComment[]        @relation("TaskCommentAuthor")
+  taskAttachments    TaskAttachment[]     @relation("TaskAttachmentUploader")
+  timeEntries        TimeEntry[]          @relation("TimeEntryUser")
+  projectExpenses    ProjectExpense[]     @relation("ProjectExpenseCreator")
+  projectDocuments   ProjectDocument[]    @relation("ProjectDocumentUploader")
+  projectStatusChanges ProjectStatusHistory[] @relation("ProjectStatusChanger")
 
   // Documents + Knowledge Base Module
   ownedFolders     Folder[]          @relation("FolderOwner")

@@ -55,51 +55,64 @@ model ServiceToken {
 }
 
 // ===========================
-// DEMO FEATURES (Projects/Tasks)
+// PROJECTS + PM MODULE
 // ===========================
-// Estes modelos são EXEMPLOS de features customizadas
-// Você pode removê-los ou adaptá-los conforme necessário
+// Full project management: projects, tasks, milestones, time tracking,
+// expenses, members, status history. Multi-tenant isolated via tenantId.
+// Cross-module FKs: contactId → clients.Contact (nullable)
 
-// [KAVEN_MODULE:PROJECTS BEGIN]
-enum ProjectStatus {
-  ACTIVE
-  ARCHIVED
-  COMPLETED
+// [KAVEN_MODULE:PROJECTS_PM BEGIN]
+
+// ---------- Enums ----------
+
+enum ProjectType {
+  FIXED_SCOPE
+  TIME_AND_MATERIAL
+  RETAINER
+  MILESTONE_BASED
+
+  @@map("project_type")
 }
 
-model Project {
-  id          String   @id @default(uuid())
-  name        String
-  description String?
-  status      ProjectStatus @default(ACTIVE)
-  color       String?  @default("#3B82F6")
+enum ProjectStatus {
+  PLANNING
+  ACTIVE
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+  ARCHIVED
 
-  tenantId    String   @map("tenant_id")
-  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  @@map("project_status")
+}
 
-  // Space Isolation
-  spaceId     String?  @map("space_id")
-  space       Space?   @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+enum BudgetType {
+  FIXED
+  HOURLY
+  MONTHLY_RETAINER
+  MILESTONE
 
-  createdById String   @map("created_by_id")
-  createdBy   User     @relation("ProjectCreator", fields: [createdById], references: [id])
+  @@map("budget_type")
+}
 
-  tasks       Task[]
+enum ProjectMemberRole {
+  OWNER
+  MANAGER
+  MEMBER
+  VIEWER
+  EXTERNAL
 
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
-  @@index([tenantId])
-  @@index([spaceId])
-  @@index([createdById])
-  @@map("projects")
+  @@map("project_member_role")
 }
 
 enum TaskStatus {
+  BACKLOG
   TODO
   IN_PROGRESS
   IN_REVIEW
   DONE
+  CANCELLED
+
+  @@map("task_status")
 }
 
 enum TaskPriority {
@@ -107,37 +120,348 @@ enum TaskPriority {
   MEDIUM
   HIGH
   URGENT
+  CRITICAL
+
+  @@map("task_priority")
 }
 
+enum MilestoneStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  OVERDUE
+  CANCELLED
+
+  @@map("milestone_status")
+}
+
+// ---------- 1. Project ----------
+
+model Project {
+  id            String        @id @default(cuid())
+  tenantId      String        @map("tenant_id")
+  name          String
+  description   String?
+  code          String?       // Short project code (e.g., "PRJ-001")
+  type          ProjectType   @default(FIXED_SCOPE)
+  status        ProjectStatus @default(PLANNING)
+  color         String?       @default("#3B82F6")
+
+  // Budget
+  budgetType    BudgetType?   @map("budget_type")
+  budgetAmount  Float?        @map("budget_amount")
+  hourlyRate    Float?        @map("hourly_rate")
+  currency      String        @default("BRL")
+
+  // Tracking (denormalized for performance)
+  hoursEstimated Float?       @map("hours_estimated")
+  hoursLogged    Float        @default(0) @map("hours_logged")
+  costIncurred   Float        @default(0) @map("cost_incurred")
+  progress       Float        @default(0) // 0-100 percentage
+
+  // Dates
+  startDate     DateTime?     @map("start_date")
+  endDate       DateTime?     @map("end_date")
+  completedAt   DateTime?     @map("completed_at")
+
+  // Space Isolation
+  spaceId       String?       @map("space_id")
+  space         Space?        @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+  // Cross-module FKs
+  contactId     String?       @map("contact_id")
+  contact       Contact?      @relation("ProjectContact", fields: [contactId], references: [id], onDelete: SetNull)
+
+  // Ownership
+  createdById   String        @map("created_by_id")
+  createdBy     User          @relation("ProjectCreator", fields: [createdById], references: [id])
+  managerId     String?       @map("manager_id")
+  manager       User?         @relation("ProjectManager", fields: [managerId], references: [id])
+
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+  deletedAt     DateTime?     @map("deleted_at")
+
+  // Relations
+  tenant         Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tasks          Task[]
+  members        ProjectMember[]
+  milestones     Milestone[]
+  timeEntries    TimeEntry[]
+  expenses       ProjectExpense[]
+  statusHistory  ProjectStatusHistory[]
+  projectDocuments ProjectDocument[]
+
+  @@index([tenantId])
+  @@index([tenantId, status])
+  @@index([tenantId, contactId])
+  @@index([tenantId, managerId])
+  @@index([spaceId])
+  @@index([createdById])
+  @@map("projects")
+}
+
+// ---------- 2. ProjectStatusHistory ----------
+
+model ProjectStatusHistory {
+  id          String        @id @default(cuid())
+  tenantId    String        @map("tenant_id")
+  projectId   String        @map("project_id")
+  fromStatus  ProjectStatus @map("from_status")
+  toStatus    ProjectStatus @map("to_status")
+  changedById String?       @map("changed_by_id")
+  reason      String?
+  createdAt   DateTime      @default(now()) @map("created_at")
+
+  // Relations
+  tenant  Tenant  @relation("TenantProjectStatusHistories", fields: [tenantId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  changedBy User? @relation("ProjectStatusChanger", fields: [changedById], references: [id])
+
+  @@index([tenantId, projectId])
+  @@index([projectId, createdAt])
+  @@map("project_status_history")
+}
+
+// ---------- 3. ProjectMember ----------
+
+model ProjectMember {
+  id          String            @id @default(cuid())
+  tenantId    String            @map("tenant_id")
+  projectId   String            @map("project_id")
+  userId      String            @map("user_id")
+  role        ProjectMemberRole @default(MEMBER)
+  hourlyRate  Float?            @map("hourly_rate") // Override project-level rate
+  joinedAt    DateTime          @default(now()) @map("joined_at")
+  leftAt      DateTime?         @map("left_at")
+
+  // Relations
+  tenant  Tenant  @relation("TenantProjectMembers", fields: [tenantId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation("ProjectMemberships", fields: [userId], references: [id])
+
+  @@unique([projectId, userId])
+  @@index([tenantId, userId])
+  @@map("project_members")
+}
+
+// ---------- 4. Task ----------
+
 model Task {
-  id          String   @id @default(uuid())
-  title       String
-  description String?
-  status      TaskStatus @default(TODO)
-  priority    TaskPriority @default(MEDIUM)
-  dueDate     DateTime? @map("due_date")
+  id            String       @id @default(cuid())
+  tenantId      String       @map("tenant_id")
+  projectId     String       @map("project_id")
+  milestoneId   String?      @map("milestone_id")
+  parentId      String?      @map("parent_id") // Subtask support (1 level)
+  title         String
+  description   String?
+  status        TaskStatus   @default(TODO)
+  priority      TaskPriority @default(MEDIUM)
+  position      Float        @default(0) // Floating-point for kanban reorder
+  dueDate       DateTime?    @map("due_date")
+  startDate     DateTime?    @map("start_date")
+  completedAt   DateTime?    @map("completed_at")
+  estimatedHours Float?      @map("estimated_hours")
 
-  projectId   String   @map("project_id")
-  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  // Assignee
+  assigneeId    String?      @map("assignee_id")
+  assignee      User?        @relation("TaskAssignee", fields: [assigneeId], references: [id])
 
-  assigneeId  String?  @map("assignee_id")
-  assignee    User?    @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  // Dependencies (stored as JSON arrays for simplicity in MVP)
+  blockedByIds  String[]     @default([]) @map("blocked_by_ids")
+  blocksIds     String[]     @default([]) @map("blocks_ids")
 
+  // Tags
+  tags          String[]     @default([])
+
+  createdById   String       @map("created_by_id")
+  createdBy     User         @relation("TaskCreator", fields: [createdById], references: [id])
+
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+  deletedAt     DateTime?    @map("deleted_at")
+
+  // Relations
+  tenant      Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project     Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  milestone   Milestone?    @relation(fields: [milestoneId], references: [id], onDelete: SetNull)
+  parent      Task?         @relation("TaskSubtasks", fields: [parentId], references: [id])
+  subtasks    Task[]        @relation("TaskSubtasks")
+  comments    TaskComment[]
+  attachments TaskAttachment[]
+  timeEntries TimeEntry[]
+
+  @@index([tenantId])
+  @@index([tenantId, projectId, status])
+  @@index([tenantId, assigneeId])
+  @@index([projectId, status])
+  @@index([projectId, position])
+  @@index([milestoneId])
+  @@map("tasks")
+}
+
+// ---------- 5. TaskComment ----------
+
+model TaskComment {
+  id        String   @id @default(cuid())
+  tenantId  String   @map("tenant_id")
+  taskId    String   @map("task_id")
+  authorId  String   @map("author_id")
+  content   String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  // Relations
+  tenant Tenant @relation("TenantTaskComments", fields: [tenantId], references: [id], onDelete: Cascade)
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  author User   @relation("TaskCommentAuthor", fields: [authorId], references: [id])
+
+  @@index([tenantId, taskId])
+  @@map("task_comments")
+}
+
+// ---------- 6. TaskAttachment ----------
+
+model TaskAttachment {
+  id        String   @id @default(cuid())
+  tenantId  String   @map("tenant_id")
+  taskId    String   @map("task_id")
+  fileName  String   @map("file_name")
+  fileKey   String   @map("file_key")
+  fileSize  Int      @map("file_size")
+  mimeType  String   @map("mime_type")
+  uploadedById String @map("uploaded_by_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  tenant     Tenant @relation("TenantTaskAttachments", fields: [tenantId], references: [id], onDelete: Cascade)
+  task       Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  uploadedBy User   @relation("TaskAttachmentUploader", fields: [uploadedById], references: [id])
+
+  @@index([tenantId, taskId])
+  @@map("task_attachments")
+}
+
+// ---------- 7. Milestone ----------
+
+model Milestone {
+  id                String          @id @default(cuid())
+  tenantId          String          @map("tenant_id")
+  projectId         String          @map("project_id")
+  title             String
+  description       String?
+  status            MilestoneStatus @default(PENDING)
+  dueDate           DateTime?       @map("due_date")
+  completedAt       DateTime?       @map("completed_at")
+  position          Int             @default(0)
+
+  // Auto-invoicing
+  triggerInvoice    Boolean         @default(false) @map("trigger_invoice")
+  invoiceAmount     Float?          @map("invoice_amount")
+  invoicePercentage Float?          @map("invoice_percentage")
+
+  // Progress (denormalized)
+  totalTasks        Int             @default(0) @map("total_tasks")
+  completedTasks    Int             @default(0) @map("completed_tasks")
+
+  createdAt         DateTime        @default(now()) @map("created_at")
+  updatedAt         DateTime        @updatedAt @map("updated_at")
+
+  // Relations
+  tenant  Tenant  @relation("TenantMilestones", fields: [tenantId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tasks   Task[]
+
+  @@index([tenantId, projectId])
+  @@index([projectId, status])
+  @@map("milestones")
+}
+
+// ---------- 8. TimeEntry ----------
+
+model TimeEntry {
+  id          String   @id @default(cuid())
   tenantId    String   @map("tenant_id")
-  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-
-  createdById String   @map("created_by_id")
-  createdBy   User     @relation("TaskCreator", fields: [createdById], references: [id])
-
+  projectId   String   @map("project_id")
+  taskId      String?  @map("task_id")
+  userId      String   @map("user_id")
+  description String?
+  startTime   DateTime @map("start_time")
+  endTime     DateTime? @map("end_time")
+  minutes     Int      @default(0)
+  isRunning   Boolean  @default(false) @map("is_running")
+  isBillable  Boolean  @default(true) @map("is_billable")
+  hourlyRate  Float?   @map("hourly_rate") // Resolved rate at creation
+  amount      Float?   // Calculated: minutes/60 * hourlyRate
+  notes       String?
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  @@index([tenantId])
-  @@index([projectId])
-  @@index([assigneeId])
-  @@map("tasks")
+  // Relations
+  tenant  Tenant  @relation("TenantTimeEntries", fields: [tenantId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  task    Task?   @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  user    User    @relation("TimeEntryUser", fields: [userId], references: [id])
+
+  @@index([tenantId, projectId])
+  @@index([tenantId, userId])
+  @@index([tenantId, isRunning])
+  @@map("time_entries")
 }
-// [KAVEN_MODULE:PROJECTS END]
+
+// ---------- 9. ProjectExpense ----------
+
+model ProjectExpense {
+  id          String   @id @default(cuid())
+  tenantId    String   @map("tenant_id")
+  projectId   String   @map("project_id")
+  category    String
+  description String?
+  amount      Float
+  currency    String   @default("BRL")
+  date        DateTime
+  receipt     String?  // File key for receipt
+  isBillable  Boolean  @default(true) @map("is_billable")
+  createdById String   @map("created_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  tenant    Tenant  @relation("TenantProjectExpenses", fields: [tenantId], references: [id], onDelete: Cascade)
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy User    @relation("ProjectExpenseCreator", fields: [createdById], references: [id])
+
+  @@index([tenantId, projectId])
+  @@map("project_expenses")
+}
+
+// ---------- 10. ProjectDocument ----------
+
+model ProjectDocument {
+  id          String   @id @default(cuid())
+  tenantId    String   @map("tenant_id")
+  projectId   String   @map("project_id")
+  title       String
+  fileKey     String?  @map("file_key")
+  fileName    String?  @map("file_name")
+  fileSize    Int?     @map("file_size")
+  mimeType    String?  @map("mime_type")
+  category    String?  // e.g., "contract", "proposal", "report"
+  uploadedById String  @map("uploaded_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  tenant     Tenant  @relation("TenantProjectDocuments", fields: [tenantId], references: [id], onDelete: Cascade)
+  project    Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  uploadedBy User    @relation("ProjectDocumentUploader", fields: [uploadedById], references: [id])
+
+  @@index([tenantId, projectId])
+  @@map("project_documents")
+}
+
+// [KAVEN_MODULE:PROJECTS_PM END]
 
 // ===========================
 // BILLING MODULE PLACEHOLDER
@@ -699,6 +1023,7 @@ model Contact {
   healthHistory    ClientHealthHistory[]
   sharedContacts    SharedContact[]
   financialEntries  FinancialEntry[]  @relation("FinancialEntryClient")
+  projects          Project[]         @relation("ProjectContact")
 
   @@index([tenantId, lifecycleStage])
   @@index([tenantId, status])

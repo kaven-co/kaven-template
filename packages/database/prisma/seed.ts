@@ -14,6 +14,8 @@ import { seedClientsCRM } from "./seeds/clients-crm-seed";
 import { seedClientFeatureFlags } from "./seeds/feature-flags-clients";
 import { seedFinance } from "./seeds/finance-seed";
 import { seedFinanceFeatureFlags } from "./seeds/feature-flags-finance";
+import { seedProjectsPM } from "./seeds/projects-pm-seed";
+import { seedProjectFeatureFlags } from "./seeds/feature-flags-projects";
 
 const prisma = new PrismaClient({
   datasources: {
@@ -645,6 +647,12 @@ async function main() {
 
   // 12. Finance Feature Flags
   await seedFinanceFeatureFlags();
+
+  // 13. Projects + PM Module Seed Data (sample projects, tasks, milestones)
+  await seedProjectsPM(adminTenant.id, architect.id);
+
+  // 14. Projects + PM Feature Flags
+  await seedProjectFeatureFlags();
 
   console.log("\n=============================================");
   console.log("✅ Seed Finished Successfully");
