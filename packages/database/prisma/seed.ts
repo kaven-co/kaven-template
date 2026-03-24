@@ -10,6 +10,8 @@ import { seedCapabilities } from "./seeds/capabilities.seed";
 import { seedSpaceRoles } from "./seeds/space-roles.seed";
 import { seedDocumentFeatureFlags } from "./seeds/feature-flags-documents";
 import { seedDocumentsKB } from "./seeds/documents-kb-seed";
+import { seedClientsCRM } from "./seeds/clients-crm-seed";
+import { seedClientFeatureFlags } from "./seeds/feature-flags-clients";
 
 const prisma = new PrismaClient({
   datasources: {
@@ -629,6 +631,12 @@ async function main() {
 
   // 8. Documents + KB Module Seed Data (categories, templates)
   await seedDocumentsKB(adminTenant.id, architect.id);
+
+  // 9. Clients + CRM Module Seed Data (lifecycle templates, default tags)
+  await seedClientsCRM(adminTenant.id);
+
+  // 10. Clients + CRM Feature Flags
+  await seedClientFeatureFlags();
 
   console.log("\n=============================================");
   console.log("✅ Seed Finished Successfully");

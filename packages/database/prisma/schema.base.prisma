@@ -411,6 +411,21 @@ model Tenant {
   documentTemplateUsages DocumentTemplateUsage[] @relation("TenantDocumentTemplateUsages")
   documentActivityLogs   DocumentActivityLog[]  @relation("TenantDocumentActivityLogs")
 
+  // Clients + CRM Module
+  contacts               Contact[]               @relation("TenantContacts")
+  crmOrganizations       CrmOrganization[]       @relation("TenantCrmOrganizations")
+  tags                   Tag[]                   @relation("TenantTags")
+  segments               Segment[]               @relation("TenantSegments")
+  crmInteractions        CrmInteraction[]        @relation("TenantCrmInteractions")
+  crmTimelineEvents      CrmTimelineEvent[]      @relation("TenantCrmTimelineEvents")
+  lifecycleHistories     LifecycleHistory[]      @relation("TenantLifecycleHistories")
+  customerFeedbacks      CustomerFeedback[]      @relation("TenantCustomerFeedbacks")
+  lifecycleTemplates     LifecycleTemplate[]     @relation("TenantLifecycleTemplates")
+  clientHealthScores     ClientHealthScore[]     @relation("TenantClientHealthScores")
+  clientHealthHistories  ClientHealthHistory[]   @relation("TenantClientHealthHistories")
+  sharedContacts         SharedContact[]         @relation("TenantSharedContacts")
+  receivedSharedContacts SharedContact[]         @relation("SharedWithTenantContacts")
+
   @@index([slug])
   @@index([domain])
   @@index([status])
@@ -494,6 +509,14 @@ model User {
   ownedDocuments   Document[]        @relation("DocumentOwner")
   documentComments DocumentComment[] @relation("DocumentCommentAuthor")
   ownedKBArticles  KBArticle[]       @relation("KBArticleOwner")
+
+  // Clients + CRM Module
+  assignedContacts    Contact[]            @relation("ContactAssignee")
+  createdContacts     Contact[]            @relation("ContactCreator")
+  crmInteractions     CrmInteraction[]     @relation("CrmInteractionUser")
+  createdSegments     Segment[]            @relation("SegmentCreator")
+  lifecycleChanges    LifecycleHistory[]   @relation("LifecycleChangedBy")
+  sharedContactsBy    SharedContact[]      @relation("SharedContactBy")
 
   // Email Relations
   emailEvents EmailEvent[]

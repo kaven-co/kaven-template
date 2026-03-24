@@ -411,6 +411,21 @@ model Tenant {
   documentTemplateUsages DocumentTemplateUsage[] @relation("TenantDocumentTemplateUsages")
   documentActivityLogs   DocumentActivityLog[]  @relation("TenantDocumentActivityLogs")
 
+  // Clients + CRM Module
+  contacts               Contact[]               @relation("TenantContacts")
+  crmOrganizations       CrmOrganization[]       @relation("TenantCrmOrganizations")
+  tags                   Tag[]                   @relation("TenantTags")
+  segments               Segment[]               @relation("TenantSegments")
+  crmInteractions        CrmInteraction[]        @relation("TenantCrmInteractions")
+  crmTimelineEvents      CrmTimelineEvent[]      @relation("TenantCrmTimelineEvents")
+  lifecycleHistories     LifecycleHistory[]      @relation("TenantLifecycleHistories")
+  customerFeedbacks      CustomerFeedback[]      @relation("TenantCustomerFeedbacks")
+  lifecycleTemplates     LifecycleTemplate[]     @relation("TenantLifecycleTemplates")
+  clientHealthScores     ClientHealthScore[]     @relation("TenantClientHealthScores")
+  clientHealthHistories  ClientHealthHistory[]   @relation("TenantClientHealthHistories")
+  sharedContacts         SharedContact[]         @relation("TenantSharedContacts")
+  receivedSharedContacts SharedContact[]         @relation("SharedWithTenantContacts")
+
   @@index([slug])
   @@index([domain])
   @@index([status])
@@ -494,6 +509,14 @@ model User {
   ownedDocuments   Document[]        @relation("DocumentOwner")
   documentComments DocumentComment[] @relation("DocumentCommentAuthor")
   ownedKBArticles  KBArticle[]       @relation("KBArticleOwner")
+
+  // Clients + CRM Module
+  assignedContacts    Contact[]            @relation("ContactAssignee")
+  createdContacts     Contact[]            @relation("ContactCreator")
+  crmInteractions     CrmInteraction[]     @relation("CrmInteractionUser")
+  createdSegments     Segment[]            @relation("SegmentCreator")
+  lifecycleChanges    LifecycleHistory[]   @relation("LifecycleChangedBy")
+  sharedContactsBy    SharedContact[]      @relation("SharedContactBy")
 
   // Email Relations
   emailEvents EmailEvent[]
@@ -2895,3 +2918,488 @@ model DocumentActivityLog {
 }
 
 // [KAVEN_MODULE:DOCUMENTS_KB END]
+
+// ===========================
+// CLIENTS + CRM MODULE
+// ===========================
+// Gestão de contatos, organizações, lifecycle, segmentação,
+// interações, timeline, feedback (NPS/CSAT) e health scoring.
+// Multi-tenant isolado via tenantId em todos os models.
+
+// [KAVEN_MODULE:CLIENTS_CRM BEGIN]
+
+enum ContactLifecycleStage {
+  LEAD
+  MQL
+  SQL
+  OPPORTUNITY
+  ACTIVE_CLIENT
+  AT_RISK
+  CHURNED
+  ADVOCATE
+}
+
+enum ContactStatus {
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+}
+
+enum ContactType {
+  PERSON
+  COMPANY
+  PARTNER
+  VENDOR
+}
+
+enum HealthCategory {
+  HEALTHY
+  AT_RISK
+  CRITICAL
+}
+
+enum TrendDirection {
+  UP
+  DOWN
+  STABLE
+}
+
+// ----------------------------
+// 1. Contact — Core entity (person/company/partner/vendor)
+// ----------------------------
+
+model Contact {
+  id             String                 @id @default(cuid())
+  tenantId       String                 @map("tenant_id")
+
+  // Identification
+  contactType    ContactType            @default(PERSON) @map("contact_type")
+  fullName       String                 @map("full_name")
+  email          String?
+  phone          String?
+  phoneAlt       String?                @map("phone_alt")
+  linkedinUrl    String?                @map("linkedin_url")
+  avatarUrl      String?                @map("avatar_url")
+
+  // Organization (B2B)
+  organizationId String?                @map("organization_id")
+  jobTitle       String?                @map("job_title")
+  department     String?
+
+  // Lifecycle & Status
+  lifecycleStage ContactLifecycleStage  @default(LEAD) @map("lifecycle_stage")
+  status         ContactStatus          @default(ACTIVE)
+  source         String?
+  sourceDetail   String?                @map("source_detail")
+
+  // Location
+  country        String?                @default("BR")
+  state          String?
+  city           String?
+  address        String?
+  postalCode     String?                @map("postal_code")
+
+  // Qualification (lead scoring base)
+  leadScore      Int?                   @default(0) @map("lead_score")
+  qualifiedAt    DateTime?              @map("qualified_at")
+  assignedToId   String?                @map("assigned_to_id")
+
+  // AI Enrichment
+  enrichedAt       DateTime?            @map("enriched_at")
+  enrichmentData   Json?                @map("enrichment_data")
+  enrichmentStatus String?              @map("enrichment_status")
+
+  // Custom fields per industry
+  customFields   Json?                  @map("custom_fields")
+
+  // Preferences & Communication
+  preferredChannel String?              @map("preferred_channel")
+  unsubscribed     Boolean              @default(false)
+  unsubscribedAt   DateTime?            @map("unsubscribed_at")
+  doNotContact     Boolean              @default(false) @map("do_not_contact")
+
+  // NPS / Satisfaction
+  npsScore       Int?                   @map("nps_score")
+  npsLastAt      DateTime?              @map("nps_last_at")
+
+  // Internal
+  notes          String?
+  ownerId        String?                @map("owner_id")
+
+  // Soft delete
+  deletedAt      DateTime?              @map("deleted_at")
+  deletedById    String?                @map("deleted_by_id")
+
+  createdById    String                 @map("created_by_id")
+  createdAt      DateTime               @default(now()) @map("created_at")
+  updatedAt      DateTime               @updatedAt @map("updated_at")
+
+  // Relations
+  tenant           Tenant               @relation("TenantContacts", fields: [tenantId], references: [id], onDelete: Cascade)
+  organization     CrmOrganization?     @relation(fields: [organizationId], references: [id])
+  assignedTo       User?                @relation("ContactAssignee", fields: [assignedToId], references: [id])
+  createdBy        User                 @relation("ContactCreator", fields: [createdById], references: [id])
+
+  interactions     CrmInteraction[]
+  timelineEvents   CrmTimelineEvent[]
+  contactTags      ContactTag[]
+  segments         ContactSegment[]
+  feedback         CustomerFeedback[]
+  lifecycleHistory LifecycleHistory[]
+  healthScores     ClientHealthScore[]
+  healthHistory    ClientHealthHistory[]
+  sharedContacts   SharedContact[]
+
+  @@index([tenantId, lifecycleStage])
+  @@index([tenantId, status])
+  @@index([tenantId, email])
+  @@index([tenantId, leadScore])
+  @@index([tenantId, deletedAt])
+  @@index([tenantId, contactType])
+  @@index([tenantId, assignedToId])
+  @@index([tenantId, organizationId])
+  @@map("contacts")
+}
+
+// ----------------------------
+// 2. CrmOrganization — B2B company entity
+// ----------------------------
+
+model CrmOrganization {
+  id             String   @id @default(cuid())
+  tenantId       String   @map("tenant_id")
+
+  name           String
+  domain         String?
+  cnpj           String?
+  website        String?
+  linkedinUrl    String?  @map("linkedin_url")
+  industry       String?
+  size           String?
+  revenue        String?
+  country        String?  @default("BR")
+  state          String?
+  city           String?
+
+  // AI Enrichment
+  enrichedAt     DateTime? @map("enriched_at")
+  enrichmentData Json?     @map("enrichment_data")
+
+  // Status
+  status         String    @default("active")
+  tags           String[]
+  customFields   Json?     @map("custom_fields")
+
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
+
+  // Relations
+  tenant         Tenant    @relation("TenantCrmOrganizations", fields: [tenantId], references: [id], onDelete: Cascade)
+  contacts       Contact[]
+
+  @@index([tenantId, domain])
+  @@index([tenantId, status])
+  @@index([tenantId, industry])
+  @@map("crm_organizations")
+}
+
+// ----------------------------
+// 3. Tag — Reusable tags scoped by tenant + area
+// ----------------------------
+
+model Tag {
+  id        String   @id @default(cuid())
+  tenantId  String   @map("tenant_id")
+  name      String
+  color     String?
+  areaSlug  String?  @map("area_slug")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  tenant    Tenant       @relation("TenantTags", fields: [tenantId], references: [id], onDelete: Cascade)
+  contacts  ContactTag[]
+
+  @@unique([tenantId, name, areaSlug])
+  @@index([tenantId])
+  @@map("tags")
+}
+
+// ----------------------------
+// 4. ContactTag — Many-to-many contact <-> tag
+// ----------------------------
+
+model ContactTag {
+  contactId String   @map("contact_id")
+  tagId     String   @map("tag_id")
+  addedAt   DateTime @default(now()) @map("added_at")
+  addedById String?  @map("added_by_id")
+
+  // Relations
+  contact   Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  tag       Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([contactId, tagId])
+  @@map("contact_tags")
+}
+
+// ----------------------------
+// 5. Segment — Saved dynamic query (JSON filters)
+// ----------------------------
+
+model Segment {
+  id              String    @id @default(cuid())
+  tenantId        String    @map("tenant_id")
+  name            String
+  description     String?
+  color           String?
+  areaSlug        String?   @map("area_slug")
+  queryDef        Json      @map("query_def")
+  isPublic        Boolean   @default(false) @map("is_public")
+  memberCount     Int       @default(0) @map("member_count")
+  lastEvaluatedAt DateTime? @map("last_evaluated_at")
+
+  createdById     String    @map("created_by_id")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  tenant          Tenant           @relation("TenantSegments", fields: [tenantId], references: [id], onDelete: Cascade)
+  createdBy       User             @relation("SegmentCreator", fields: [createdById], references: [id])
+  contacts        ContactSegment[]
+
+  @@index([tenantId, areaSlug])
+  @@index([tenantId, createdById])
+  @@map("segments")
+}
+
+// ----------------------------
+// 6. ContactSegment — Materialized segment membership
+// ----------------------------
+
+model ContactSegment {
+  contactId String   @map("contact_id")
+  segmentId String   @map("segment_id")
+  addedAt   DateTime @default(now()) @map("added_at")
+
+  // Relations
+  contact   Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  segment   Segment  @relation(fields: [segmentId], references: [id], onDelete: Cascade)
+
+  @@id([contactId, segmentId])
+  @@map("contact_segments")
+}
+
+// ----------------------------
+// 7. CrmInteraction — Communication log
+// ----------------------------
+
+model CrmInteraction {
+  id          String    @id @default(cuid())
+  tenantId    String    @map("tenant_id")
+  contactId   String    @map("contact_id")
+  userId      String?   @map("user_id")
+  agentId     String?   @map("agent_id")
+
+  type        String
+  channel     String?
+  direction   String?
+  subject     String?
+  body        String?
+  duration    Int?
+  outcome     String?
+
+  metadata    Json?
+  occurredAt  DateTime  @default(now()) @map("occurred_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  tenant      Tenant    @relation("TenantCrmInteractions", fields: [tenantId], references: [id], onDelete: Cascade)
+  contact     Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  user        User?     @relation("CrmInteractionUser", fields: [userId], references: [id])
+
+  @@index([tenantId, contactId])
+  @@index([tenantId, type])
+  @@index([contactId, occurredAt])
+  @@map("crm_interactions")
+}
+
+// ----------------------------
+// 8. CrmTimelineEvent — Unified cross-module history feed
+// ----------------------------
+
+model CrmTimelineEvent {
+  id          String   @id @default(cuid())
+  tenantId    String   @map("tenant_id")
+  contactId   String   @map("contact_id")
+
+  sourceType  String   @map("source_type")
+  sourceId    String?  @map("source_id")
+
+  title       String
+  description String?
+  icon        String?
+  metadata    Json?
+
+  occurredAt  DateTime @default(now()) @map("occurred_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  tenant      Tenant   @relation("TenantCrmTimelineEvents", fields: [tenantId], references: [id], onDelete: Cascade)
+  contact     Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, contactId, occurredAt])
+  @@index([tenantId, sourceType])
+  @@map("crm_timeline_events")
+}
+
+// ----------------------------
+// 9. LifecycleHistory — Audit trail for lifecycle stage changes
+// ----------------------------
+
+model LifecycleHistory {
+  id          String    @id @default(cuid())
+  tenantId    String    @map("tenant_id")
+  contactId   String    @map("contact_id")
+  fromStage   String?   @map("from_stage")
+  toStage     String    @map("to_stage")
+  changedById String?   @map("changed_by_id")
+  reason      String?
+  changedAt   DateTime  @default(now()) @map("changed_at")
+
+  // Relations
+  tenant      Tenant    @relation("TenantLifecycleHistories", fields: [tenantId], references: [id], onDelete: Cascade)
+  contact     Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  changedBy   User?     @relation("LifecycleChangedBy", fields: [changedById], references: [id])
+
+  @@index([tenantId, contactId])
+  @@index([tenantId, changedAt])
+  @@map("lifecycle_histories")
+}
+
+// ----------------------------
+// 10. CustomerFeedback — NPS/CSAT native feedback
+// ----------------------------
+
+model CustomerFeedback {
+  id           String    @id @default(cuid())
+  tenantId     String    @map("tenant_id")
+  contactId    String    @map("contact_id")
+
+  feedbackType String    @map("feedback_type")
+  score        Int?
+  comment      String?
+  sentiment    String?
+
+  triggeredBy  String?   @map("triggered_by")
+  sourceId     String?   @map("source_id")
+
+  submittedAt  DateTime? @map("submitted_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  tenant       Tenant    @relation("TenantCustomerFeedbacks", fields: [tenantId], references: [id], onDelete: Cascade)
+  contact      Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, feedbackType])
+  @@index([tenantId, contactId])
+  @@map("customer_feedbacks")
+}
+
+// ----------------------------
+// 11. LifecycleTemplate — Industry-specific lifecycle stages
+// ----------------------------
+
+model LifecycleTemplate {
+  id        String    @id @default(cuid())
+  tenantId  String?   @map("tenant_id")
+  industry  String?
+  name      String
+  stages    Json
+  isDefault Boolean   @default(false) @map("is_default")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  // Relations (tenantId nullable = global platform template)
+  tenant    Tenant?   @relation("TenantLifecycleTemplates", fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([industry])
+  @@map("lifecycle_templates")
+}
+
+// ----------------------------
+// 12. ClientHealthScore — 5-dimension health scoring
+// ----------------------------
+
+model ClientHealthScore {
+  id           String         @id @default(cuid())
+  tenantId     String         @map("tenant_id")
+  contactId    String         @map("contact_id")
+  overallScore Int            @map("overall_score")
+  dimensions   Json
+  category     HealthCategory
+  calculatedAt DateTime       @default(now()) @map("calculated_at")
+  calculatedBy String?        @map("calculated_by")
+
+  // Relations
+  tenant       Tenant         @relation("TenantClientHealthScores", fields: [tenantId], references: [id], onDelete: Cascade)
+  contact      Contact        @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, contactId])
+  @@index([tenantId, category])
+  @@index([tenantId, calculatedAt])
+  @@map("client_health_scores")
+}
+
+// ----------------------------
+// 13. ClientHealthHistory — Health score change tracking
+// ----------------------------
+
+model ClientHealthHistory {
+  id               String          @id @default(cuid())
+  tenantId         String          @map("tenant_id")
+  contactId        String          @map("contact_id")
+  previousScore    Int             @map("previous_score")
+  newScore         Int             @map("new_score")
+  previousCategory HealthCategory  @map("previous_category")
+  newCategory      HealthCategory  @map("new_category")
+  delta            Int
+  trigger          String
+  changedAt        DateTime        @default(now()) @map("changed_at")
+
+  // Relations
+  tenant           Tenant          @relation("TenantClientHealthHistories", fields: [tenantId], references: [id], onDelete: Cascade)
+  contact          Contact         @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, contactId])
+  @@index([tenantId, changedAt])
+  @@map("client_health_histories")
+}
+
+// ----------------------------
+// 14. SharedContact — Cross-tenant sharing
+// ----------------------------
+
+model SharedContact {
+  id                 String          @id @default(cuid())
+  tenantId           String          @map("tenant_id")
+  contactId          String          @map("contact_id")
+  sharedWithTenantId String          @map("shared_with_tenant_id")
+  permission         SharePermission
+  sharedBy           String          @map("shared_by")
+  sharedAt           DateTime        @default(now()) @map("shared_at")
+  expiresAt          DateTime?       @map("expires_at")
+
+  // Relations
+  tenant             Tenant          @relation("TenantSharedContacts", fields: [tenantId], references: [id], onDelete: Cascade)
+  sharedWithTenant   Tenant          @relation("SharedWithTenantContacts", fields: [sharedWithTenantId], references: [id], onDelete: Cascade)
+  contact            Contact         @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  sharedByUser       User            @relation("SharedContactBy", fields: [sharedBy], references: [id])
+
+  @@unique([contactId, sharedWithTenantId])
+  @@index([tenantId, contactId])
+  @@index([sharedWithTenantId])
+  @@map("shared_contacts")
+}
+
+// [KAVEN_MODULE:CLIENTS_CRM END]
