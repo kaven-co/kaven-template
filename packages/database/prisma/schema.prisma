@@ -475,6 +475,23 @@ model Tenant {
   marketingCalendars    MarketingCalendar[]    @relation("TenantMarketingCalendars")
   campaignTags          CampaignTag[]          @relation("TenantCampaignTags")
 
+  // Governance Module
+  okrCycles          OKRCycle[]          @relation("TenantOKRCycles")
+  objectives         Objective[]         @relation("TenantObjectives")
+  keyResults         KeyResult[]         @relation("TenantKeyResults")
+  okrCheckIns        OKRCheckIn[]        @relation("TenantOKRCheckIns")
+  initiatives        Initiative[]        @relation("TenantInitiatives")
+  meetings           Meeting[]           @relation("TenantMeetings")
+  meetingAttendees   MeetingAttendee[]   @relation("TenantMeetingAttendees")
+  meetingAgendaItems MeetingAgendaItem[] @relation("TenantAgendaItems")
+  decisions          Decision[]          @relation("TenantDecisions")
+  actionItems        ActionItem[]        @relation("TenantActionItems")
+  meetingMinutes     MeetingMinutes[]    @relation("TenantMeetingMinutes")
+  boards             Board[]             @relation("TenantBoards")
+  boardMembers       BoardMember[]       @relation("TenantBoardMembers")
+  strategicPillars   StrategicPillar[]   @relation("TenantStrategicPillars")
+  missionStatements  MissionStatement?   @relation("TenantMissionStatement")
+
   // Finance Module
   chartOfAccounts      ChartOfAccount[]      @relation("TenantChartOfAccounts")
   bankAccounts         BankAccount[]         @relation("TenantBankAccounts")
@@ -605,6 +622,23 @@ model User {
   createdMktEmailTemplates  MktEmailTemplate[]  @relation("MktEmailTemplateCreator")
   createdMktForms           MktForm[]           @relation("MktFormCreator")
   createdMarketingCalendars MarketingCalendar[] @relation("MarketingCalendarCreator")
+
+  // Governance Module
+  createdOKRCycles         OKRCycle[]          @relation("OKRCycleCreator")
+  ownedObjectives          Objective[]         @relation("ObjectiveOwner")
+  ownedKeyResults          KeyResult[]         @relation("KeyResultOwner")
+  createdOKRCheckIns       OKRCheckIn[]        @relation("OKRCheckInCreator")
+  ownedInitiatives         Initiative[]        @relation("InitiativeOwner")
+  organizedMeetings        Meeting[]           @relation("MeetingOrganizer")
+  meetingAttendances       MeetingAttendee[]   @relation("MeetingAttendeeUser")
+  presentedAgendaItems     MeetingAgendaItem[] @relation("AgendaItemPresenter")
+  createdDecisions         Decision[]          @relation("DecisionCreator")
+  assignedActionItems      ActionItem[]        @relation("ActionItemAssignee")
+  createdActionItems       ActionItem[]        @relation("ActionItemCreator")
+  createdMeetingMinutes    MeetingMinutes[]    @relation("MeetingMinutesCreator")
+  boardMemberships         BoardMember[]       @relation("BoardMemberUser")
+  ownedStrategicPillars    StrategicPillar[]   @relation("StrategicPillarOwner")
+  updatedMissionStatements MissionStatement[]  @relation("MissionStatementUpdater")
 
   // Finance Module
   createdFinancialEntries FinancialEntry[] @relation("FinancialEntryCreator")
@@ -2620,6 +2654,7 @@ model Project {
   expenses         ProjectExpense[]
   statusHistory    ProjectStatusHistory[]
   projectDocuments ProjectDocument[]
+  initiatives      Initiative[]
 
   @@index([tenantId])
   @@index([tenantId, status])
@@ -6002,3 +6037,590 @@ model CampaignTag {
 }
 
 // [KAVEN_MODULE:MARKETING END]
+
+// ===========================
+// GOVERNANCE MODULE
+// ===========================
+// OKR management, meetings, decisions, board governance, and strategic planning.
+// Multi-tenant isolated via tenantId. Cross-module FKs: Initiative→Project (nullable).
+
+// [KAVEN_MODULE:GOVERNANCE BEGIN]
+
+// ---------- Enums ----------
+
+enum OKRCycleType {
+  ANNUAL
+  SEMI_ANNUAL
+  QUARTERLY
+  MONTHLY
+  CUSTOM
+
+  @@map("okr_cycle_type")
+}
+
+enum OKRCycleStatus {
+  PLANNING
+  ACTIVE
+  REVIEW
+  CLOSED
+
+  @@map("okr_cycle_status")
+}
+
+enum ObjectiveLevel {
+  COMPANY
+  DEPARTMENT
+  TEAM
+  INDIVIDUAL
+
+  @@map("objective_level")
+}
+
+enum OKRStatus {
+  DRAFT
+  ON_TRACK
+  AT_RISK
+  OFF_TRACK
+  COMPLETED
+  CANCELLED
+
+  @@map("okr_status")
+}
+
+enum OKRPrivacy {
+  PUBLIC
+  TEAM
+  PRIVATE
+
+  @@map("okr_privacy")
+}
+
+enum KRType {
+  NUMERIC
+  PERCENT
+  BINARY
+  CURRENCY
+
+  @@map("kr_type")
+}
+
+enum KRDataSource {
+  MANUAL
+  FINANCE
+  SALES
+  PROJECTS
+  PEOPLE
+
+  @@map("kr_data_source")
+}
+
+enum CheckInConfidence {
+  LOW
+  MEDIUM
+  HIGH
+
+  @@map("check_in_confidence")
+}
+
+enum InitiativeStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+  CANCELLED
+
+  @@map("initiative_status")
+}
+
+enum MeetingType {
+  ONE_ON_ONE
+  TEAM
+  ALL_HANDS
+  BOARD
+  COMMITTEE
+  STANDUP
+
+  @@map("meeting_type")
+}
+
+enum MeetingLocation {
+  IN_PERSON
+  VIRTUAL
+  HYBRID
+
+  @@map("meeting_location")
+}
+
+enum MeetingStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+
+  @@map("meeting_status")
+}
+
+enum AgendaItemType {
+  INFO
+  DISCUSSION
+  VOTE
+  REPORT
+  ACTION
+
+  @@map("agenda_item_type")
+}
+
+enum ActionItemStatus {
+  OPEN
+  IN_PROGRESS
+  DONE
+  CANCELLED
+
+  @@map("action_item_status")
+}
+
+enum GovPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+
+  @@map("gov_priority")
+}
+
+enum DecisionType {
+  OPERATIONAL
+  STRATEGIC
+  FINANCIAL
+  POLICY
+  TECHNICAL
+
+  @@map("decision_type")
+}
+
+enum DecisionOutcome {
+  APPROVED
+  REJECTED
+  DEFERRED
+  WITHDRAWN
+
+  @@map("decision_outcome")
+}
+
+enum BoardType {
+  BOARD
+  COMMITTEE
+  ADVISORY
+  INVESTOR
+
+  @@map("board_type")
+}
+
+enum BoardRole {
+  CHAIR
+  VICE_CHAIR
+  SECRETARY
+  TREASURER
+  MEMBER
+  OBSERVER
+
+  @@map("board_role")
+}
+
+enum StrategicHorizon {
+  SHORT_TERM
+  MID_TERM
+  LONG_TERM
+
+  @@map("strategic_horizon")
+}
+
+// ---------- Models ----------
+
+// 1. OKRCycle — Time-bounded period for objectives (e.g. Q1 2026)
+model OKRCycle {
+  id          String         @id @default(cuid())
+  tenantId    String         @map("tenant_id")
+  name        String // e.g. "Q1 2026"
+  description String?
+  type        OKRCycleType   @default(QUARTERLY)
+  status      OKRCycleStatus @default(PLANNING)
+  startDate   DateTime       @map("start_date")
+  endDate     DateTime       @map("end_date")
+  createdById String         @map("created_by_id")
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+
+  // Relations
+  tenant     Tenant      @relation("TenantOKRCycles", fields: [tenantId], references: [id], onDelete: Cascade)
+  createdBy  User        @relation("OKRCycleCreator", fields: [createdById], references: [id])
+  objectives Objective[]
+
+  @@index([tenantId, status])
+  @@index([tenantId, startDate])
+  @@map("okr_cycles")
+}
+
+// 2. Objective — A goal within an OKR cycle, supports hierarchy (parent→child)
+model Objective {
+  id          String         @id @default(cuid())
+  tenantId    String         @map("tenant_id")
+  cycleId     String         @map("cycle_id")
+  parentId    String?        @map("parent_id")
+  title       String
+  description String?
+  level       ObjectiveLevel @default(COMPANY)
+  status      OKRStatus      @default(DRAFT)
+  privacy     OKRPrivacy     @default(PUBLIC)
+  progress    Float          @default(0) // 0-100, auto-calculated from KRs
+  ownerId     String         @map("owner_id")
+  deletedAt   DateTime?      @map("deleted_at")
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+
+  // Relations
+  tenant      Tenant       @relation("TenantObjectives", fields: [tenantId], references: [id], onDelete: Cascade)
+  cycle       OKRCycle     @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  parent      Objective?   @relation("ObjectiveHierarchy", fields: [parentId], references: [id])
+  children    Objective[]  @relation("ObjectiveHierarchy")
+  owner       User         @relation("ObjectiveOwner", fields: [ownerId], references: [id])
+  keyResults  KeyResult[]
+  initiatives Initiative[]
+
+  @@index([tenantId, cycleId])
+  @@index([tenantId, ownerId])
+  @@index([tenantId, parentId])
+  @@map("objectives")
+}
+
+// 3. KeyResult — Measurable outcome for an Objective
+model KeyResult {
+  id           String       @id @default(cuid())
+  tenantId     String       @map("tenant_id")
+  objectiveId  String       @map("objective_id")
+  title        String
+  description  String?
+  type         KRType       @default(PERCENT)
+  dataSource   KRDataSource @default(MANUAL)
+  startValue   Float        @default(0) @map("start_value")
+  currentValue Float        @default(0) @map("current_value")
+  targetValue  Float        @default(100) @map("target_value")
+  unit         String? // e.g. "BRL", "%", "deals"
+  progress     Float        @default(0) // 0-100, auto-calculated
+  status       OKRStatus    @default(DRAFT)
+  ownerId      String       @map("owner_id")
+  deletedAt    DateTime?    @map("deleted_at")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+
+  // Relations
+  tenant      Tenant       @relation("TenantKeyResults", fields: [tenantId], references: [id], onDelete: Cascade)
+  objective   Objective    @relation(fields: [objectiveId], references: [id], onDelete: Cascade)
+  owner       User         @relation("KeyResultOwner", fields: [ownerId], references: [id])
+  checkIns    OKRCheckIn[]
+  initiatives Initiative[]
+
+  @@index([tenantId, objectiveId])
+  @@index([tenantId, ownerId])
+  @@map("key_results")
+}
+
+// 4. OKRCheckIn — Periodic update on a KeyResult's progress
+model OKRCheckIn {
+  id            String            @id @default(cuid())
+  tenantId      String            @map("tenant_id")
+  keyResultId   String            @map("key_result_id")
+  value         Float // The new value for the KR
+  previousValue Float             @map("previous_value")
+  confidence    CheckInConfidence @default(MEDIUM)
+  notes         String?
+  blockers      String?
+  createdById   String            @map("created_by_id")
+  createdAt     DateTime          @default(now()) @map("created_at")
+
+  // Relations
+  tenant    Tenant    @relation("TenantOKRCheckIns", fields: [tenantId], references: [id], onDelete: Cascade)
+  keyResult KeyResult @relation(fields: [keyResultId], references: [id], onDelete: Cascade)
+  createdBy User      @relation("OKRCheckInCreator", fields: [createdById], references: [id])
+
+  @@index([tenantId, keyResultId])
+  @@index([tenantId, createdAt])
+  @@map("okr_check_ins")
+}
+
+// 5. Initiative — Links a KeyResult to a Project or standalone action
+model Initiative {
+  id          String           @id @default(cuid())
+  tenantId    String           @map("tenant_id")
+  keyResultId String           @map("key_result_id")
+  objectiveId String           @map("objective_id")
+  projectId   String?          @map("project_id") // Cross-module FK → Projects
+  title       String
+  description String?
+  status      InitiativeStatus @default(TODO)
+  priority    GovPriority      @default(MEDIUM)
+  ownerId     String           @map("owner_id")
+  dueDate     DateTime?        @map("due_date")
+  completedAt DateTime?        @map("completed_at")
+  deletedAt   DateTime?        @map("deleted_at")
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  // Relations
+  tenant    Tenant    @relation("TenantInitiatives", fields: [tenantId], references: [id], onDelete: Cascade)
+  keyResult KeyResult @relation(fields: [keyResultId], references: [id], onDelete: Cascade)
+  objective Objective @relation(fields: [objectiveId], references: [id], onDelete: Cascade)
+  project   Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  owner     User      @relation("InitiativeOwner", fields: [ownerId], references: [id])
+
+  @@index([tenantId, keyResultId])
+  @@index([tenantId, objectiveId])
+  @@index([tenantId, status])
+  @@map("initiatives")
+}
+
+// 6. Meeting — Structured meetings with agenda and tracking
+model Meeting {
+  id          String          @id @default(cuid())
+  tenantId    String          @map("tenant_id")
+  title       String
+  description String?
+  type        MeetingType     @default(TEAM)
+  status      MeetingStatus   @default(SCHEDULED)
+  location    MeetingLocation @default(VIRTUAL)
+  locationUrl String?         @map("location_url") // Video call link
+  scheduledAt DateTime        @map("scheduled_at")
+  startedAt   DateTime?       @map("started_at")
+  endedAt     DateTime?       @map("ended_at")
+  durationMin Int?            @map("duration_min")
+  boardId     String?         @map("board_id") // Optional: board meeting
+  organizerId String          @map("organizer_id")
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+
+  // Relations
+  tenant      Tenant              @relation("TenantMeetings", fields: [tenantId], references: [id], onDelete: Cascade)
+  organizer   User                @relation("MeetingOrganizer", fields: [organizerId], references: [id])
+  board       Board?              @relation(fields: [boardId], references: [id], onDelete: SetNull)
+  agendaItems MeetingAgendaItem[]
+  decisions   Decision[]
+  actionItems ActionItem[]
+  minutes     MeetingMinutes?
+  attendees   MeetingAttendee[]
+
+  @@index([tenantId, scheduledAt])
+  @@index([tenantId, type])
+  @@index([tenantId, boardId])
+  @@map("meetings")
+}
+
+// 7. MeetingAttendee — Who attends a meeting
+model MeetingAttendee {
+  id         String   @id @default(cuid())
+  tenantId   String   @map("tenant_id")
+  meetingId  String   @map("meeting_id")
+  userId     String   @map("user_id")
+  isRequired Boolean  @default(true) @map("is_required")
+  attended   Boolean  @default(false)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // Relations
+  tenant  Tenant  @relation("TenantMeetingAttendees", fields: [tenantId], references: [id], onDelete: Cascade)
+  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  user    User    @relation("MeetingAttendeeUser", fields: [userId], references: [id])
+
+  @@unique([meetingId, userId])
+  @@index([tenantId, meetingId])
+  @@map("meeting_attendees")
+}
+
+// 8. MeetingAgendaItem — Agenda item with ordering
+model MeetingAgendaItem {
+  id          String         @id @default(cuid())
+  tenantId    String         @map("tenant_id")
+  meetingId   String         @map("meeting_id")
+  title       String
+  description String?
+  type        AgendaItemType @default(DISCUSSION)
+  position    Int            @default(0) // Order in agenda
+  durationMin Int?           @map("duration_min")
+  presenterId String?        @map("presenter_id")
+  notes       String? // Notes taken during meeting
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+
+  // Relations
+  tenant    Tenant  @relation("TenantAgendaItems", fields: [tenantId], references: [id], onDelete: Cascade)
+  meeting   Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  presenter User?   @relation("AgendaItemPresenter", fields: [presenterId], references: [id])
+
+  @@index([tenantId, meetingId])
+  @@map("meeting_agenda_items")
+}
+
+// 9. Decision — Formal decisions made during meetings
+model Decision {
+  id           String           @id @default(cuid())
+  tenantId     String           @map("tenant_id")
+  meetingId    String?          @map("meeting_id") // Optional: standalone decisions
+  title        String
+  context      String? // Background / what led to this decision
+  description  String // The decision itself
+  type         DecisionType     @default(OPERATIONAL)
+  outcome      DecisionOutcome? // Result if voted
+  votesFor     Int?             @map("votes_for")
+  votesAgainst Int?             @map("votes_against")
+  abstentions  Int?
+  impact       String? // What changes as a result
+  participants String[] // User IDs who participated
+  decidedAt    DateTime         @default(now()) @map("decided_at")
+  createdById  String           @map("created_by_id")
+  createdAt    DateTime         @default(now()) @map("created_at")
+  updatedAt    DateTime         @updatedAt @map("updated_at")
+
+  // Relations
+  tenant    Tenant   @relation("TenantDecisions", fields: [tenantId], references: [id], onDelete: Cascade)
+  meeting   Meeting? @relation(fields: [meetingId], references: [id], onDelete: SetNull)
+  createdBy User     @relation("DecisionCreator", fields: [createdById], references: [id])
+
+  @@index([tenantId, meetingId])
+  @@index([tenantId, type])
+  @@index([tenantId, decidedAt])
+  @@map("decisions")
+}
+
+// 10. ActionItem — Tasks arising from meetings or decisions
+model ActionItem {
+  id          String           @id @default(cuid())
+  tenantId    String           @map("tenant_id")
+  meetingId   String?          @map("meeting_id")
+  title       String
+  description String?
+  status      ActionItemStatus @default(OPEN)
+  priority    GovPriority      @default(MEDIUM)
+  assigneeId  String           @map("assignee_id")
+  dueDate     DateTime?        @map("due_date")
+  completedAt DateTime?        @map("completed_at")
+  createdById String           @map("created_by_id")
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  // Relations
+  tenant    Tenant   @relation("TenantActionItems", fields: [tenantId], references: [id], onDelete: Cascade)
+  meeting   Meeting? @relation(fields: [meetingId], references: [id], onDelete: SetNull)
+  assignee  User     @relation("ActionItemAssignee", fields: [assigneeId], references: [id])
+  createdBy User     @relation("ActionItemCreator", fields: [createdById], references: [id])
+
+  @@index([tenantId, assigneeId])
+  @@index([tenantId, status])
+  @@index([tenantId, dueDate])
+  @@map("action_items")
+}
+
+// 11. MeetingMinutes — Draft/approved minutes for a meeting (1:1 with Meeting)
+model MeetingMinutes {
+  id          String    @id @default(cuid())
+  tenantId    String    @map("tenant_id")
+  meetingId   String    @unique @map("meeting_id")
+  content     String // Rich text content
+  summary     String?
+  isApproved  Boolean   @default(false) @map("is_approved")
+  approvedAt  DateTime? @map("approved_at")
+  approvedBy  String?   @map("approved_by")
+  createdById String    @map("created_by_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  tenant    Tenant  @relation("TenantMeetingMinutes", fields: [tenantId], references: [id], onDelete: Cascade)
+  meeting   Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  createdBy User    @relation("MeetingMinutesCreator", fields: [createdById], references: [id])
+
+  @@index([tenantId])
+  @@map("meeting_minutes")
+}
+
+// 12. Board — Governance body (board of directors, committee, advisory)
+model Board {
+  id          String    @id @default(cuid())
+  tenantId    String    @map("tenant_id")
+  name        String
+  description String?
+  type        BoardType @default(BOARD)
+  quorumMin   Int       @default(3) @map("quorum_min") // Minimum members for valid decisions
+  isActive    Boolean   @default(true) @map("is_active")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  tenant   Tenant        @relation("TenantBoards", fields: [tenantId], references: [id], onDelete: Cascade)
+  members  BoardMember[]
+  meetings Meeting[]
+
+  @@index([tenantId, type])
+  @@map("boards")
+}
+
+// 13. BoardMember — Members of a governance board
+model BoardMember {
+  id        String    @id @default(cuid())
+  tenantId  String    @map("tenant_id")
+  boardId   String    @map("board_id")
+  userId    String    @map("user_id")
+  role      BoardRole @default(MEMBER)
+  joinedAt  DateTime  @default(now()) @map("joined_at")
+  leftAt    DateTime? @map("left_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  tenant Tenant @relation("TenantBoardMembers", fields: [tenantId], references: [id], onDelete: Cascade)
+  board  Board  @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  user   User   @relation("BoardMemberUser", fields: [userId], references: [id])
+
+  @@unique([boardId, userId])
+  @@index([tenantId, boardId])
+  @@map("board_members")
+}
+
+// 14. StrategicPillar — High-level strategic themes/pillars
+model StrategicPillar {
+  id          String           @id @default(cuid())
+  tenantId    String           @map("tenant_id")
+  title       String
+  description String?
+  horizon     StrategicHorizon @default(MID_TERM)
+  color       String? // Visual color for strategy maps
+  position    Int              @default(0)
+  isActive    Boolean          @default(true) @map("is_active")
+  ownerId     String           @map("owner_id")
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  // Relations
+  tenant Tenant @relation("TenantStrategicPillars", fields: [tenantId], references: [id], onDelete: Cascade)
+  owner  User   @relation("StrategicPillarOwner", fields: [ownerId], references: [id])
+
+  @@index([tenantId, horizon])
+  @@map("strategic_pillars")
+}
+
+// 15. MissionStatement — Company mission, vision, values
+model MissionStatement {
+  id          String   @id @default(cuid())
+  tenantId    String   @unique @map("tenant_id") // One per tenant
+  mission     String? // Company mission
+  vision      String? // Company vision
+  values      String[] // Core values
+  purpose     String? // Company purpose
+  updatedById String   @map("updated_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  tenant    Tenant @relation("TenantMissionStatement", fields: [tenantId], references: [id], onDelete: Cascade)
+  updatedBy User   @relation("MissionStatementUpdater", fields: [updatedById], references: [id])
+
+  @@map("mission_statements")
+}
+
+// [KAVEN_MODULE:GOVERNANCE END]

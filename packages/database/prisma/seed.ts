@@ -22,6 +22,8 @@ import { seedOperations } from "./seeds/operations-seed";
 import { seedOperationsFeatureFlags } from "./seeds/feature-flags-operations";
 import { seedMarketing } from "./seeds/marketing-seed";
 import { seedMarketingFeatureFlags } from "./seeds/feature-flags-marketing";
+import { seedGovernance } from "./seeds/governance-seed";
+import { seedGovernanceFeatureFlags } from "./seeds/feature-flags-governance";
 
 const prisma = new PrismaClient({
   datasources: {
@@ -677,6 +679,12 @@ async function main() {
 
   // 20. Marketing Feature Flags
   await seedMarketingFeatureFlags();
+
+  // 21. Governance Module Seed Data (OKR cycles, objectives, meetings, boards)
+  await seedGovernance(adminTenant.id, architect.id);
+
+  // 22. Governance Feature Flags
+  await seedGovernanceFeatureFlags();
 
   console.log("\n=============================================");
   console.log("✅ Seed Finished Successfully");

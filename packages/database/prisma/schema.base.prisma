@@ -475,6 +475,23 @@ model Tenant {
   marketingCalendars     MarketingCalendar[]     @relation("TenantMarketingCalendars")
   campaignTags           CampaignTag[]           @relation("TenantCampaignTags")
 
+  // Governance Module
+  okrCycles              OKRCycle[]              @relation("TenantOKRCycles")
+  objectives             Objective[]             @relation("TenantObjectives")
+  keyResults             KeyResult[]             @relation("TenantKeyResults")
+  okrCheckIns            OKRCheckIn[]            @relation("TenantOKRCheckIns")
+  initiatives            Initiative[]            @relation("TenantInitiatives")
+  meetings               Meeting[]               @relation("TenantMeetings")
+  meetingAttendees       MeetingAttendee[]       @relation("TenantMeetingAttendees")
+  meetingAgendaItems     MeetingAgendaItem[]     @relation("TenantAgendaItems")
+  decisions              Decision[]              @relation("TenantDecisions")
+  actionItems            ActionItem[]            @relation("TenantActionItems")
+  meetingMinutes         MeetingMinutes[]        @relation("TenantMeetingMinutes")
+  boards                 Board[]                 @relation("TenantBoards")
+  boardMembers           BoardMember[]           @relation("TenantBoardMembers")
+  strategicPillars       StrategicPillar[]       @relation("TenantStrategicPillars")
+  missionStatements      MissionStatement?       @relation("TenantMissionStatement")
+
   // Finance Module
   chartOfAccounts        ChartOfAccount[]        @relation("TenantChartOfAccounts")
   bankAccounts           BankAccount[]           @relation("TenantBankAccounts")
@@ -605,6 +622,23 @@ model User {
   createdMktEmailTemplates MktEmailTemplate[]  @relation("MktEmailTemplateCreator")
   createdMktForms        MktForm[]             @relation("MktFormCreator")
   createdMarketingCalendars MarketingCalendar[] @relation("MarketingCalendarCreator")
+
+  // Governance Module
+  createdOKRCycles         OKRCycle[]         @relation("OKRCycleCreator")
+  ownedObjectives          Objective[]        @relation("ObjectiveOwner")
+  ownedKeyResults          KeyResult[]        @relation("KeyResultOwner")
+  createdOKRCheckIns       OKRCheckIn[]       @relation("OKRCheckInCreator")
+  ownedInitiatives         Initiative[]       @relation("InitiativeOwner")
+  organizedMeetings        Meeting[]          @relation("MeetingOrganizer")
+  meetingAttendances       MeetingAttendee[]  @relation("MeetingAttendeeUser")
+  presentedAgendaItems     MeetingAgendaItem[] @relation("AgendaItemPresenter")
+  createdDecisions         Decision[]         @relation("DecisionCreator")
+  assignedActionItems      ActionItem[]       @relation("ActionItemAssignee")
+  createdActionItems       ActionItem[]       @relation("ActionItemCreator")
+  createdMeetingMinutes    MeetingMinutes[]   @relation("MeetingMinutesCreator")
+  boardMemberships         BoardMember[]      @relation("BoardMemberUser")
+  ownedStrategicPillars    StrategicPillar[]  @relation("StrategicPillarOwner")
+  updatedMissionStatements MissionStatement[] @relation("MissionStatementUpdater")
 
   // Finance Module
   createdFinancialEntries FinancialEntry[] @relation("FinancialEntryCreator")
