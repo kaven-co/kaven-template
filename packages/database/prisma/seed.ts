@@ -8,6 +8,8 @@ import bcrypt from "bcryptjs";
 import "dotenv/config";
 import { seedCapabilities } from "./seeds/capabilities.seed";
 import { seedSpaceRoles } from "./seeds/space-roles.seed";
+import { seedDocumentFeatureFlags } from "./seeds/feature-flags-documents";
+import { seedDocumentsKB } from "./seeds/documents-kb-seed";
 
 const prisma = new PrismaClient({
   datasources: {
@@ -621,6 +623,12 @@ async function main() {
 
   // 6.2 Space Roles
   await seedSpaceRoles();
+
+  // 7. Documents + KB Feature Flags
+  await seedDocumentFeatureFlags();
+
+  // 8. Documents + KB Module Seed Data (categories, templates)
+  await seedDocumentsKB(adminTenant.id, architect.id);
 
   console.log("\n=============================================");
   console.log("✅ Seed Finished Successfully");

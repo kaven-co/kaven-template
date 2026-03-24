@@ -398,6 +398,19 @@ model Tenant {
   // AI Agent Auth
   serviceTokens ServiceToken[]
 
+  // Documents + Knowledge Base Module
+  folders                Folder[]                @relation("TenantFolders")
+  folderShares           FolderShare[]           @relation("TenantFolderShares")
+  documents              Document[]              @relation("TenantDocuments")
+  documentVersions       DocumentVersion[]       @relation("TenantDocumentVersions")
+  documentComments       DocumentComment[]       @relation("TenantDocumentComments")
+  documentShares         DocumentShare[]         @relation("TenantDocumentShares")
+  kbArticles             KBArticle[]             @relation("TenantKBArticles")
+  kbCategories           KBCategory[]            @relation("TenantKBCategories")
+  documentTemplates      DocumentTemplate[]      @relation("TenantDocumentTemplates")
+  documentTemplateUsages DocumentTemplateUsage[] @relation("TenantDocumentTemplateUsages")
+  documentActivityLogs   DocumentActivityLog[]  @relation("TenantDocumentActivityLogs")
+
   @@index([slug])
   @@index([domain])
   @@index([status])
@@ -475,6 +488,12 @@ model User {
   createdProjects Project[] @relation("ProjectCreator")
   createdTasks    Task[]    @relation("TaskCreator")
   assignedTasks   Task[]    @relation("TaskAssignee")
+
+  // Documents + Knowledge Base Module
+  ownedFolders     Folder[]          @relation("FolderOwner")
+  ownedDocuments   Document[]        @relation("DocumentOwner")
+  documentComments DocumentComment[] @relation("DocumentCommentAuthor")
+  ownedKBArticles  KBArticle[]       @relation("KBArticleOwner")
 
   // Email Relations
   emailEvents EmailEvent[]

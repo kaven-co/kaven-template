@@ -398,6 +398,19 @@ model Tenant {
   // AI Agent Auth
   serviceTokens ServiceToken[]
 
+  // Documents + Knowledge Base Module
+  folders                Folder[]                @relation("TenantFolders")
+  folderShares           FolderShare[]           @relation("TenantFolderShares")
+  documents              Document[]              @relation("TenantDocuments")
+  documentVersions       DocumentVersion[]       @relation("TenantDocumentVersions")
+  documentComments       DocumentComment[]       @relation("TenantDocumentComments")
+  documentShares         DocumentShare[]         @relation("TenantDocumentShares")
+  kbArticles             KBArticle[]             @relation("TenantKBArticles")
+  kbCategories           KBCategory[]            @relation("TenantKBCategories")
+  documentTemplates      DocumentTemplate[]      @relation("TenantDocumentTemplates")
+  documentTemplateUsages DocumentTemplateUsage[] @relation("TenantDocumentTemplateUsages")
+  documentActivityLogs   DocumentActivityLog[]  @relation("TenantDocumentActivityLogs")
+
   @@index([slug])
   @@index([domain])
   @@index([status])
@@ -475,6 +488,12 @@ model User {
   createdProjects Project[] @relation("ProjectCreator")
   createdTasks    Task[]    @relation("TaskCreator")
   assignedTasks   Task[]    @relation("TaskAssignee")
+
+  // Documents + Knowledge Base Module
+  ownedFolders     Folder[]          @relation("FolderOwner")
+  ownedDocuments   Document[]        @relation("DocumentOwner")
+  documentComments DocumentComment[] @relation("DocumentCommentAuthor")
+  ownedKBArticles  KBArticle[]       @relation("KBArticleOwner")
 
   // Email Relations
   emailEvents EmailEvent[]
@@ -2465,3 +2484,414 @@ model Task {
 
 // [KAVEN_MODULE:NOTIFICATIONS BEGIN]
 // [KAVEN_MODULE:NOTIFICATIONS END]
+
+// ===========================
+// DOCUMENTS + KNOWLEDGE BASE MODULE
+// ===========================
+// Gestão documental completa: folders, versionamento, comentários,
+// compartilhamento granular, templates e base de conhecimento (KB).
+// Multi-tenant isolado via tenantId em todos os models.
+
+// [KAVEN_MODULE:DOCUMENTS_KB BEGIN]
+
+enum DocumentStatus {
+  DRAFT
+  UNDER_REVIEW
+  APPROVED
+  PUBLISHED
+  ARCHIVED
+}
+
+enum DocumentVisibility {
+  PRIVATE
+  FOLDER_MEMBERS
+  TENANT
+}
+
+enum SharePermission {
+  VIEWER
+  COMMENTER
+  EDITOR
+  ADMIN
+}
+
+enum KBArticleStatus {
+  DRAFT
+  PUBLISHED
+  NEEDS_REVIEW
+  ARCHIVED
+}
+
+enum DocumentCommentStatus {
+  OPEN
+  RESOLVED
+  DELETED
+}
+
+enum TemplateCategory {
+  LEGAL
+  HR
+  FINANCE
+  MARKETING
+  PROJECTS
+  CLIENTS
+  GENERAL
+}
+
+// ----------------------------
+// 1. Folder — Hierarchical folder organization
+// ----------------------------
+
+model Folder {
+  id          String              @id @default(cuid())
+  tenantId    String              @map("tenant_id")
+  name        String
+  description String?
+  color       String?
+  icon        String?
+  parentId    String?             @map("parent_id")
+  visibility  DocumentVisibility  @default(FOLDER_MEMBERS)
+  ownerId     String              @map("owner_id")
+  isSystem    Boolean             @default(false) @map("is_system")
+  systemSlug  String?             @map("system_slug")
+  createdAt   DateTime            @default(now()) @map("created_at")
+  updatedAt   DateTime            @updatedAt @map("updated_at")
+  archivedAt  DateTime?           @map("archived_at")
+
+  // Relations
+  tenant    Tenant    @relation("TenantFolders", fields: [tenantId], references: [id], onDelete: Cascade)
+  owner     User      @relation("FolderOwner", fields: [ownerId], references: [id])
+  parent    Folder?   @relation("FolderChildren", fields: [parentId], references: [id])
+  children  Folder[]  @relation("FolderChildren")
+  documents Document[]
+  shares    FolderShare[]
+
+  @@index([tenantId])
+  @@index([tenantId, parentId])
+  @@index([tenantId, systemSlug])
+  @@map("folders")
+}
+
+// ----------------------------
+// 2. FolderShare — Explicit folder access permission
+// ----------------------------
+
+model FolderShare {
+  id         String          @id @default(cuid())
+  tenantId   String          @map("tenant_id")
+  folderId   String          @map("folder_id")
+  userId     String?         @map("user_id")
+  groupId    String?         @map("group_id")
+  permission SharePermission
+  grantedBy  String          @map("granted_by")
+  grantedAt  DateTime        @default(now()) @map("granted_at")
+  expiresAt  DateTime?       @map("expires_at")
+
+  // Relations
+  tenant Tenant @relation("TenantFolderShares", fields: [tenantId], references: [id], onDelete: Cascade)
+  folder Folder @relation(fields: [folderId], references: [id], onDelete: Cascade)
+
+  @@unique([folderId, userId])
+  @@unique([folderId, groupId])
+  @@index([tenantId, userId])
+  @@map("folder_shares")
+}
+
+// ----------------------------
+// 3. Document — File or rich-text document
+// ----------------------------
+
+model Document {
+  id               String              @id @default(cuid())
+  tenantId         String              @map("tenant_id")
+  folderId         String?             @map("folder_id")
+  title            String
+  description      String?
+  status           DocumentStatus      @default(DRAFT)
+  visibility       DocumentVisibility  @default(FOLDER_MEMBERS)
+  fileKey          String?             @map("file_key")
+  fileName         String?             @map("file_name")
+  fileSize         Int?                @map("file_size")
+  mimeType         String?             @map("mime_type")
+  isRichText       Boolean             @default(false) @map("is_rich_text")
+  richContent      Json?               @map("rich_content")
+  summary          String?
+  tags             String[]
+  embedding        Unsupported("vector(1536)")?
+  linkedModule     String?             @map("linked_module")
+  linkedId         String?             @map("linked_id")
+  ownerId          String              @map("owner_id")
+  currentVersionId String?             @map("current_version_id")
+  versionCount     Int                 @default(1) @map("version_count")
+  downloadCount    Int                 @default(0) @map("download_count")
+  viewCount        Int                 @default(0) @map("view_count")
+  createdAt        DateTime            @default(now()) @map("created_at")
+  updatedAt        DateTime            @updatedAt @map("updated_at")
+  archivedAt       DateTime?           @map("archived_at")
+  deletedAt        DateTime?           @map("deleted_at")
+
+  // Relations
+  tenant         Tenant                 @relation("TenantDocuments", fields: [tenantId], references: [id], onDelete: Cascade)
+  owner          User                   @relation("DocumentOwner", fields: [ownerId], references: [id])
+  folder         Folder?                @relation(fields: [folderId], references: [id])
+  versions       DocumentVersion[]
+  comments       DocumentComment[]
+  shares         DocumentShare[]
+  templateUsages DocumentTemplateUsage[]
+
+  @@index([tenantId])
+  @@index([tenantId, folderId])
+  @@index([tenantId, status])
+  @@index([tenantId, linkedModule, linkedId])
+  @@index([tenantId, ownerId])
+  @@index([tenantId, tags])
+  @@map("documents")
+}
+
+// ----------------------------
+// 4. DocumentVersion — Immutable version snapshot
+// ----------------------------
+
+model DocumentVersion {
+  id            String   @id @default(cuid())
+  tenantId      String   @map("tenant_id")
+  documentId    String   @map("document_id")
+  versionNumber Int      @map("version_number")
+  label         String?
+  fileKey       String?  @map("file_key")
+  fileSize      Int?     @map("file_size")
+  mimeType      String?  @map("mime_type")
+  richContent   Json?    @map("rich_content")
+  changeLog     String?  @map("change_log")
+  createdBy     String   @map("created_by")
+  createdAt     DateTime @default(now()) @map("created_at")
+  summary       String?
+  embedding     Unsupported("vector(1536)")?
+
+  // Relations
+  tenant   Tenant   @relation("TenantDocumentVersions", fields: [tenantId], references: [id], onDelete: Cascade)
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, versionNumber])
+  @@index([tenantId, documentId])
+  @@map("document_versions")
+}
+
+// ----------------------------
+// 5. DocumentComment — Inline comment with threading
+// ----------------------------
+
+model DocumentComment {
+  id         String                @id @default(cuid())
+  tenantId   String                @map("tenant_id")
+  documentId String                @map("document_id")
+  parentId   String?               @map("parent_id")
+  status     DocumentCommentStatus @default(OPEN)
+  content    String
+  mentions   String[]
+  anchorId   String?               @map("anchor_id")
+  anchorText String?               @map("anchor_text")
+  authorId   String                @map("author_id")
+  resolvedBy String?               @map("resolved_by")
+  resolvedAt DateTime?             @map("resolved_at")
+  createdAt  DateTime              @default(now()) @map("created_at")
+  updatedAt  DateTime              @updatedAt @map("updated_at")
+  deletedAt  DateTime?             @map("deleted_at")
+
+  // Relations
+  tenant   Tenant           @relation("TenantDocumentComments", fields: [tenantId], references: [id], onDelete: Cascade)
+  document Document         @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  author   User             @relation("DocumentCommentAuthor", fields: [authorId], references: [id])
+  parent   DocumentComment? @relation("CommentReplies", fields: [parentId], references: [id])
+  replies  DocumentComment[] @relation("CommentReplies")
+
+  @@index([tenantId, documentId])
+  @@index([tenantId, authorId])
+  @@map("document_comments")
+}
+
+// ----------------------------
+// 6. DocumentShare — Document-level sharing
+// ----------------------------
+
+model DocumentShare {
+  id         String          @id @default(cuid())
+  tenantId   String          @map("tenant_id")
+  documentId String          @map("document_id")
+  userId     String?         @map("user_id")
+  groupId    String?         @map("group_id")
+  email      String?
+  permission SharePermission
+  token      String?         @unique
+  grantedBy  String          @map("granted_by")
+  grantedAt  DateTime        @default(now()) @map("granted_at")
+  expiresAt  DateTime?       @map("expires_at")
+  accessedAt DateTime?       @map("accessed_at")
+
+  // Relations
+  tenant   Tenant   @relation("TenantDocumentShares", fields: [tenantId], references: [id], onDelete: Cascade)
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, userId])
+  @@unique([documentId, groupId])
+  @@index([tenantId, userId])
+  @@index([token])
+  @@map("document_shares")
+}
+
+// ----------------------------
+// 7. KBArticle — Knowledge base wiki article
+// ----------------------------
+
+model KBArticle {
+  id            String          @id @default(cuid())
+  tenantId      String          @map("tenant_id")
+  categoryId    String?         @map("category_id")
+  title         String
+  slug          String
+  status        KBArticleStatus @default(DRAFT)
+  content       String
+  excerpt       String?
+  summary       String?
+  tags          String[]
+  embedding     Unsupported("vector(1536)")?
+  linkedModule  String?         @map("linked_module")
+  relatedDocIds String[]        @map("related_doc_ids")
+  expertId      String?         @map("expert_id")
+  verifiedAt    DateTime?       @map("verified_at")
+  expiresAt     DateTime?       @map("expires_at")
+  needsReview   Boolean         @default(false) @map("needs_review")
+  viewCount     Int             @default(0) @map("view_count")
+  likeCount     Int             @default(0) @map("like_count")
+  helpfulCount  Int             @default(0) @map("helpful_count")
+  version       Int             @default(1)
+  publishedAt   DateTime?       @map("published_at")
+  ownerId       String          @map("owner_id")
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+  archivedAt    DateTime?       @map("archived_at")
+
+  // Relations
+  tenant   Tenant      @relation("TenantKBArticles", fields: [tenantId], references: [id], onDelete: Cascade)
+  owner    User        @relation("KBArticleOwner", fields: [ownerId], references: [id])
+  category KBCategory? @relation(fields: [categoryId], references: [id])
+
+  @@unique([tenantId, slug])
+  @@index([tenantId])
+  @@index([tenantId, categoryId])
+  @@index([tenantId, status])
+  @@index([tenantId, tags])
+  @@map("kb_articles")
+}
+
+// ----------------------------
+// 8. KBCategory — Hierarchical KB categories
+// ----------------------------
+
+model KBCategory {
+  id         String   @id @default(cuid())
+  tenantId   String   @map("tenant_id")
+  name       String
+  slug       String
+  description String?
+  icon       String?
+  color      String?
+  parentId   String?  @map("parent_id")
+  order      Int      @default(0)
+  isSystem   Boolean  @default(false) @map("is_system")
+  systemSlug String?  @map("system_slug")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  tenant   Tenant       @relation("TenantKBCategories", fields: [tenantId], references: [id], onDelete: Cascade)
+  parent   KBCategory?  @relation("CategoryChildren", fields: [parentId], references: [id])
+  children KBCategory[] @relation("CategoryChildren")
+  articles KBArticle[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, parentId])
+  @@map("kb_categories")
+}
+
+// ----------------------------
+// 9. DocumentTemplate — Reusable document template
+// ----------------------------
+
+model DocumentTemplate {
+  id           String           @id @default(cuid())
+  tenantId     String?          @map("tenant_id") // null = global system template
+  name         String
+  description  String?
+  category     TemplateCategory
+  content      Json
+  fileKey      String?          @map("file_key")
+  mimeType     String?          @map("mime_type")
+  tags         String[]
+  previewUrl   String?          @map("preview_url")
+  usageCount   Int              @default(0) @map("usage_count")
+  isActive     Boolean          @default(true) @map("is_active")
+  isSystem     Boolean          @default(false) @map("is_system")
+  linkedModule String?          @map("linked_module")
+  createdBy    String?          @map("created_by")
+  createdAt    DateTime         @default(now()) @map("created_at")
+  updatedAt    DateTime         @updatedAt @map("updated_at")
+
+  // Relations
+  tenant Tenant? @relation("TenantDocumentTemplates", fields: [tenantId], references: [id], onDelete: Cascade)
+  usages DocumentTemplateUsage[]
+
+  @@index([tenantId])
+  @@index([tenantId, category])
+  @@index([tenantId, linkedModule])
+  @@map("document_templates")
+}
+
+// ----------------------------
+// 10. DocumentTemplateUsage — Template usage record
+// ----------------------------
+
+model DocumentTemplateUsage {
+  id         String   @id @default(cuid())
+  tenantId   String   @map("tenant_id")
+  templateId String   @map("template_id")
+  documentId String   @map("document_id")
+  usedBy     String   @map("used_by")
+  usedAt     DateTime @default(now()) @map("used_at")
+
+  // Relations
+  tenant   Tenant           @relation("TenantDocumentTemplateUsages", fields: [tenantId], references: [id], onDelete: Cascade)
+  template DocumentTemplate @relation(fields: [templateId], references: [id])
+  document Document         @relation(fields: [documentId], references: [id])
+
+  @@index([tenantId, templateId])
+  @@map("document_template_usages")
+}
+
+// ----------------------------
+// 11. DocumentActivityLog — Audit trail
+// ----------------------------
+
+model DocumentActivityLog {
+  id         String   @id @default(cuid())
+  tenantId   String   @map("tenant_id")
+  documentId String?  @map("document_id")
+  articleId  String?  @map("article_id")
+  actorId    String   @map("actor_id")
+  action     String
+  metadata   Json?
+  ipAddress  String?  @map("ip_address")
+  userAgent  String?  @map("user_agent")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // Relations
+  tenant Tenant @relation("TenantDocumentActivityLogs", fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, documentId])
+  @@index([tenantId, articleId])
+  @@index([tenantId, actorId])
+  @@index([tenantId, createdAt])
+  @@map("document_activity_logs")
+}
+
+// [KAVEN_MODULE:DOCUMENTS_KB END]
