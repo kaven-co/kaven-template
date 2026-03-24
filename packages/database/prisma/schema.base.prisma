@@ -436,6 +436,22 @@ model Tenant {
   projectExpenses        ProjectExpense[]        @relation("TenantProjectExpenses")
   projectDocuments       ProjectDocument[]       @relation("TenantProjectDocuments")
 
+  // People + HR Module
+  employees              Employee[]              @relation("TenantEmployees")
+  departments            Department[]            @relation("TenantDepartments")
+  hiringJobs             HiringJob[]             @relation("TenantHiringJobs")
+  applicants             Applicant[]             @relation("TenantApplicants")
+  applications           Application[]           @relation("TenantApplications")
+  interviewStages        InterviewStage[]        @relation("TenantInterviewStages")
+  onboardingPlans        OnboardingPlan[]        @relation("TenantOnboardingPlans")
+  reviewCycles           ReviewCycle[]           @relation("TenantReviewCycles")
+  performanceReviews     PerformanceReview[]     @relation("TenantPerformanceReviews")
+  oneOnOnes              OneOnOne[]              @relation("TenantOneOnOnes")
+  hrTimeEntries          HrTimeEntry[]           @relation("TenantHrTimeEntries")
+  lgpdConsents           LgpdConsent[]           @relation("TenantLgpdConsents")
+  lgpdRetentionPolicies  LgpdRetentionPolicy[]   @relation("TenantLgpdRetentionPolicies")
+  peopleAuditLogs        PeopleAuditLog[]        @relation("TenantPeopleAuditLogs")
+
   // Finance Module
   chartOfAccounts        ChartOfAccount[]        @relation("TenantChartOfAccounts")
   bankAccounts           BankAccount[]           @relation("TenantBankAccounts")
@@ -549,6 +565,9 @@ model User {
   createdSegments     Segment[]            @relation("SegmentCreator")
   lifecycleChanges    LifecycleHistory[]   @relation("LifecycleChangedBy")
   sharedContactsBy    SharedContact[]      @relation("SharedContactBy")
+
+  // People + HR Module
+  employeeProfile Employee? @relation("EmployeeUser")
 
   // Finance Module
   createdFinancialEntries FinancialEntry[] @relation("FinancialEntryCreator")
