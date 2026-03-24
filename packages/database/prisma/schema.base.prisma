@@ -579,6 +579,43 @@ model Tenant {
   agentTelemetry         AgentTelemetry[]        @relation("TenantAgentTelemetry")
   agentActions           AgentAction[]           @relation("TenantAgentActions")
   costBudgets            CostBudget[]            @relation("TenantCostBudgets")
+  // Case/Matter Management module
+  cases                  Case[]                  @relation("TenantCases")
+  caseMatters            CaseMatter[]            @relation("TenantCaseMatters")
+  caseStatusHistories    CaseStatusHistory[]     @relation("TenantCaseStatusHistories")
+  caseParties            CaseParty[]             @relation("TenantCaseParties")
+  caseTasks              CaseTask[]              @relation("TenantCaseTasks")
+  caseDeadlines          CaseDeadline[]          @relation("TenantCaseDeadlines")
+  caseTimeEntries        CaseTimeEntry[]         @relation("TenantCaseTimeEntries")
+  billableRecords        BillableRecord[]        @relation("TenantBillableRecords")
+  trustAccounts          TrustAccount[]          @relation("TenantTrustAccounts")
+  trustTransactions      TrustTransaction[]      @relation("TenantTrustTransactions")
+  caseDocuments          CaseDocument[]          @relation("TenantCaseDocuments")
+  caseNotes              CaseNote[]              @relation("TenantCaseNotes")
+  // SaaS Operations module
+  mrrSnapshots           MRRSnapshot[]           @relation("TenantMRRSnapshots")
+  stripeWebhookEvents    StripeWebhookEvent[]    @relation("TenantStripeWebhookEvents")
+  churnEvents            ChurnEvent[]            @relation("TenantChurnEvents")
+  featureAdoptionLogs    FeatureAdoptionLog[]    @relation("TenantFeatureAdoptionLogs")
+  revenueMetrics         RevenueMetric[]         @relation("TenantRevenueMetrics")
+  customerHealthScores   CustomerHealthScore[]   @relation("TenantCustomerHealthScores")
+
+  // Property Management Module
+  properties             Property[]              @relation("TenantProperties")
+  propertyUnits          PropertyUnit[]          @relation("TenantPropertyUnits")
+  renters                Renter[]                @relation("TenantRenters")
+  guarantors             Guarantor[]             @relation("TenantGuarantors")
+  leases                 Lease[]                 @relation("TenantLeases")
+  rentPayments           RentPayment[]           @relation("TenantRentPayments")
+
+  // Inventory & Fulfillment Module
+  warehouses             Warehouse[]             @relation("TenantWarehouses")
+  stockItems             StockItem[]             @relation("TenantStockItems")
+  stockMovements         StockMovement[]         @relation("TenantStockMovements")
+  salesOrders            SalesOrder[]            @relation("TenantSalesOrders")
+  salesOrderItems        SalesOrderItem[]        @relation("TenantSalesOrderItems")
+  purchaseOrders         PurchaseOrder[]         @relation("TenantPurchaseOrders")
+  purchaseOrderItems     PurchaseOrderItem[]     @relation("TenantPurchaseOrderItems")
 
   @@index([slug])
   @@index([domain])
@@ -788,6 +825,24 @@ model User {
   createdAutomationRules  AutomationRule[]        @relation("AutomationRuleCreator")
   agentActionsTriggered   AgentAction[]           @relation("AgentActionUser")
   createdCostBudgets      CostBudget[]            @relation("CostBudgetCreator")
+  // Case/Matter Management module
+  leadCases               Case[]                  @relation("CaseLeadAttorney")
+  caseStatusChanges       CaseStatusHistory[]     @relation("CaseStatusChangedBy")
+  createdCaseTasks        CaseTask[]              @relation("CaseTaskCreatedBy")
+  caseTimeEntries         CaseTimeEntry[]         @relation("CaseTimeEntryUser")
+  trustTransactions       TrustTransaction[]      @relation("TrustTransactionAuthorizer")
+  uploadedCaseDocuments   CaseDocument[]          @relation("CaseDocumentUploader")
+  caseNotesAuthored       CaseNote[]              @relation("CaseNoteAuthor")
+
+  // Property Management Module
+  createdProperties       Property[]              @relation("PropertyCreator")
+  createdLeases           Lease[]                 @relation("LeaseCreator")
+
+  // Inventory & Fulfillment Module
+  createdWarehouses       Warehouse[]             @relation("WarehouseCreator")
+  createdStockMovements   StockMovement[]         @relation("StockMovementCreator")
+  createdSalesOrders      SalesOrder[]            @relation("SalesOrderCreator")
+  createdPurchaseOrders   PurchaseOrder[]         @relation("PurchaseOrderCreator")
 
   @@index([email])
   @@index([tenantId])

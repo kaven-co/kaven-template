@@ -26,6 +26,10 @@ import { seedGovernance } from "./seeds/governance-seed";
 import { seedGovernanceFeatureFlags } from "./seeds/feature-flags-governance";
 import { seedAdsFeatureFlags } from "./seeds/feature-flags-ads";
 import { seedAiFeatureFlags } from "./seeds/feature-flags-ai";
+import { seedCaseMatterFeatureFlags } from "./seeds/feature-flags-case-matter";
+import { seedSaasOpsFeatureFlags } from "./seeds/feature-flags-saas-ops";
+import { seedPropertyManagementFeatureFlags } from "./seeds/feature-flags-property-management";
+import { seedInventoryFeatureFlags } from "./seeds/feature-flags-inventory";
 
 const prisma = new PrismaClient({
   datasources: {
@@ -693,6 +697,18 @@ async function main() {
 
   // 24. AI Automation Feature Flags
   await seedAiFeatureFlags();
+
+  // 25. Case/Matter Management Feature Flags
+  await seedCaseMatterFeatureFlags();
+
+  // 26. SaaS Operations Feature Flags
+  await seedSaasOpsFeatureFlags();
+
+  // 25. Property Management Feature Flags
+  await seedPropertyManagementFeatureFlags();
+
+  // 26. Inventory & Fulfillment Feature Flags
+  await seedInventoryFeatureFlags();
 
   console.log("\n=============================================");
   console.log("✅ Seed Finished Successfully");
