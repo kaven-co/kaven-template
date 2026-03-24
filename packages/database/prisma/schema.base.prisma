@@ -506,6 +506,25 @@ model Tenant {
   closedPeriods          ClosedPeriod[]          @relation("TenantClosedPeriods")
   kpiDefinitions         KPIDefinition[]         @relation("TenantKPIDefinitions")
 
+  // Content Operations Module
+  contentCalendars       ContentCalendar[]       @relation("TenantContentCalendars")
+  contentBriefs          ContentBrief[]          @relation("TenantContentBriefs")
+  contentPieces          ContentPiece[]          @relation("TenantContentPieces")
+  contentReviews         ContentReview[]         @relation("TenantContentReviews")
+  contentAssets          ContentAsset[]          @relation("TenantContentAssets")
+  contentChannels        ContentChannel[]        @relation("TenantContentChannels")
+  contentPerformance     ContentPerformance[]    @relation("TenantContentPerformance")
+  contentStatusHistories ContentStatusHistory[]  @relation("TenantContentStatusHistories")
+
+  // Compliance & Security Module
+  complianceChecklists   ComplianceChecklist[]   @relation("TenantComplianceChecklists")
+  complianceItems        ComplianceItem[]        @relation("TenantComplianceItems")
+  complianceReports      ComplianceReport[]      @relation("TenantComplianceReports")
+  incidentResponses      IncidentResponse[]      @relation("TenantIncidentResponses")
+  incidentTimelines      IncidentTimeline[]      @relation("TenantIncidentTimelines")
+  insurancePolicies      InsurancePolicy[]       @relation("TenantInsurancePolicies")
+  securityAssessments    SecurityAssessment[]    @relation("TenantSecurityAssessments")
+
   @@index([slug])
   @@index([domain])
   @@index([status])
@@ -639,6 +658,26 @@ model User {
   boardMemberships         BoardMember[]      @relation("BoardMemberUser")
   ownedStrategicPillars    StrategicPillar[]  @relation("StrategicPillarOwner")
   updatedMissionStatements MissionStatement[] @relation("MissionStatementUpdater")
+
+  // Content Operations Module
+  createdContentCalendars   ContentCalendar[]      @relation("ContentCalendarCreator")
+  createdContentBriefs      ContentBrief[]         @relation("ContentBriefCreator")
+  assignedContentPieces     ContentPiece[]         @relation("ContentPieceAssignee")
+  createdContentPieces      ContentPiece[]         @relation("ContentPieceCreator")
+  contentReviewsMade        ContentReview[]        @relation("ContentReviewer")
+  uploadedContentAssets     ContentAsset[]         @relation("ContentAssetUploader")
+  contentStatusChanges      ContentStatusHistory[] @relation("ContentStatusChanger")
+
+  // Compliance & Security Module
+  createdComplianceChecklists ComplianceChecklist[] @relation("ComplianceChecklistCreator")
+  assignedComplianceItems     ComplianceItem[]      @relation("ComplianceItemAssignee")
+  verifiedComplianceItems     ComplianceItem[]      @relation("ComplianceItemVerifier")
+  generatedComplianceReports  ComplianceReport[]    @relation("ComplianceReportGenerator")
+  reportedIncidents           IncidentResponse[]    @relation("IncidentReporter")
+  assignedIncidents           IncidentResponse[]    @relation("IncidentAssignee")
+  incidentTimelineEntries     IncidentTimeline[]    @relation("IncidentTimelineCreator")
+  createdInsurancePolicies    InsurancePolicy[]     @relation("InsurancePolicyCreator")
+  createdSecurityAssessments  SecurityAssessment[]  @relation("SecurityAssessmentCreator")
 
   // Finance Module
   createdFinancialEntries FinancialEntry[] @relation("FinancialEntryCreator")

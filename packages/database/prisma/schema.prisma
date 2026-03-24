@@ -506,6 +506,25 @@ model Tenant {
   closedPeriods        ClosedPeriod[]        @relation("TenantClosedPeriods")
   kpiDefinitions       KPIDefinition[]       @relation("TenantKPIDefinitions")
 
+  // Content Operations Module
+  contentCalendars       ContentCalendar[]      @relation("TenantContentCalendars")
+  contentBriefs          ContentBrief[]         @relation("TenantContentBriefs")
+  contentPieces          ContentPiece[]         @relation("TenantContentPieces")
+  contentReviews         ContentReview[]        @relation("TenantContentReviews")
+  contentAssets          ContentAsset[]         @relation("TenantContentAssets")
+  contentChannels        ContentChannel[]       @relation("TenantContentChannels")
+  contentPerformance     ContentPerformance[]   @relation("TenantContentPerformance")
+  contentStatusHistories ContentStatusHistory[] @relation("TenantContentStatusHistories")
+
+  // Compliance & Security Module
+  complianceChecklists ComplianceChecklist[] @relation("TenantComplianceChecklists")
+  complianceItems      ComplianceItem[]      @relation("TenantComplianceItems")
+  complianceReports    ComplianceReport[]    @relation("TenantComplianceReports")
+  incidentResponses    IncidentResponse[]    @relation("TenantIncidentResponses")
+  incidentTimelines    IncidentTimeline[]    @relation("TenantIncidentTimelines")
+  insurancePolicies    InsurancePolicy[]     @relation("TenantInsurancePolicies")
+  securityAssessments  SecurityAssessment[]  @relation("TenantSecurityAssessments")
+
   @@index([slug])
   @@index([domain])
   @@index([status])
@@ -639,6 +658,26 @@ model User {
   boardMemberships         BoardMember[]       @relation("BoardMemberUser")
   ownedStrategicPillars    StrategicPillar[]   @relation("StrategicPillarOwner")
   updatedMissionStatements MissionStatement[]  @relation("MissionStatementUpdater")
+
+  // Content Operations Module
+  createdContentCalendars ContentCalendar[]      @relation("ContentCalendarCreator")
+  createdContentBriefs    ContentBrief[]         @relation("ContentBriefCreator")
+  assignedContentPieces   ContentPiece[]         @relation("ContentPieceAssignee")
+  createdContentPieces    ContentPiece[]         @relation("ContentPieceCreator")
+  contentReviewsMade      ContentReview[]        @relation("ContentReviewer")
+  uploadedContentAssets   ContentAsset[]         @relation("ContentAssetUploader")
+  contentStatusChanges    ContentStatusHistory[] @relation("ContentStatusChanger")
+
+  // Compliance & Security Module
+  createdComplianceChecklists ComplianceChecklist[] @relation("ComplianceChecklistCreator")
+  assignedComplianceItems     ComplianceItem[]      @relation("ComplianceItemAssignee")
+  verifiedComplianceItems     ComplianceItem[]      @relation("ComplianceItemVerifier")
+  generatedComplianceReports  ComplianceReport[]    @relation("ComplianceReportGenerator")
+  reportedIncidents           IncidentResponse[]    @relation("IncidentReporter")
+  assignedIncidents           IncidentResponse[]    @relation("IncidentAssignee")
+  incidentTimelineEntries     IncidentTimeline[]    @relation("IncidentTimelineCreator")
+  createdInsurancePolicies    InsurancePolicy[]     @relation("InsurancePolicyCreator")
+  createdSecurityAssessments  SecurityAssessment[]  @relation("SecurityAssessmentCreator")
 
   // Finance Module
   createdFinancialEntries FinancialEntry[] @relation("FinancialEntryCreator")
@@ -6624,3 +6663,660 @@ model MissionStatement {
 }
 
 // [KAVEN_MODULE:GOVERNANCE END]
+
+// ===========================
+// CONTENT OPERATIONS MODULE
+// ===========================
+// Editorial pipeline: calendars, briefs, content pieces, reviews, assets,
+// channels, and performance tracking. Multi-tenant isolated via tenantId.
+
+// [KAVEN_MODULE:CONTENT_OPS BEGIN]
+
+// ---------- Enums ----------
+
+enum ContentStatus {
+  IDEA
+  BRIEF
+  IN_CREATION
+  IN_REVIEW
+  SCHEDULED
+  PUBLISHED
+  ARCHIVED
+  CANCELLED
+
+  @@map("content_status")
+}
+
+enum ContentType {
+  ARTICLE
+  BLOG_POST
+  SOCIAL_POST
+  VIDEO
+  PODCAST
+  NEWSLETTER
+  INFOGRAPHIC
+  EBOOK
+  CASE_STUDY
+  WEBINAR
+  OTHER
+
+  @@map("content_type")
+}
+
+enum AssetType {
+  IMAGE
+  VIDEO
+  AUDIO
+  DOCUMENT
+  SPREADSHEET
+  PRESENTATION
+  ARCHIVE
+  OTHER
+
+  @@map("asset_type")
+}
+
+enum ReviewDecision {
+  APPROVED
+  NEEDS_REVISION
+  REJECTED
+
+  @@map("review_decision")
+}
+
+enum ChannelPlatform {
+  INSTAGRAM
+  FACEBOOK
+  TWITTER
+  LINKEDIN
+  YOUTUBE
+  TIKTOK
+  PINTEREST
+  BLOG
+  NEWSLETTER
+  PODCAST
+  WEBSITE
+  OTHER
+
+  @@map("channel_platform")
+}
+
+enum PerformanceMetricType {
+  VIEWS
+  IMPRESSIONS
+  REACH
+  ENGAGEMENT_RATE
+  LIKES
+  COMMENTS
+  SHARES
+  SAVES
+  CLICKS
+  CTR
+  WATCH_TIME
+  SUBSCRIBERS_GAINED
+  OPEN_RATE
+  CLICK_RATE
+  BOUNCE_RATE
+  CONVERSIONS
+
+  @@map("performance_metric_type")
+}
+
+// ---------- Models ----------
+
+// 1. ContentCalendar — Editorial calendar container
+model ContentCalendar {
+  id            String   @id @default(cuid())
+  tenantId      String   @map("tenant_id")
+  name          String
+  description   String?
+  color         String? // Hex color for UI
+  isDefault     Boolean  @default(false) @map("is_default")
+  leadTimeDays  Int      @default(7) @map("lead_time_days")
+  approvalChain Json?    @map("approval_chain") // JSON array: [{userId, order}]
+  clientId      String?  @map("client_id") // Optional link to CRM contact
+  isActive      Boolean  @default(true) @map("is_active")
+  createdById   String   @map("created_by_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  tenant    Tenant         @relation("TenantContentCalendars", fields: [tenantId], references: [id], onDelete: Cascade)
+  createdBy User           @relation("ContentCalendarCreator", fields: [createdById], references: [id])
+  pieces    ContentPiece[]
+
+  @@index([tenantId, isActive])
+  @@index([tenantId, clientId])
+  @@map("content_calendars")
+}
+
+// 2. ContentBrief — Strategic brief with objectives and KPIs
+model ContentBrief {
+  id                String      @id @default(cuid())
+  tenantId          String      @map("tenant_id")
+  title             String
+  contentType       ContentType @map("content_type")
+  objective         String
+  targetAudience    String?     @map("target_audience")
+  toneOfVoice       String?     @map("tone_of_voice")
+  primaryKeyword    String?     @map("primary_keyword")
+  secondaryKeywords String[]    @map("secondary_keywords")
+  headline          String?
+  outline           Json? // Structured outline (JSON)
+  references        Json? // Reference links/docs (JSON)
+  cta               String? // Call to action
+  kpiTargets        Json?       @map("kpi_targets") // {metric: target} pairs
+  wordCountTarget   Int?        @map("word_count_target")
+  durationTarget    Int?        @map("duration_target") // seconds for video/audio
+  notes             String?
+  createdById       String      @map("created_by_id")
+  createdAt         DateTime    @default(now()) @map("created_at")
+  updatedAt         DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  tenant    Tenant         @relation("TenantContentBriefs", fields: [tenantId], references: [id], onDelete: Cascade)
+  createdBy User           @relation("ContentBriefCreator", fields: [createdById], references: [id])
+  pieces    ContentPiece[]
+
+  @@index([tenantId, contentType])
+  @@index([tenantId, createdById])
+  @@map("content_briefs")
+}
+
+// 3. ContentPiece — Individual content item with state machine
+model ContentPiece {
+  id           String        @id @default(cuid())
+  tenantId     String        @map("tenant_id")
+  calendarId   String        @map("calendar_id")
+  briefId      String?       @map("brief_id")
+  parentId     String?       @map("parent_id") // For repurposed/derived content
+  title        String
+  body         String? // Rich text content
+  contentType  ContentType   @map("content_type")
+  status       ContentStatus @default(IDEA)
+  scheduledAt  DateTime?     @map("scheduled_at")
+  publishedAt  DateTime?     @map("published_at")
+  embargo      DateTime? // Do not publish before this date
+  assignedToId String?       @map("assigned_to_id")
+  channelId    String?       @map("channel_id")
+  tags         String[]
+  metadata     Json? // Flexible metadata (JSON)
+  createdById  String        @map("created_by_id")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  tenant        Tenant                 @relation("TenantContentPieces", fields: [tenantId], references: [id], onDelete: Cascade)
+  calendar      ContentCalendar        @relation(fields: [calendarId], references: [id], onDelete: Cascade)
+  brief         ContentBrief?          @relation(fields: [briefId], references: [id], onDelete: SetNull)
+  parent        ContentPiece?          @relation("ContentPieceRepurpose", fields: [parentId], references: [id], onDelete: SetNull)
+  children      ContentPiece[]         @relation("ContentPieceRepurpose")
+  assignedTo    User?                  @relation("ContentPieceAssignee", fields: [assignedToId], references: [id])
+  channel       ContentChannel?        @relation(fields: [channelId], references: [id], onDelete: SetNull)
+  createdBy     User                   @relation("ContentPieceCreator", fields: [createdById], references: [id])
+  reviews       ContentReview[]
+  assets        ContentAsset[]
+  performance   ContentPerformance[]
+  statusHistory ContentStatusHistory[]
+
+  @@index([tenantId, status])
+  @@index([tenantId, calendarId])
+  @@index([tenantId, contentType])
+  @@index([tenantId, scheduledAt])
+  @@index([tenantId, assignedToId])
+  @@map("content_pieces")
+}
+
+// 4. ContentReview — Multi-level review/approval entries
+model ContentReview {
+  id          String         @id @default(cuid())
+  tenantId    String         @map("tenant_id")
+  pieceId     String         @map("piece_id")
+  reviewerId  String         @map("reviewer_id")
+  decision    ReviewDecision
+  comments    String?
+  round       Int            @default(1) // Review round number
+  reviewOrder Int            @default(0) @map("review_order") // Position in approval chain
+  createdAt   DateTime       @default(now()) @map("created_at")
+
+  // Relations
+  tenant   Tenant       @relation("TenantContentReviews", fields: [tenantId], references: [id], onDelete: Cascade)
+  piece    ContentPiece @relation(fields: [pieceId], references: [id], onDelete: Cascade)
+  reviewer User         @relation("ContentReviewer", fields: [reviewerId], references: [id])
+
+  @@index([tenantId, pieceId])
+  @@index([tenantId, reviewerId])
+  @@map("content_reviews")
+}
+
+// 5. ContentAsset — Media files linked to content
+model ContentAsset {
+  id           String    @id @default(cuid())
+  tenantId     String    @map("tenant_id")
+  pieceId      String    @map("piece_id")
+  fileName     String    @map("file_name")
+  fileSize     Int       @map("file_size") // bytes
+  mimeType     String    @map("mime_type")
+  assetType    AssetType @map("asset_type")
+  storagePath  String    @map("storage_path")
+  width        Int? // pixels, for images/video
+  height       Int? // pixels, for images/video
+  duration     Int? // seconds, for video/audio
+  metadata     Json? // Extra metadata (JSON)
+  uploadedById String    @map("uploaded_by_id")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  tenant     Tenant       @relation("TenantContentAssets", fields: [tenantId], references: [id], onDelete: Cascade)
+  piece      ContentPiece @relation(fields: [pieceId], references: [id], onDelete: Cascade)
+  uploadedBy User         @relation("ContentAssetUploader", fields: [uploadedById], references: [id])
+
+  @@index([tenantId, pieceId])
+  @@index([tenantId, assetType])
+  @@map("content_assets")
+}
+
+// 6. ContentChannel — Publication channel
+model ContentChannel {
+  id           String          @id @default(cuid())
+  tenantId     String          @map("tenant_id")
+  name         String
+  platform     ChannelPlatform
+  accountName  String?         @map("account_name")
+  accountUrl   String?         @map("account_url")
+  accessConfig Json?           @map("access_config") // OAuth scaffold (JSON)
+  isActive     Boolean         @default(true) @map("is_active")
+  createdAt    DateTime        @default(now()) @map("created_at")
+  updatedAt    DateTime        @updatedAt @map("updated_at")
+
+  // Relations
+  tenant      Tenant               @relation("TenantContentChannels", fields: [tenantId], references: [id], onDelete: Cascade)
+  pieces      ContentPiece[]
+  performance ContentPerformance[]
+
+  @@unique([tenantId, platform, accountName])
+  @@index([tenantId, isActive])
+  @@map("content_channels")
+}
+
+// 7. ContentPerformance — Performance metrics per piece/channel
+model ContentPerformance {
+  id          String                @id @default(cuid())
+  tenantId    String                @map("tenant_id")
+  pieceId     String                @map("piece_id")
+  channelId   String?               @map("channel_id")
+  metricType  PerformanceMetricType @map("metric_type")
+  value       Float
+  periodStart DateTime              @map("period_start")
+  periodEnd   DateTime              @map("period_end")
+  recordedAt  DateTime              @default(now()) @map("recorded_at")
+
+  // Relations
+  tenant  Tenant          @relation("TenantContentPerformance", fields: [tenantId], references: [id], onDelete: Cascade)
+  piece   ContentPiece    @relation(fields: [pieceId], references: [id], onDelete: Cascade)
+  channel ContentChannel? @relation(fields: [channelId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, pieceId])
+  @@index([tenantId, metricType])
+  @@index([tenantId, periodStart, periodEnd])
+  @@map("content_performance")
+}
+
+// 8. ContentStatusHistory — Immutable status audit trail
+model ContentStatusHistory {
+  id          String         @id @default(cuid())
+  tenantId    String         @map("tenant_id")
+  pieceId     String         @map("piece_id")
+  fromStatus  ContentStatus? @map("from_status")
+  toStatus    ContentStatus  @map("to_status")
+  changedById String         @map("changed_by_id")
+  reason      String?
+  createdAt   DateTime       @default(now()) @map("created_at")
+
+  // Relations
+  tenant    Tenant       @relation("TenantContentStatusHistories", fields: [tenantId], references: [id], onDelete: Cascade)
+  piece     ContentPiece @relation(fields: [pieceId], references: [id], onDelete: Cascade)
+  changedBy User         @relation("ContentStatusChanger", fields: [changedById], references: [id])
+
+  @@index([tenantId, pieceId])
+  @@map("content_status_histories")
+}
+
+// [KAVEN_MODULE:CONTENT_OPS END]
+
+// ===========================
+// COMPLIANCE & SECURITY MODULE
+// ===========================
+// Compliance checklists, incident response, insurance tracking,
+// and security assessments. Multi-tenant isolated via tenantId.
+
+// [KAVEN_MODULE:COMPLIANCE_SECURITY BEGIN]
+
+// ---------- Enums ----------
+
+enum ComplianceFrameworkType {
+  LGPD
+  SOC2
+  ISO27001
+  GDPR
+  HIPAA
+  PCI_DSS
+  CUSTOM
+
+  @@map("compliance_framework_type")
+}
+
+enum ComplianceItemStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  IMPLEMENTED
+  VERIFIED
+  NON_COMPLIANT
+  NOT_APPLICABLE
+
+  @@map("compliance_item_status")
+}
+
+enum IncidentSeverity {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+
+  @@map("incident_severity")
+}
+
+enum IncidentStatus {
+  OPEN
+  INVESTIGATING
+  MITIGATING
+  RESOLVED
+  CLOSED
+  POST_MORTEM
+
+  @@map("incident_status")
+}
+
+enum IncidentTimelineType {
+  DETECTION
+  NOTIFICATION
+  ESCALATION
+  ACTION_TAKEN
+  MITIGATION
+  RESOLUTION
+  COMMUNICATION
+  POST_MORTEM
+
+  @@map("incident_timeline_type")
+}
+
+enum InsurancePolicyType {
+  CYBER
+  GENERAL_LIABILITY
+  PROFESSIONAL_LIABILITY
+  DIRECTORS_OFFICERS
+  PROPERTY
+  WORKERS_COMP
+  OTHER
+
+  @@map("insurance_policy_type")
+}
+
+enum InsurancePolicyStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+  PENDING_RENEWAL
+
+  @@map("insurance_policy_status")
+}
+
+enum AssessmentType {
+  VULNERABILITY_SCAN
+  PENETRATION_TEST
+  CODE_REVIEW
+  INFRASTRUCTURE_AUDIT
+  POLICY_REVIEW
+  VENDOR_ASSESSMENT
+  CUSTOM
+
+  @@map("assessment_type")
+}
+
+enum AssessmentStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+
+  @@map("assessment_status")
+}
+
+enum RiskLevel {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+  INFORMATIONAL
+
+  @@map("risk_level")
+}
+
+// ---------- Models ----------
+
+// 1. ComplianceChecklist — Checklist for a specific framework
+model ComplianceChecklist {
+  id            String                  @id @default(cuid())
+  tenantId      String                  @map("tenant_id")
+  name          String
+  description   String?
+  frameworkType ComplianceFrameworkType @map("framework_type")
+  version       String                  @default("1.0")
+  isTemplate    Boolean                 @default(false) @map("is_template")
+  dueDate       DateTime?               @map("due_date")
+  completedAt   DateTime?               @map("completed_at")
+  score         Float? // Overall compliance score (0-100)
+  createdById   String                  @map("created_by_id")
+  createdAt     DateTime                @default(now()) @map("created_at")
+  updatedAt     DateTime                @updatedAt @map("updated_at")
+
+  // Relations
+  tenant    Tenant             @relation("TenantComplianceChecklists", fields: [tenantId], references: [id], onDelete: Cascade)
+  createdBy User               @relation("ComplianceChecklistCreator", fields: [createdById], references: [id])
+  items     ComplianceItem[]
+  reports   ComplianceReport[]
+
+  @@index([tenantId, frameworkType])
+  @@index([tenantId, isTemplate])
+  @@map("compliance_checklists")
+}
+
+// 2. ComplianceItem — Individual control/requirement
+model ComplianceItem {
+  id           String               @id @default(cuid())
+  tenantId     String               @map("tenant_id")
+  checklistId  String               @map("checklist_id")
+  controlRef   String               @map("control_ref") // e.g., "A.5.1" for ISO27001
+  title        String
+  description  String?
+  category     String? // Logical grouping
+  status       ComplianceItemStatus @default(NOT_STARTED)
+  weight       Float                @default(1.0) // Weight for scoring
+  evidence     Json? // Evidence references (JSON)
+  notes        String?
+  assigneeId   String?              @map("assignee_id")
+  verifiedAt   DateTime?            @map("verified_at")
+  verifiedById String?              @map("verified_by_id")
+  dueDate      DateTime?            @map("due_date")
+  order        Int                  @default(0)
+  createdAt    DateTime             @default(now()) @map("created_at")
+  updatedAt    DateTime             @updatedAt @map("updated_at")
+
+  // Relations
+  tenant     Tenant              @relation("TenantComplianceItems", fields: [tenantId], references: [id], onDelete: Cascade)
+  checklist  ComplianceChecklist @relation(fields: [checklistId], references: [id], onDelete: Cascade)
+  assignee   User?               @relation("ComplianceItemAssignee", fields: [assigneeId], references: [id])
+  verifiedBy User?               @relation("ComplianceItemVerifier", fields: [verifiedById], references: [id])
+
+  @@index([tenantId, checklistId])
+  @@index([tenantId, status])
+  @@index([tenantId, assigneeId])
+  @@map("compliance_items")
+}
+
+// 3. ComplianceReport — Generated compliance report
+model ComplianceReport {
+  id                 String   @id @default(cuid())
+  tenantId           String   @map("tenant_id")
+  checklistId        String   @map("checklist_id")
+  title              String
+  summary            String?
+  overallScore       Float    @map("overall_score") // 0-100
+  totalControls      Int      @map("total_controls")
+  compliantCount     Int      @map("compliant_count")
+  nonCompliantCount  Int      @map("non_compliant_count")
+  notApplicableCount Int      @map("not_applicable_count")
+  findings           Json? // Detailed findings (JSON)
+  recommendations    Json? // Recommendations (JSON)
+  generatedById      String   @map("generated_by_id")
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  // Relations
+  tenant      Tenant              @relation("TenantComplianceReports", fields: [tenantId], references: [id], onDelete: Cascade)
+  checklist   ComplianceChecklist @relation(fields: [checklistId], references: [id], onDelete: Cascade)
+  generatedBy User                @relation("ComplianceReportGenerator", fields: [generatedById], references: [id])
+
+  @@index([tenantId, checklistId])
+  @@index([tenantId, createdAt])
+  @@map("compliance_reports")
+}
+
+// 4. IncidentResponse — Security incident tracking
+model IncidentResponse {
+  id                String           @id @default(cuid())
+  tenantId          String           @map("tenant_id")
+  title             String
+  description       String
+  severity          IncidentSeverity
+  status            IncidentStatus   @default(OPEN)
+  category          String? // e.g., "data_breach", "unauthorized_access"
+  affectedSystems   String[]         @map("affected_systems")
+  impactDescription String?          @map("impact_description")
+  rootCause         String?          @map("root_cause")
+  resolution        String?
+  lessonsLearned    String?          @map("lessons_learned")
+  detectedAt        DateTime         @map("detected_at")
+  acknowledgedAt    DateTime?        @map("acknowledged_at")
+  resolvedAt        DateTime?        @map("resolved_at")
+  closedAt          DateTime?        @map("closed_at")
+  slaDeadline       DateTime?        @map("sla_deadline") // Response SLA
+  reportedById      String           @map("reported_by_id")
+  assignedToId      String?          @map("assigned_to_id")
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
+
+  // Relations
+  tenant     Tenant             @relation("TenantIncidentResponses", fields: [tenantId], references: [id], onDelete: Cascade)
+  reportedBy User               @relation("IncidentReporter", fields: [reportedById], references: [id])
+  assignedTo User?              @relation("IncidentAssignee", fields: [assignedToId], references: [id])
+  timeline   IncidentTimeline[]
+
+  @@index([tenantId, severity])
+  @@index([tenantId, status])
+  @@index([tenantId, detectedAt])
+  @@map("incident_responses")
+}
+
+// 5. IncidentTimeline — Timeline entries for incident response
+model IncidentTimeline {
+  id          String               @id @default(cuid())
+  tenantId    String               @map("tenant_id")
+  incidentId  String               @map("incident_id")
+  entryType   IncidentTimelineType @map("entry_type")
+  description String
+  metadata    Json? // Extra details (JSON)
+  createdById String               @map("created_by_id")
+  createdAt   DateTime             @default(now()) @map("created_at")
+
+  // Relations
+  tenant    Tenant           @relation("TenantIncidentTimelines", fields: [tenantId], references: [id], onDelete: Cascade)
+  incident  IncidentResponse @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  createdBy User             @relation("IncidentTimelineCreator", fields: [createdById], references: [id])
+
+  @@index([tenantId, incidentId])
+  @@map("incident_timelines")
+}
+
+// 6. InsurancePolicy — Insurance policy tracking
+model InsurancePolicy {
+  id               String                @id @default(cuid())
+  tenantId         String                @map("tenant_id")
+  policyNumber     String                @map("policy_number")
+  policyType       InsurancePolicyType   @map("policy_type")
+  provider         String
+  status           InsurancePolicyStatus @default(ACTIVE)
+  coverageAmount   Float                 @map("coverage_amount")
+  deductible       Float?
+  premiumAmount    Float                 @map("premium_amount")
+  premiumFrequency String                @map("premium_frequency") // monthly, annual
+  startDate        DateTime              @map("start_date")
+  endDate          DateTime              @map("end_date")
+  renewalDate      DateTime?             @map("renewal_date")
+  coverageDetails  Json?                 @map("coverage_details") // Detailed coverage (JSON)
+  contactName      String?               @map("contact_name")
+  contactEmail     String?               @map("contact_email")
+  contactPhone     String?               @map("contact_phone")
+  notes            String?
+  createdById      String                @map("created_by_id")
+  createdAt        DateTime              @default(now()) @map("created_at")
+  updatedAt        DateTime              @updatedAt @map("updated_at")
+
+  // Relations
+  tenant    Tenant @relation("TenantInsurancePolicies", fields: [tenantId], references: [id], onDelete: Cascade)
+  createdBy User   @relation("InsurancePolicyCreator", fields: [createdById], references: [id])
+
+  @@unique([tenantId, policyNumber])
+  @@index([tenantId, policyType])
+  @@index([tenantId, status])
+  @@index([tenantId, endDate])
+  @@map("insurance_policies")
+}
+
+// 7. SecurityAssessment — Security assessment/audit tracking
+model SecurityAssessment {
+  id              String           @id @default(cuid())
+  tenantId        String           @map("tenant_id")
+  title           String
+  description     String?
+  assessmentType  AssessmentType   @map("assessment_type")
+  status          AssessmentStatus @default(PLANNED)
+  riskLevel       RiskLevel?       @map("risk_level")
+  scope           String? // What is being assessed
+  methodology     String? // Assessment methodology
+  findings        Json? // Assessment findings (JSON)
+  recommendations Json? // Recommendations (JSON)
+  findingsCount   Int              @default(0) @map("findings_count")
+  criticalCount   Int              @default(0) @map("critical_count")
+  highCount       Int              @default(0) @map("high_count")
+  mediumCount     Int              @default(0) @map("medium_count")
+  lowCount        Int              @default(0) @map("low_count")
+  scheduledDate   DateTime?        @map("scheduled_date")
+  completedDate   DateTime?        @map("completed_date")
+  nextAssessment  DateTime?        @map("next_assessment")
+  assessorName    String?          @map("assessor_name")
+  assessorOrg     String?          @map("assessor_org")
+  createdById     String           @map("created_by_id")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+
+  // Relations
+  tenant    Tenant @relation("TenantSecurityAssessments", fields: [tenantId], references: [id], onDelete: Cascade)
+  createdBy User   @relation("SecurityAssessmentCreator", fields: [createdById], references: [id])
+
+  @@index([tenantId, assessmentType])
+  @@index([tenantId, status])
+  @@index([tenantId, riskLevel])
+  @@map("security_assessments")
+}
+
+// [KAVEN_MODULE:COMPLIANCE_SECURITY END]
