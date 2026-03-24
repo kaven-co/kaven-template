@@ -361,6 +361,16 @@ model Tenant {
   /// @unique -- Custom domain for subdomain-based tenant detection (e.g., acme.kaven.com)
   domain    String?      @unique // Para subdomain-based detection
   status    TenantStatus @default(ACTIVE)
+
+  // Admin Extend — workspace settings
+  logoUrl         String?  @map("logo_url")
+  locale          String   @default("en")
+  dateFormat      String   @default("YYYY-MM-DD") @map("date_format")
+  firstDayOfWeek  Int      @default(0) @map("first_day_of_week") // 0=Sunday, 1=Monday
+  defaultTimezone String   @default("UTC") @map("default_timezone")
+  ssoConfig       Json?    @map("sso_config") // SSO scaffold — implementation later
+  wizardState     Json?    @map("wizard_state") // Setup wizard progress
+
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
   deletedAt DateTime? // Soft delete
@@ -505,6 +515,26 @@ model Tenant {
   financialProjections   FinancialProjection[]   @relation("TenantFinancialProjections")
   closedPeriods          ClosedPeriod[]          @relation("TenantClosedPeriods")
   kpiDefinitions         KPIDefinition[]         @relation("TenantKPIDefinitions")
+
+  // Admin Extend Module
+  groups                 Group[]                 @relation("TenantGroups")
+  groupMembers           GroupMember[]            @relation("TenantGroupMembers")
+  integrationConfigs     IntegrationConfig[]      @relation("TenantIntegrationConfigs")
+  webhookEndpoints       WebhookEndpoint[]        @relation("TenantWebhookEndpoints")
+  webhookDeliveries      WebhookDelivery[]        @relation("TenantWebhookDeliveries")
+  apiKeys                ApiKey[]                 @relation("TenantApiKeys")
+  adminInvites           Invite[]                 @relation("TenantInvites2")
+
+  // Legal Module
+  legalEntities          LegalEntity[]            @relation("TenantLegalEntities")
+  legalEntityReps        LegalEntityRepresentative[] @relation("TenantLegalEntityReps")
+  contracts              Contract[]               @relation("TenantContracts")
+  contractParties        ContractParty[]           @relation("TenantContractParties")
+  contractSigners        ContractSigner[]          @relation("TenantContractSigners")
+  contractObligations    ContractObligation[]      @relation("TenantContractObligations")
+  contractAttachments    ContractAttachment[]      @relation("TenantContractAttachments")
+  contractNotes          ContractNote[]            @relation("TenantContractNotes")
+  contractStatusHistories ContractStatusHistory[]  @relation("TenantContractStatusHistories")
 
   // Content Operations Module
   contentCalendars       ContentCalendar[]       @relation("TenantContentCalendars")
@@ -705,6 +735,24 @@ model User {
   securityApprovals     SecurityRequest[]        @relation("SecurityApprovals")
   securityExecutions    SecurityRequest[]        @relation("SecurityExecutions")
 
+  // Admin Extend Module
+  createdGroups           Group[]                @relation("GroupCreator")
+  groupMemberships        GroupMember[]           @relation("GroupMemberUser")
+  addedGroupMembers       GroupMember[]           @relation("GroupMemberAddedBy")
+  createdIntegrationConfigs IntegrationConfig[]   @relation("IntegrationConfigCreator")
+  createdWebhookEndpoints WebhookEndpoint[]       @relation("WebhookEndpointCreator")
+  createdApiKeys          ApiKey[]               @relation("ApiKeyCreator")
+  createdInvites2         Invite[]               @relation("InviteCreator")
+  acceptedInvites2        Invite[]               @relation("InviteAcceptor")
+
+  // Legal Module
+  createdLegalEntities    LegalEntity[]           @relation("LegalEntityCreator")
+  createdContracts        Contract[]             @relation("ContractCreator")
+  ownedObligations        ContractObligation[]   @relation("ObligationOwner")
+  uploadedContractAttachments ContractAttachment[] @relation("ContractAttachmentUploader")
+  contractNotes2          ContractNote[]         @relation("ContractNoteAuthor")
+  contractStatusChanges   ContractStatusHistory[] @relation("ContractStatusChanger")
+
   @@index([email])
   @@index([tenantId])
   @@index([role])
@@ -746,6 +794,7 @@ model AuditLog {
   entityId   String
   userId     String?
   tenantId   String?
+  module     String?    // Module identifier (e.g., "admin", "legal", "finance")
   metadata   Json?      // Dados adicionais
   ipAddress  String?
   userAgent  String?

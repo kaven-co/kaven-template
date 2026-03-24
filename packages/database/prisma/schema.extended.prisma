@@ -4163,6 +4163,552 @@ model MissionStatement {
 // [KAVEN_MODULE:GOVERNANCE END]
 
 // ===========================
+// ADMIN EXTEND MODULE
+// ===========================
+// Extends Kaven's base admin with groups, invites, webhooks,
+// API keys, integrations. Multi-tenant isolated via tenantId.
+
+// [KAVEN_MODULE:ADMIN_EXTEND BEGIN]
+
+// ---------- Enums ----------
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  REVOKED
+
+  @@map("invite_status")
+}
+
+enum SyncStatus {
+  IDLE
+  SYNCING
+  SUCCESS
+  ERROR
+
+  @@map("sync_status")
+}
+
+enum DeliveryStatus {
+  PENDING
+  DELIVERED
+  FAILED
+  RETRYING
+
+  @@map("delivery_status")
+}
+
+// ---------- Models ----------
+
+// 1. Group — user groups for bulk RBAC
+model Group {
+  id          String   @id @default(cuid())
+  tenantId    String   @map("tenant_id")
+  name        String
+  description String?
+  color       String?  @default("#6B7280")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdById String   @map("created_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  tenant    Tenant      @relation("TenantGroups", fields: [tenantId], references: [id], onDelete: Cascade)
+  createdBy User        @relation("GroupCreator", fields: [createdById], references: [id])
+  members   GroupMember[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId, isActive])
+  @@map("groups")
+}
+
+// 2. GroupMember — group membership join table
+model GroupMember {
+  id        String   @id @default(cuid())
+  tenantId  String   @map("tenant_id")
+  groupId   String   @map("group_id")
+  userId    String   @map("user_id")
+  addedById String   @map("added_by_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  tenant  Tenant @relation("TenantGroupMembers", fields: [tenantId], references: [id], onDelete: Cascade)
+  group   Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user    User   @relation("GroupMemberUser", fields: [userId], references: [id], onDelete: Cascade)
+  addedBy User   @relation("GroupMemberAddedBy", fields: [addedById], references: [id])
+
+  @@unique([groupId, userId])
+  @@index([tenantId, groupId])
+  @@index([tenantId, userId])
+  @@map("group_members")
+}
+
+// 3. IntegrationConfig — third-party integration settings
+model IntegrationConfig {
+  id           String     @id @default(cuid())
+  tenantId     String     @map("tenant_id")
+  provider     String     // e.g., "slack", "google_workspace", "zapier"
+  displayName  String     @map("display_name")
+  config       Json       @default("{}") // Encrypted config values
+  syncStatus   SyncStatus @default(IDLE) @map("sync_status")
+  lastSyncAt   DateTime?  @map("last_sync_at")
+  lastError    String?    @map("last_error")
+  isEnabled    Boolean    @default(true) @map("is_enabled")
+  createdById  String     @map("created_by_id")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  // Relations
+  tenant    Tenant @relation("TenantIntegrationConfigs", fields: [tenantId], references: [id], onDelete: Cascade)
+  createdBy User   @relation("IntegrationConfigCreator", fields: [createdById], references: [id])
+
+  @@unique([tenantId, provider])
+  @@index([tenantId, isEnabled])
+  @@map("integration_configs")
+}
+
+// 4. WebhookEndpoint — outbound webhook configuration
+model WebhookEndpoint {
+  id          String   @id @default(cuid())
+  tenantId    String   @map("tenant_id")
+  url         String
+  description String?
+  secret      String   // Shared secret for HMAC signature
+  events      String[] // e.g., ["user.created", "member.invited"]
+  isActive    Boolean  @default(true) @map("is_active")
+  createdById String   @map("created_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  tenant     Tenant             @relation("TenantWebhookEndpoints", fields: [tenantId], references: [id], onDelete: Cascade)
+  createdBy  User               @relation("WebhookEndpointCreator", fields: [createdById], references: [id])
+  deliveries WebhookDelivery[]
+
+  @@index([tenantId, isActive])
+  @@map("webhook_endpoints")
+}
+
+// 5. WebhookDelivery — webhook delivery log
+model WebhookDelivery {
+  id             String         @id @default(cuid())
+  tenantId       String         @map("tenant_id")
+  endpointId     String         @map("endpoint_id")
+  event          String         // e.g., "user.created"
+  payload        Json
+  status         DeliveryStatus @default(PENDING)
+  httpStatusCode Int?           @map("http_status_code")
+  responseBody   String?        @map("response_body")
+  attempts       Int            @default(0)
+  lastAttemptAt  DateTime?      @map("last_attempt_at")
+  completedAt    DateTime?      @map("completed_at")
+  createdAt      DateTime       @default(now()) @map("created_at")
+
+  // Relations
+  tenant   Tenant          @relation("TenantWebhookDeliveries", fields: [tenantId], references: [id], onDelete: Cascade)
+  endpoint WebhookEndpoint @relation(fields: [endpointId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, endpointId])
+  @@index([tenantId, status])
+  @@index([createdAt])
+  @@map("webhook_deliveries")
+}
+
+// 6. ApiKey — tenant-scoped API keys
+model ApiKey {
+  id          String    @id @default(cuid())
+  tenantId    String    @map("tenant_id")
+  name        String
+  keyHash     String    @unique @map("key_hash") // SHA-256 hash
+  keyPrefix   String    @map("key_prefix") // First 8 chars for identification
+  permissions String[]  // Scoped permissions
+  lastUsedAt  DateTime? @map("last_used_at")
+  expiresAt   DateTime? @map("expires_at")
+  revokedAt   DateTime? @map("revoked_at")
+  createdById String    @map("created_by_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  tenant    Tenant @relation("TenantApiKeys", fields: [tenantId], references: [id], onDelete: Cascade)
+  createdBy User   @relation("ApiKeyCreator", fields: [createdById], references: [id])
+
+  @@index([tenantId])
+  @@index([keyHash])
+  @@index([expiresAt])
+  @@map("api_keys")
+}
+
+// 7. Invite — member invitation with token
+model Invite {
+  id          String       @id @default(cuid())
+  tenantId    String       @map("tenant_id")
+  email       String
+  role        String       @default("USER") // Role to assign on acceptance
+  status      InviteStatus @default(PENDING)
+  tokenHash   String       @unique @map("token_hash") // bcrypt hash of invite token
+  message     String?      // Optional invitation message
+  expiresAt   DateTime     @map("expires_at")
+  acceptedAt  DateTime?    @map("accepted_at")
+  revokedAt   DateTime?    @map("revoked_at")
+  invitedById String       @map("invited_by_id")
+  acceptedById String?     @map("accepted_by_id")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  // Relations
+  tenant     Tenant @relation("TenantInvites2", fields: [tenantId], references: [id], onDelete: Cascade)
+  invitedBy  User   @relation("InviteCreator", fields: [invitedById], references: [id])
+  acceptedBy User?  @relation("InviteAcceptor", fields: [acceptedById], references: [id])
+
+  @@index([tenantId, status])
+  @@index([email])
+  @@index([expiresAt])
+  @@map("invites")
+}
+
+// [KAVEN_MODULE:ADMIN_EXTEND END]
+
+// ===========================
+// LEGAL MODULE
+// ===========================
+// Legal entity management with CNPJ validation, contract lifecycle
+// with state machine, versioning, obligations, and renewal alerts.
+// Multi-tenant isolated via tenantId.
+
+// [KAVEN_MODULE:LEGAL BEGIN]
+
+// ---------- Enums ----------
+
+enum LegalContractStatus {
+  DRAFT
+  REVIEW
+  PENDING_APPROVAL
+  APPROVED
+  SENT_FOR_SIGN
+  SIGNED
+  ACTIVE
+  EXPIRED
+  CANCELLED
+  ARCHIVED
+
+  @@map("legal_contract_status")
+}
+
+enum LegalEntityStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  CLOSED
+
+  @@map("legal_entity_status")
+}
+
+enum ObligationStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  OVERDUE
+  CANCELLED
+
+  @@map("obligation_status")
+}
+
+enum SignerAuthMethod {
+  EMAIL
+  SMS
+  WHATSAPP
+  PIX
+  BIOMETRIC
+  ICP_BRASIL
+  SIMPLE
+
+  @@map("signer_auth_method")
+}
+
+// ---------- Models ----------
+
+// 1. LegalEntity — company/person with CNPJ/CPF validation
+model LegalEntity {
+  id              String            @id @default(cuid())
+  tenantId        String            @map("tenant_id")
+  type            String            @default("PJ") // PJ or PF
+  name            String            // Razao Social
+  tradeName       String?           @map("trade_name") // Nome Fantasia
+  document        String            // CNPJ or CPF
+  documentType    String            @default("CNPJ") @map("document_type")
+  status          LegalEntityStatus @default(ACTIVE)
+
+  // Address
+  street          String?
+  number          String?
+  complement      String?
+  neighborhood    String?
+  city            String?
+  state           String?
+  zipCode         String?           @map("zip_code")
+  country         String            @default("BR")
+
+  // Contact
+  email           String?
+  phone           String?
+  website         String?
+
+  // CNPJ-specific
+  cnpjStatus      String?           @map("cnpj_status") // ATIVA, SUSPENSA, INAPTA, BAIXADA
+  cnpjLastChecked DateTime?         @map("cnpj_last_checked")
+  cnpjData        Json?             @map("cnpj_data") // Full API response cache
+
+  // DPO fields (LGPD)
+  dpoName         String?           @map("dpo_name")
+  dpoEmail        String?           @map("dpo_email")
+  dpoPhone        String?           @map("dpo_phone")
+  dpoAppointedAt  DateTime?         @map("dpo_appointed_at")
+
+  // Metadata
+  notes           String?
+  createdById     String            @map("created_by_id")
+  deletedAt       DateTime?         @map("deleted_at")
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  tenant          Tenant            @relation("TenantLegalEntities", fields: [tenantId], references: [id], onDelete: Cascade)
+  createdBy       User              @relation("LegalEntityCreator", fields: [createdById], references: [id])
+  representatives LegalEntityRepresentative[]
+  contractParties ContractParty[]
+
+  @@unique([tenantId, document])
+  @@index([tenantId, status])
+  @@index([tenantId, documentType])
+  @@index([document])
+  @@map("legal_entities")
+}
+
+// 2. LegalEntityRepresentative — entity legal representatives
+model LegalEntityRepresentative {
+  id            String   @id @default(cuid())
+  tenantId      String   @map("tenant_id")
+  entityId      String   @map("entity_id")
+  name          String
+  document      String?  // CPF
+  email         String?
+  phone         String?
+  role          String   // e.g., "Socio", "Diretor", "Procurador"
+  isPrimary     Boolean  @default(false) @map("is_primary")
+  validFrom     DateTime? @map("valid_from")
+  validUntil    DateTime? @map("valid_until")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  tenant Tenant      @relation("TenantLegalEntityReps", fields: [tenantId], references: [id], onDelete: Cascade)
+  entity LegalEntity @relation(fields: [entityId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, entityId])
+  @@map("legal_entity_representatives")
+}
+
+// 3. Contract — agreements with state machine lifecycle
+model Contract {
+  id              String         @id @default(cuid())
+  tenantId        String         @map("tenant_id")
+  title           String
+  description     String?
+  contractNumber  String?        @map("contract_number")
+  type            String         // e.g., "SERVICE", "NDA", "EMPLOYMENT", "SUPPLY"
+  status          LegalContractStatus @default(DRAFT)
+  value           Float?
+  currency        String         @default("BRL")
+
+  // Dates
+  effectiveDate   DateTime?      @map("effective_date")
+  expiresAt       DateTime?      @map("expires_at")
+  signedAt        DateTime?      @map("signed_at")
+  cancelledAt     DateTime?      @map("cancelled_at")
+
+  // Renewal
+  autoRenew       Boolean        @default(false) @map("auto_renew")
+  renewalPeriodDays Int?         @map("renewal_period_days")
+  renewalNoticeDays Int          @default(30) @map("renewal_notice_days")
+  lastRenewalAlert DateTime?     @map("last_renewal_alert")
+
+  // Versioning
+  version         Int            @default(1)
+  parentId        String?        @map("parent_id") // Self-referential for version chain
+
+  // Content
+  content         String?        // Rich text or markdown
+  summary         String?
+
+  // Metadata
+  tags            String[]
+  metadata        Json?
+  createdById     String         @map("created_by_id")
+  deletedAt       DateTime?      @map("deleted_at")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+
+  // Relations
+  tenant          Tenant         @relation("TenantContracts", fields: [tenantId], references: [id], onDelete: Cascade)
+  createdBy       User           @relation("ContractCreator", fields: [createdById], references: [id])
+  parent          Contract?      @relation("ContractVersions", fields: [parentId], references: [id])
+  childVersions   Contract[]     @relation("ContractVersions")
+  parties         ContractParty[]
+  signers         ContractSigner[]
+  obligations     ContractObligation[]
+  attachments     ContractAttachment[]
+  notes           ContractNote[]
+  statusHistory   ContractStatusHistory[]
+
+  @@unique([tenantId, contractNumber])
+  @@index([tenantId, status])
+  @@index([tenantId, type])
+  @@index([expiresAt])
+  @@index([parentId])
+  @@map("contracts")
+}
+
+// 4. ContractParty — parties involved in contract
+model ContractParty {
+  id            String   @id @default(cuid())
+  tenantId      String   @map("tenant_id")
+  contractId    String   @map("contract_id")
+  entityId      String?  @map("entity_id") // FK to LegalEntity
+  role          String   // "CONTRACTOR", "CONTRACTED", "WITNESS", "GUARANTOR"
+  name          String   // Denormalized for display
+  document      String?  // Denormalized CNPJ/CPF
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  tenant   Tenant       @relation("TenantContractParties", fields: [tenantId], references: [id], onDelete: Cascade)
+  contract Contract     @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  entity   LegalEntity? @relation(fields: [entityId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, contractId])
+  @@map("contract_parties")
+}
+
+// 5. ContractSigner — designated signers with auth method
+model ContractSigner {
+  id           String          @id @default(cuid())
+  tenantId     String          @map("tenant_id")
+  contractId   String          @map("contract_id")
+  name         String
+  email        String
+  phone        String?
+  authMethod   SignerAuthMethod @default(EMAIL) @map("auth_method")
+  signedAt     DateTime?       @map("signed_at")
+  signOrder    Int             @default(0) @map("sign_order")
+  signatureUrl String?         @map("signature_url")
+  createdAt    DateTime        @default(now()) @map("created_at")
+  updatedAt    DateTime        @updatedAt @map("updated_at")
+
+  // Relations
+  tenant   Tenant   @relation("TenantContractSigners", fields: [tenantId], references: [id], onDelete: Cascade)
+  contract Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, contractId])
+  @@map("contract_signers")
+}
+
+// 6. ContractObligation — tracked obligations with due dates
+model ContractObligation {
+  id           String           @id @default(cuid())
+  tenantId     String           @map("tenant_id")
+  contractId   String           @map("contract_id")
+  title        String
+  description  String?
+  status       ObligationStatus @default(PENDING)
+  dueDate      DateTime?        @map("due_date")
+  completedAt  DateTime?        @map("completed_at")
+  ownerId      String?          @map("owner_id")
+  value        Float?
+  currency     String           @default("BRL")
+  isRecurring  Boolean          @default(false) @map("is_recurring")
+  recurringDays Int?            @map("recurring_days")
+  createdAt    DateTime         @default(now()) @map("created_at")
+  updatedAt    DateTime         @updatedAt @map("updated_at")
+
+  // Relations
+  tenant   Tenant   @relation("TenantContractObligations", fields: [tenantId], references: [id], onDelete: Cascade)
+  contract Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  owner    User?    @relation("ObligationOwner", fields: [ownerId], references: [id])
+
+  @@index([tenantId, contractId])
+  @@index([tenantId, status])
+  @@index([dueDate])
+  @@map("contract_obligations")
+}
+
+// 7. ContractAttachment — contract-linked files
+model ContractAttachment {
+  id          String   @id @default(cuid())
+  tenantId    String   @map("tenant_id")
+  contractId  String   @map("contract_id")
+  fileName    String   @map("file_name")
+  fileUrl     String   @map("file_url")
+  fileSize    Int?     @map("file_size") // bytes
+  mimeType    String?  @map("mime_type")
+  uploadedById String  @map("uploaded_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  tenant     Tenant   @relation("TenantContractAttachments", fields: [tenantId], references: [id], onDelete: Cascade)
+  contract   Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  uploadedBy User     @relation("ContractAttachmentUploader", fields: [uploadedById], references: [id])
+
+  @@index([tenantId, contractId])
+  @@map("contract_attachments")
+}
+
+// 8. ContractNote — internal notes on contracts
+model ContractNote {
+  id          String   @id @default(cuid())
+  tenantId    String   @map("tenant_id")
+  contractId  String   @map("contract_id")
+  content     String
+  isInternal  Boolean  @default(true) @map("is_internal")
+  authorId    String   @map("author_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  tenant   Tenant   @relation("TenantContractNotes", fields: [tenantId], references: [id], onDelete: Cascade)
+  contract Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  author   User     @relation("ContractNoteAuthor", fields: [authorId], references: [id])
+
+  @@index([tenantId, contractId])
+  @@map("contract_notes")
+}
+
+// 9. ContractStatusHistory — immutable state transition audit trail
+model ContractStatusHistory {
+  id          String         @id @default(cuid())
+  tenantId    String         @map("tenant_id")
+  contractId  String         @map("contract_id")
+  fromStatus  LegalContractStatus @map("from_status")
+  toStatus    LegalContractStatus @map("to_status")
+  reason      String?
+  changedById String         @map("changed_by_id")
+  metadata    Json?
+  createdAt   DateTime       @default(now()) @map("created_at")
+
+  // Relations
+  tenant    Tenant   @relation("TenantContractStatusHistories", fields: [tenantId], references: [id], onDelete: Cascade)
+  contract  Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  changedBy User     @relation("ContractStatusChanger", fields: [changedById], references: [id])
+
+  @@index([tenantId, contractId])
+  @@index([createdAt])
+  @@map("contract_status_history")
+}
+
+// [KAVEN_MODULE:LEGAL END]
+
+// ===========================
 // CONTENT OPERATIONS MODULE
 // ===========================
 // Editorial pipeline: calendars, briefs, content pieces, reviews, assets,
