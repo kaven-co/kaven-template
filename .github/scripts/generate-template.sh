@@ -55,12 +55,14 @@ rsync -a \
   --exclude='.aios-core/' \
   --exclude='.aios/' \
   --exclude='.aios-core-backup-*/' \
+  --exclude='.agents/' \
   --exclude='squads/' \
   --exclude='**/dist/' \
   --exclude='**/build/' \
   --exclude='**/.turbo/' \
   --exclude='**/coverage/' \
   --exclude='.env' \
+  --exclude='.env.example' \
   --exclude='.env.local' \
   --exclude='.env.*.local' \
   --exclude='**/*.log' \
@@ -88,6 +90,19 @@ rsync -a \
   "${FRAMEWORK_ROOT}/" "${TMP_COPY}/"
 
 echo "INFO: Copy complete. File count: $(find "${TMP_COPY}" -type f | wc -l)"
+
+# ---------------------------------------------------------------------------
+# Step 1b — Inject canonical .env.example (Kaven Framework vars only)
+# .env.example is excluded from rsync above to prevent AIOX contamination.
+# The source of truth is .github/scripts/env-example-template.env
+# ---------------------------------------------------------------------------
+ENV_EXAMPLE_SRC="${SCRIPT_DIR}/env-example-template.env"
+if [[ ! -f "${ENV_EXAMPLE_SRC}" ]]; then
+  echo "ERROR: Canonical env template not found at ${ENV_EXAMPLE_SRC}" >&2
+  exit 1
+fi
+cp "${ENV_EXAMPLE_SRC}" "${TMP_COPY}/.env.example"
+echo "INFO: Injected canonical .env.example from ${ENV_EXAMPLE_SRC}"
 
 # ---------------------------------------------------------------------------
 # Step 2 — Clone kaven-template (shallow, single branch)
