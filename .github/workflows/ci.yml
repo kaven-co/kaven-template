@@ -94,7 +94,9 @@ jobs:
         run: pnpm run check:ui-migration-clean
 
       - name: Typecheck
-        run: pnpm run typecheck
+        # Template apps depend on @kaven/ui-base workspace package which is
+        # a placeholder (populated by kaven init). Only typecheck packages here.
+        run: pnpm turbo typecheck --filter=@kaven/ui-base --filter=@kaven/shared --filter=@kaven/database
 
       - name: Test
         env:
