@@ -64,9 +64,9 @@ scrape_configs:
   # Fonte: .aiox-core/core/orchestration/metrics-exporter.js
   # Iniciar com: node .aiox-core/core/orchestration/metrics-exporter.js
   # Porta configurável via AIOX_METRICS_PORT (default: 9464)
-  - job_name: 'aiox'
+  - job_name: 'aiox-development'
     static_configs:
-      - targets: ['host.docker.internal:9464']
+      - targets: ['host.docker.internal:9091']
     metrics_path: '/metrics'
     scrape_interval: 30s
     scrape_timeout: 10s

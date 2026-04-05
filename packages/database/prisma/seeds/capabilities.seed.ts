@@ -11,8 +11,9 @@ const prisma = new PrismaClient();
  * - Finance (12 capabilities)
  * - Marketing (10 capabilities)
  * - Management (11 capabilities)
- * 
- * Total: 60 capabilities
+ * - AI Agents (1 capability)
+ *
+ * Total: 61 capabilities
  */
 
 export async function seedCapabilities() {
@@ -638,6 +639,19 @@ export async function seedCapabilities() {
       scope: CapabilityScope.TENANT,
       requiresMFA: true,
       requiresApproval: true,
+    },
+
+    // ===========================
+    // AI AGENTS (1 capability)
+    // ===========================
+    {
+      code: 'MAX_AGENT_API_CALLS_HOUR',
+      resource: 'service-tokens',
+      action: 'rate-limit',
+      description: 'Máximo de chamadas de API por hora para AI agents (0 = ilimitado)',
+      category: 'AI Agents',
+      sensitivity: CapabilitySensitivity.SENSITIVE,
+      scope: CapabilityScope.TENANT,
     },
   ];
 
