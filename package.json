@@ -38,7 +38,7 @@
     "kill-port": "^2.0.1",
     "prettier": "^3.4.2",
     "prisma": "^5.22.0",
-    "turbo": "^2.8.9",
+    "turbo": "^2.9.4",
     "typescript": "^5.7.2"
   },
   "packageManager": "pnpm@9.15.4",
