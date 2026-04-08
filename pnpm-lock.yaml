@@ -123,8 +123,8 @@ importers:
         specifier: ^3.2.43
         version: 3.2.44
       lucide-react:
-        specifier: ^0.576.0
-        version: 0.576.0(react@19.2.3)
+        specifier: ^1.7.0
+        version: 1.7.0(react@19.2.3)
       next:
         specifier: 16.1.5
         version: 16.1.5(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.58.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -458,8 +458,8 @@ importers:
         specifier: ^0.16.27
         version: 0.16.28
       lucide-react:
-        specifier: ^0.576.0
-        version: 0.576.0(react@19.2.3)
+        specifier: ^1.7.0
+        version: 1.7.0(react@19.2.3)
       next:
         specifier: 16.1.5
         version: 16.1.5(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.58.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -615,8 +615,8 @@ importers:
         specifier: ^3.2.43
         version: 3.2.44
       lucide-react:
-        specifier: ^0.576.0
-        version: 0.576.0(react@19.2.3)
+        specifier: ^1.7.0
+        version: 1.7.0(react@19.2.3)
       next:
         specifier: 16.1.5
         version: 16.1.5(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.58.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -819,8 +819,8 @@ importers:
         specifier: ^2.1.1
         version: 2.1.1
       lucide-react:
-        specifier: ^0.576.0
-        version: 0.576.0(react@19.2.3)
+        specifier: ^1.7.0
+        version: 1.7.0(react@19.2.3)
       react:
         specifier: '>=18.0.0'
         version: 19.2.3
@@ -6135,8 +6135,8 @@ packages:
     resolution: {integrity: sha512-Jo6dJ04CmSjuznwJSS3pUeWmd/H0ffTlkXXgwZi+eq1UCmqQwCh+eLsYOYCwY991i2Fah4h1BEMCx4qThGbsiA==}
     engines: {node: '>=10'}
 
-  lucide-react@0.576.0:
-    resolution: {integrity: sha512-koNxU14BXrxUfZQ9cUaP0ES1uyPZKYDjk31FQZB6dQ/x+tXk979sVAn9ppZ/pVeJJyOxVM8j1E+8QEuSc02Vug==}
+  lucide-react@1.7.0:
+    resolution: {integrity: sha512-yI7BeItCLZJTXikmK4KNUGCKoGzSvbKlfCvw44bU4fXAL6v3gYS4uHD1jzsLkfwODYwI6Drw5Tu9Z5ulDe0TSg==}
     peerDependencies:
       react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
@@ -14196,7 +14196,7 @@ snapshots:
     dependencies:
       yallist: 4.0.0
 
-  lucide-react@0.576.0(react@19.2.3):
+  lucide-react@1.7.0(react@19.2.3):
     dependencies:
       react: 19.2.3
 
