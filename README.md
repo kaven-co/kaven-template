@@ -1,31 +1,36 @@
-# Kaven Framework
+# Kaven Template 🚀
 
-Production-ready SaaS boilerplate.
+Produção em dias, não meses. Monorepo enterprise-grade, multi-tenant e pronto para escala.
 
 ## Quick Start
-
 ```bash
-git clone git@github.com:KavenCompany/kaven-framework.git
-cd kaven-framework
+# 1. Configurar o ambiente (Instalar deps, Docker, Migrations, Seed)
 pnpm setup
+
+# 2. Rodar o servidor em desenvolvimento
 pnpm dev
 ```
 
-## Features (22)
+## Estrutura do Monorepo
+- **apps/api:** Fastify REST API (RBAC, Multi-tenancy, JWT).
+- **apps/admin:** Next.js Dashboard do administrador da plataforma.
+- **apps/tenant:** Next.js Dashboard de cada cliente (tenant).
+- **packages/database:** Prisma schema, migrações e dados iniciais.
+- **packages/ui:** Biblioteca de componentes @kaven/ui-base.
 
-- Multi-tenancy (subdomains & custom domains)
-- Authentication (JWT + Refresh Tokens)
-- Payments (Stripe/Paddle integration)
-- **Arsenal of Observability** (Prometheus, Grafana, Loki)
-- **Developer Tools** (MailHog, pgAdmin, Prisma Studio)
-- Health Monitoring & Alerting
-- And more...
+## URLs Locais
+- **API:** http://localhost:4000
+- **Admin:** http://localhost:3000
+- **Tenant:** http://{tenant}.localhost:3001
+- **Docs:** http://localhost:3002
 
-## Commands
+## Comandos Principais
+- `pnpm dev`: Rodar todas as apps simultaneamente.
+- `pnpm db:studio`: Interface para visualizar o banco de dados.
+- `pnpm quality`: Rodar lint, testes e typecheck (Quality Gate).
 
-```bash
-pnpm setup    # Setup environment
-pnpm dev      # Start development
-pnpm quality  # Run quality gates
-pnpm build    # Build all apps
-```
+## Documentação
+Acesse [kaven.site/docs](https://kaven.site/docs) para guias de deploy (Vercel, Railway, GCP) e arquitetura.
+
+---
+**License:** Commercial. See [kaven.site/terms](https://kaven.site/terms).
