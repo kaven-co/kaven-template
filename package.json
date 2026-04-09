@@ -35,11 +35,10 @@
     "sync:ide:aiox": "node .aiox-core/infrastructure/scripts/ide-sync/index.js sync",
     "sync:ide:kaven": "node squads/kaven-squad/scripts/sync-kaven-ide.js",
     "sync:ide:all": "npm run sync:ide:aiox && npm run sync:ide:kaven",
-    "prepare": "husky"
+    "prepare": "echo 'no prepare step'"
   },
   "devDependencies": {
     "@types/node-cron": "^3.0.11",
-    "husky": "^9.1.7",
     "kill-port": "^2.0.1",
     "prettier": "^3.4.2",
     "prisma": "^5.22.0",

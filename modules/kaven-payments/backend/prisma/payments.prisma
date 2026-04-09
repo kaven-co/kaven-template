@@ -1,0 +1,134 @@
+// Kaven Payments Module — Prisma Schema Extension
+// Merge este arquivo em packages/database/prisma/ ao instalar o módulo.
+// O CLI executa automaticamente: npx prisma db push após instalação.
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  UNPAID
+  PAUSED
+  INCOMPLETE
+}
+
+enum InvoiceStatus {
+  PENDING
+  PAID
+  OVERDUE
+  CANCELED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  STRIPE
+  PADDLE
+  PIX
+  BOLETO
+  CREDIT_CARD
+  BANK_TRANSFER
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  CONFIRMED
+  FAILED
+  REFUNDED
+  CANCELED
+}
+
+// ─── Models ───────────────────────────────────────────────────────────────────
+
+model Subscription {
+  id String @id @default(uuid())
+
+  tenantId String @unique @map("tenant_id")
+  planId   String @map("plan_id")
+  priceId  String? @map("price_id")
+
+  stripeCustomerId     String? @unique @map("stripe_customer_id")
+  stripeSubscriptionId String? @unique @map("stripe_subscription_id")
+
+  status             SubscriptionStatus @default(TRIALING)
+  currentPeriodStart DateTime?          @map("current_period_start")
+  currentPeriodEnd   DateTime?          @map("current_period_end")
+  cancelAtPeriodEnd  Boolean            @default(false) @map("cancel_at_period_end")
+  canceledAt         DateTime?          @map("canceled_at")
+  cancelReason       String?            @map("cancel_reason")
+  trialEnd           DateTime?          @map("trial_end")
+  discountCode       String?            @map("discount_code")
+  discountPercent    Int?               @map("discount_percent")
+  metadata           Json?
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  plan     Plan      @relation(fields: [planId], references: [id], onDelete: Restrict)
+  price    Price?    @relation(fields: [priceId], references: [id], onDelete: SetNull)
+  invoices Invoice[]
+
+  @@index([tenantId])
+  @@index([planId])
+  @@index([status])
+  @@index([stripeSubscriptionId])
+  @@index([currentPeriodEnd])
+  @@map("subscriptions")
+}
+
+model Invoice {
+  id             String        @id @default(uuid())
+  tenantId       String
+  subscriptionId String?
+  invoiceNumber  String        @unique
+  status         InvoiceStatus @default(PENDING)
+  amountDue      Decimal       @db.Decimal(10, 2)
+  amountPaid     Decimal       @default(0) @db.Decimal(10, 2)
+  currency       String        @default("BRL")
+  dueDate        DateTime
+  paidAt         DateTime?
+  metadata       Json?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  deletedAt      DateTime?
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id])
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id])
+  payments     Payment[]
+
+  @@index([tenantId])
+  @@index([status])
+  @@index([invoiceNumber])
+  @@index([dueDate])
+  @@index([tenantId, status])
+  @@index([tenantId, createdAt])
+  @@index([tenantId, dueDate])
+  @@index([tenantId, status, createdAt])
+}
+
+model Payment {
+  id            String        @id @default(uuid())
+  invoiceId     String?
+  orderId       String?
+  amount        Decimal       @db.Decimal(10, 2)
+  currency      String        @default("BRL")
+  method        PaymentMethod
+  status        PaymentStatus @default(PENDING)
+  transactionId String?       @unique
+  pixQrCode     String?
+  pixQrCodeUrl  String?
+  metadata      Json?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  confirmedAt   DateTime?
+
+  invoice Invoice? @relation(fields: [invoiceId], references: [id])
+
+  @@index([invoiceId])
+  @@index([status])
+  @@index([transactionId])
+}

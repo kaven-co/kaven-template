@@ -1,0 +1,51 @@
+{
+  "name": "kaven-payments",
+  "slug": "payments",
+  "version": "1.0.0",
+  "description": "Stripe and Paddle payment integration with subscriptions, invoices, and webhook handling",
+  "author": "kaven-co",
+  "license": "proprietary",
+  "tier": "pro",
+  "kavenVersion": ">=1.0.0-rc1",
+  "dependencies": {
+    "npm": ["stripe", "@paddle/paddle-node-sdk"],
+    "modules": []
+  },
+  "env": [
+    { "key": "STRIPE_SECRET_KEY", "required": true, "description": "Stripe secret API key" },
+    { "key": "STRIPE_WEBHOOK_SECRET", "required": true, "description": "Stripe webhook endpoint secret" },
+    { "key": "PADDLE_API_KEY", "required": false, "description": "Paddle API key (marketplace billing)" },
+    { "key": "PADDLE_WEBHOOK_SECRET", "required": false, "description": "Paddle webhook secret" }
+  ],
+  "files": [
+    { "src": "backend/routes/billing.ts", "dest": "apps/api/src/modules/billing/routes.ts" },
+    { "src": "backend/routes/payments.ts", "dest": "apps/api/src/modules/checkout/routes.ts" },
+    { "src": "backend/routes/subscriptions.ts", "dest": "apps/api/src/modules/subscriptions/routes.ts" },
+    { "src": "backend/routes/webhooks/stripe.ts", "dest": "apps/api/src/modules/webhooks/stripe.ts" },
+    { "src": "backend/routes/webhooks/paddle.ts", "dest": "apps/api/src/modules/webhooks/paddle.ts" },
+    { "src": "backend/services/billing.service.ts", "dest": "apps/api/src/modules/billing/services/payment.service.ts" },
+    { "src": "backend/services/payment.service.ts", "dest": "apps/api/src/modules/billing/services/payment.service.ts" },
+    { "src": "backend/services/subscription.service.ts", "dest": "apps/api/src/modules/subscriptions/services/subscription.service.ts" },
+    { "src": "backend/services/stripe-client.ts", "dest": "apps/api/src/lib/stripe.ts" },
+    { "src": "backend/services/paddle-client.ts", "dest": "apps/api/src/lib/paddle.ts" },
+    { "src": "backend/prisma/payments.prisma", "dest": "packages/database/prisma/payments.prisma" },
+    { "src": "frontend/components/billing", "dest": "apps/tenant/components/billing" },
+    { "src": "frontend/components/plans/UpgradeButton.tsx", "dest": "apps/tenant/components/plans/UpgradeButton.tsx" },
+    { "src": "frontend/lib/paddle.ts", "dest": "apps/tenant/lib/paddle.ts" }
+  ],
+  "injections": [
+    {
+      "file": "apps/api/src/app.ts",
+      "marker": "payments",
+      "code": "import { billingRoutes } from './modules/billing/routes';\nimport { checkoutRoutes } from './modules/checkout/routes';\nimport { subscriptionRoutes } from './modules/subscriptions/routes';\nimport { stripeWebhookRoutes } from './modules/webhooks/stripe';\nimport { paddleWebhookRoutes } from './modules/webhooks/paddle';\napp.register(billingRoutes, { prefix: '/api/billing' });\napp.register(checkoutRoutes, { prefix: '/api/checkout' });\napp.register(subscriptionRoutes, { prefix: '/api/subscriptions' });\napp.register(stripeWebhookRoutes, { prefix: '/api/webhooks/stripe' });\napp.register(paddleWebhookRoutes, { prefix: '/api/webhooks/paddle' });"
+    },
+    {
+      "file": "apps/tenant/app/layout.tsx",
+      "marker": "payments",
+      "code": "import { PaddleScript } from '../lib/paddle';"
+    }
+  ],
+  "prisma": {
+    "models": ["backend/prisma/payments.prisma"]
+  }
+}
