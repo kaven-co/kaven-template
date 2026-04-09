@@ -1,0 +1,158 @@
+// Kaven Payments Module — Prisma Schema
+// Merge este arquivo em packages/database/prisma/ ao instalar o módulo
+
+model Subscription {
+  id String @id @default(uuid())
+
+  /// Associated tenant
+  /// @unique -- One active subscription per tenant (enforces single-plan billing)
+  tenantId String @unique @map("tenant_id")
+
+  /// Associated plan
+  planId String @map("plan_id")
+
+  /// Associated price (specific billing interval)
+  priceId String? @map("price_id")
+
+  /// Stripe Customer ID
+  /// @unique -- Maps 1:1 to Stripe customer; prevents duplicate billing accounts
+  stripeCustomerId String? @unique @map("stripe_customer_id")
+
+  /// Stripe Subscription ID
+  /// @unique -- Maps 1:1 to Stripe subscription; prevents duplicate subscription records
+  stripeSubscriptionId String? @unique @map("stripe_subscription_id")
+
+  /// Subscription status
+  status SubscriptionStatus @default(TRIALING)
+
+  /// Current billing period start
+  currentPeriodStart DateTime? @map("current_period_start")
+
+  /// Current billing period end
+  currentPeriodEnd DateTime? @map("current_period_end")
+
+  /// Whether to cancel at period end
+  cancelAtPeriodEnd Boolean @default(false) @map("cancel_at_period_end")
+
+  /// Cancellation timestamp
+  canceledAt DateTime? @map("canceled_at")
+
+  /// Cancellation reason
+  cancelReason String? @map("cancel_reason")
+
+  /// Trial end timestamp
+  trialEnd DateTime? @map("trial_end")
+
+  /// Discount/coupon code applied
+  discountCode String? @map("discount_code")
+
+  /// Discount percentage (0-100)
+  discountPercent Int? @map("discount_percent")
+
+  /// Additional metadata
+  metadata Json?
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  // Relations
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  plan     Plan      @relation(fields: [planId], references: [id], onDelete: Restrict)
+  price    Price?    @relation(fields: [priceId], references: [id], onDelete: SetNull)
+  invoices Invoice[]
+
+  @@index([tenantId])
+  @@index([planId])
+  @@index([status])
+  @@index([stripeSubscriptionId])
+  @@index([currentPeriodEnd])
+  @@map("subscriptions")
+}
+
+model Invoice {
+  id             String        @id @default(uuid())
+  tenantId       String
+  subscriptionId String?
+  /// @unique -- Human-readable invoice number (e.g., INV-2026-001); used in billing UI and fiscal documents
+  invoiceNumber  String        @unique
+  status         InvoiceStatus @default(PENDING)
+  amountDue      Decimal       @db.Decimal(10, 2)
+  amountPaid     Decimal       @default(0) @db.Decimal(10, 2)
+  currency       String        @default("BRL")
+  dueDate        DateTime
+  paidAt         DateTime?
+  metadata       Json?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  deletedAt      DateTime?
+
+  // Relations
+  tenant       Tenant        @relation(fields: [tenantId], references: [id])
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id])
+  payments     Payment[]
+
+  @@index([tenantId])
+  @@index([status])
+  @@index([invoiceNumber])
+  @@index([dueDate])
+
+  // Composite indexes for multi-tenant query performance
+  @@index([tenantId, status])            // Tenant-scoped invoice listing by status
+  @@index([tenantId, createdAt])         // Tenant-scoped invoice timeline
+  @@index([tenantId, dueDate])           // Tenant-scoped overdue invoice detection
+  @@index([tenantId, status, createdAt]) // Analytics: invoice status distribution over time
+}
+
+model Payment {
+  id            String        @id @default(uuid())
+  invoiceId     String?
+  orderId       String?
+  amount        Decimal       @db.Decimal(10, 2)
+  currency      String        @default("BRL")
+  method        PaymentMethod
+  status        PaymentStatus @default(PENDING)
+  /// @unique -- External payment gateway transaction ID (Stripe charge, Pix e2eId); prevents duplicate payment processing
+  transactionId String?       @unique // Stripe/Pix transaction ID
+  pixQrCode     String? // For Pix payments
+  pixQrCodeUrl  String?
+  metadata      Json?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  confirmedAt   DateTime?
+
+  // Relations
+  invoice Invoice? @relation(fields: [invoiceId], references: [id])
+  order   Order?   @relation(fields: [orderId], references: [id])
+
+  @@index([invoiceId])
+  @@index([orderId])
+  @@index([status])
+  @@index([transactionId])
+}
+
+model WebhookEvent {
+  id String @id @default(uuid())
+
+  /// ID externo do evento (para idempotência)
+  /// @unique -- Webhook event idempotency key; prevents processing the same webhook twice
+  externalId String @unique @map("external_id")
+
+  /// Provider (PAGUEBIT, STRIPE, etc)
+  provider String
+
+  /// Tipo de evento
+  event String
+
+  /// Payload completo
+  payload Json
+
+  /// Quando foi processado
+  processedAt DateTime? @map("processed_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([provider])
+  @@index([event])
+  @@map("webhook_events")
+}

@@ -1,8 +1,8 @@
 # Story Status Index
 
-> **Generated:** 2026-02-17 | **Last Updated:** 2026-02-25
-> **Total Completed:** 109 stories
-> **Total Planned:** 25 stories
+> **Generated:** 2026-02-17 | **Last Updated:** 2026-04-04
+> **Total Completed:** 113 stories
+> **Total Planned:** 34 stories
 
 ---
 
@@ -131,11 +131,20 @@
 | C2.7 | CLI Documentation | CLI | C2 | Done | #18-#23 | Feb 24 |
 | C2.8 | Sprint C2 Test Suite (255 tests — kaven init, publish, upgrade, doctor, browse, cache, config, init-ci, Ed25519) | CLI | C2 | Done | #18-#23 | Feb 24 |
 
+### CLI Sprint C3 — AIOX Bridge (4 stories, PR #41) ✅ Apr 4
+
+| Story ID | Title | Epic | Sprint | Status | PR | Date |
+|----------|-------|------|--------|--------|----|----- |
+| C3.1 | AIOX Core auto-install + `kaven aiox bootstrap` subcommand (.aiox/config.yaml + environment-report) | CLI | C3 | Done | #41 | Apr 4 |
+| C3.2 | `kaven config features` TUI — 27-capability catalog, tier presets, generates capabilities.seed.ts | CLI | C3 | Done | #41 | Apr 4 |
+| C3.3 | `kaven module activate/deactivate/list` — Prisma schema modifier, dependency resolution, confirm prompt, prisma migrate | CLI | C3 | Done | #41 | Apr 4 |
+| C3.4 | Sprint C3 Test Suite — 316 tests (activate ×9, module-registry ×7, schema-modifier ×3) | CLI | C3 | Done | #41 | Apr 4 |
+
 ### Epic-4 Framework RC1 (2 stories, PRs #31 + v1.0.0-rc1 tag)
 
 | Story ID | Title | Epic | Sprint | Status | PR | Date |
 |----------|-------|------|--------|--------|----|----- |
-| F1.1 | Upgrade Button Integration (Stripe Checkout) | Framework RC1 | F1 | Done | #31 | Feb 17 |
+| F1.1 | Upgrade Button Integration (Stripe Checkout) | Framework RC1 | F1 | In Progress | #31 | Feb 17 |
 | F1.5 | Framework v1.0.0-rc1 Tag (985 tests, 100% tech debt, full CI, GitHub release published) | Framework RC1 | F1 | Done | tag | Feb 17 |
 
 ### Epic-5 Cross-Squad Councils (17 stories, PR #30)
@@ -166,20 +175,22 @@
 
 ### Epic-6 Deploy & Launch Sprint D1 (12 stories)
 
-| Story ID | Title | Epic | Sprint | Status | Blocked By |
-|----------|-------|------|--------|--------|-----------|
-| D1.1 | Setup Neon PostgreSQL (2 databases) | Deploy | D1 | Not Started | None |
-| D1.2 | Setup Upstash Redis | Deploy | D1 | Not Started | None |
-| D1.3 | Create GitHub OAuth App | Deploy | D1 | Not Started | None |
-| D1.4 | Configure Paddle Production | Deploy | D1 | Not Started | D1.6 (webhook URL) |
-| D1.5 | Generate Production Secrets (JWT + Ed25519) | Deploy | D1 | Not Started | None |
-| D1.6 | Deploy Marketplace API (Railway) | Deploy | D1 | Not Started | D1.1-D1.5 |
-| D1.7 | Configure DNS + Subdomains (Cloudflare) | Deploy | D1 | Not Started | D1.6 |
-| D1.8 | Verify AWS SES Production Access | Deploy | D1 | In Progress | AWS Approval (pending) |
-| D1.9 | Fix kaven-template (BLOCKER #0) | Deploy | D1 | Not Started | D1.5 |
-| D1.10 | Publish Payments Module to Marketplace | Deploy | D1 | Not Started | D1.6, D1.5 |
-| D1.11 | Seed Marketplace Content (4 modules) | Deploy | D1 | Not Started | D1.6, D1.10 |
-| D1.12 | E2E Smoke Test — PROVA FINAL | Deploy | D1 | Not Started | D1.1-D1.11 ALL |
+> **Providers reais (atualizado 2026-04-09):** Cloud Run (GCP) substituiu Railway. Stripe substituiu Paddle. Resend substituiu AWS SES.
+
+| Story ID | Title | Epic | Sprint | Status | Notas |
+|----------|-------|------|--------|--------|-------|
+| D1.1 | Setup Neon PostgreSQL (2 databases) | Deploy | D1 | ✅ Done | 37 migrations aplicadas |
+| D1.2 | Setup Upstash Redis | Deploy | D1 | ✅ Done | |
+| D1.3 | Create GitHub OAuth App | Deploy | D1 | ✅ Done | |
+| D1.4 | Configure Stripe Production (era Paddle) | Deploy | D1 | ✅ Done | Provider trocado: Paddle → Stripe |
+| D1.5 | Generate Production Secrets (JWT + Ed25519) | Deploy | D1 | ✅ Done | |
+| D1.6 | Deploy Marketplace API — Cloud Run GCP (era Railway) | Deploy | D1 | ✅ Done | LIVE — revision kaven-marketplace-00024-t6t |
+| D1.7 | Configure DNS + Subdomains (Cloudflare) | Deploy | D1 | ✅ Done | |
+| D1.8 | Configure Resend Email (era AWS SES) | Deploy | D1 | ✅ Done | Provider trocado: SES → Resend (100/dia free) |
+| D1.9 | Fix kaven-template (BLOCKER #0) | Deploy | D1 | ✅ Done | |
+| D1.10 | Publish Payments Module to Marketplace | Deploy | D1 | ❌ Not Started | |
+| D1.11 | Seed Marketplace Content (4 modules) | Deploy | D1 | ❌ Not Started | Aguarda D1.10 |
+| D1.12 | E2E Smoke Test — PROVA FINAL | Deploy | D1 | ❌ Not Started | Aguarda D1.1–D1.11 ALL |
 
 ### Epic-3 Site Sprint S1 (6 stories)
 
@@ -201,6 +212,21 @@
 | S2.3 | Billing Management | Site | S2 | Planned | S2.1, M2.4 done |
 | S2.4 | Module Discovery | Site | S2 | Planned | S2.1, M3.1 |
 
+### AIOX Bridge Sprint CS4 — Workflow + Councils (2 stories)
+
+| Story ID | Title | Epic | Sprint | Status | Blocked By |
+|----------|-------|------|--------|--------|-----------|
+| CS4.1 | Workflow `greenfield-kaven.yaml` — orquestra AIOX Phases 0-2 + kaven-squad Phase 3 via Kai | Cross-Squad | CS4 | ✅ Done (PR #85, 2026-04-04) | — |
+| CS4.2 | Protocol de Council via Steave — protocolo formal 5-steps integrado à constitution AIOX | Cross-Squad | CS4 | ✅ Done (PR #85, 2026-04-04) | — |
+
+### AIOX Bridge Sprint D2 — Infra AIOX (3 stories)
+
+| Story ID | Title | Epic | Sprint | Status | Blocked By |
+|----------|-------|------|--------|--------|-----------|
+| D2.1 | Service Token para AI Agents — `X-Service-Token` middleware, role AGENT, revogação por inatividade | Deploy | D2 | ✅ Done (PR #86, 2026-04-05) | — |
+| D2.2 | Telemetria AIOX ↔ Prometheus — metrics-exporter.js + dashboard Grafana "AIOX Development Health" | Deploy | D2 | ✅ Done (PR #86, 2026-04-05) | — |
+| D2.3 | `devLoadAlwaysFiles` no Template — docs architecture/tech-stack/coding-standards no kaven-template | Deploy | D2 | ✅ Done (PR #86, 2026-04-05) | — |
+
 ### Epic-4 Framework RC1 Remaining (3 stories)
 
 | Story ID | Title | Epic | Sprint | Status | Blocked By |
@@ -221,12 +247,17 @@
 | Marketplace M3 ✅ Feb 17 | 8 | 0 | 8 |
 | CLI C1 ✅ Feb 17 | 9 | 0 | 9 |
 | CLI C2 ✅ Feb 24 | 8 | 0 | 8 |
+| CLI C3 ✅ Apr 4 | 4 | 0 | 4 |
 | Site S1 | 0 | 6 | 6 |
 | Site S2 | 0 | 4 | 4 |
 | Framework RC1 (F1) | 2 | 3 | 5 |
-| Cross-Squad (CS) | 17 | 0 | 17 |
-| Epic-6 Deploy D1 | 0 | 12 | 12 |
-| **Total** | **109** | **25** | **134** |
+| Cross-Squad (CS) | 17 | 2 | 19 |
+| Epic-6 Deploy D1 | 9 | 3 | 12 |
+| AIOX Bridge CS4 | 2 | 0 | 2 |
+| AIOX Bridge D2 | 3 | 0 | 3 |
+| **Total** | **127** | **18** | **145** |
+
+> **Atualizado 2026-04-09:** D1.1–D1.9 marcadas como Done (9 stories). Providers corrigidos: Cloud Run (GCP), Stripe, Resend.
 
 > Note: Sprint 7 framework tasks (11 parallel agent tasks merged in PR#23) counted as one aggregated entry above.
 > Individual stories STORY-001 to STORY-046 (46 file-tracked stories) + 1 aggregated Sprint 7 batch = 47 framework stories.

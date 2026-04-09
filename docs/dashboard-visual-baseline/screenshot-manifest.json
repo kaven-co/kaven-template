@@ -1,0 +1,43 @@
+{
+  "capturedAt": "2026-02-17T16:58:00.000Z",
+  "baseUrl": "http://localhost:3200",
+  "dashboardVersion": "v4.4-lendaria-ds",
+  "sourceDir": "/home/bychrisr/projects/work/kaven/kaven-framework/.aios-core/dashboard",
+  "chromeVersion": "145.0.7632.45",
+  "total": 21,
+  "succeeded": 21,
+  "bundleBaseline": {
+    "htmlKb": 0.46,
+    "cssKb": 36,
+    "jsKb": 724,
+    "totalKb": 760,
+    "jsGzipKb": 201,
+    "cssGzipKb": 6.8,
+    "totalGzipKb": 208,
+    "builtAt": "2026-02-17T16:50:00.000Z",
+    "note": "JS bundle exceeds Vite 500kB warning threshold"
+  },
+  "screenshots": [
+    { "page": "Project Overview", "breakpoint": "mobile", "width": 320, "file": "project-overview-mobile-320px.png", "sizeKb": 34, "success": true },
+    { "page": "Project Overview", "breakpoint": "tablet", "width": 768, "file": "project-overview-tablet-768px.png", "sizeKb": 63, "success": true },
+    { "page": "Project Overview", "breakpoint": "desktop", "width": 1920, "file": "project-overview-desktop-1920px.png", "sizeKb": 79, "success": true },
+    { "page": "Epic Breakdown", "breakpoint": "mobile", "width": 320, "file": "epic-breakdown-mobile-320px.png", "sizeKb": 23, "success": true },
+    { "page": "Epic Breakdown", "breakpoint": "tablet", "width": 768, "file": "epic-breakdown-tablet-768px.png", "sizeKb": 60, "success": true },
+    { "page": "Epic Breakdown", "breakpoint": "desktop", "width": 1920, "file": "epic-breakdown-desktop-1920px.png", "sizeKb": 59, "success": true },
+    { "page": "Story Timeline", "breakpoint": "mobile", "width": 320, "file": "story-timeline-mobile-320px.png", "sizeKb": 21, "success": true },
+    { "page": "Story Timeline", "breakpoint": "tablet", "width": 768, "file": "story-timeline-tablet-768px.png", "sizeKb": 54, "success": true },
+    { "page": "Story Timeline", "breakpoint": "desktop", "width": 1920, "file": "story-timeline-desktop-1920px.png", "sizeKb": 34, "success": true },
+    { "page": "Agent Performance", "breakpoint": "mobile", "width": 320, "file": "agent-performance-mobile-320px.png", "sizeKb": 27, "success": true },
+    { "page": "Agent Performance", "breakpoint": "tablet", "width": 768, "file": "agent-performance-tablet-768px.png", "sizeKb": 62, "success": true },
+    { "page": "Agent Performance", "breakpoint": "desktop", "width": 1920, "file": "agent-performance-desktop-1920px.png", "sizeKb": 78, "success": true },
+    { "page": "Estimates Analysis", "breakpoint": "mobile", "width": 320, "file": "estimates-analysis-mobile-320px.png", "sizeKb": 20, "success": true },
+    { "page": "Estimates Analysis", "breakpoint": "tablet", "width": 768, "file": "estimates-analysis-tablet-768px.png", "sizeKb": 46, "success": true },
+    { "page": "Estimates Analysis", "breakpoint": "desktop", "width": 1920, "file": "estimates-analysis-desktop-1920px.png", "sizeKb": 61, "success": true },
+    { "page": "Cost Analysis", "breakpoint": "mobile", "width": 320, "file": "cost-analysis-mobile-320px.png", "sizeKb": 48, "success": true },
+    { "page": "Cost Analysis", "breakpoint": "tablet", "width": 768, "file": "cost-analysis-tablet-768px.png", "sizeKb": 95, "success": true },
+    { "page": "Cost Analysis", "breakpoint": "desktop", "width": 1920, "file": "cost-analysis-desktop-1920px.png", "sizeKb": 113, "success": true },
+    { "page": "Advanced Analytics", "breakpoint": "mobile", "width": 320, "file": "advanced-analytics-mobile-320px.png", "sizeKb": 30, "success": true },
+    { "page": "Advanced Analytics", "breakpoint": "tablet", "width": 768, "file": "advanced-analytics-tablet-768px.png", "sizeKb": 58, "success": true },
+    { "page": "Advanced Analytics", "breakpoint": "desktop", "width": 1920, "file": "advanced-analytics-desktop-1920px.png", "sizeKb": 69, "success": true }
+  ]
+}

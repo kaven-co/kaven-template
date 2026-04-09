@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kaven — Production-ready SaaS Framework</title>
+  <meta name="description" content="22-feature multi-tenant SaaS framework. Auth, payments, observability, RBAC, CLI — built, tested, documented. Launching March 31, 2026." />
+  <meta property="og:title" content="Kaven — Production-ready SaaS Framework" />
+  <meta property="og:description" content="22-feature multi-tenant SaaS framework. Launching March 31, 2026." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://kaven.site" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            surface: { base: '#0F172A', elevated: '#1E293B', card: '#243044', border: '#334155' },
+            frost: { amber: '#F59E0B', 'amber-dim': '#B45309', 'amber-glow': '#FCD34D', blue: '#3B82F6', 'blue-dim': '#1D4ED8' },
+            text: { primary: '#F8FAFC', secondary: '#94A3B8', muted: '#64748B', inverse: '#0F172A' },
+            code: { bg: '#1a2235', border: '#2d3f5a' }
+          },
+          fontFamily: { sans: ['DM Sans', 'system-ui', 'sans-serif'], mono: ['Geist Mono', 'monospace'] }
+        }
+      }
+    }
+  </script>
+  <style>
+    * { -webkit-font-smoothing: antialiased; }
+    body { background: #0F172A; color: #F8FAFC; font-family: 'DM Sans', system-ui, sans-serif; }
+    .mono { font-family: 'Geist Mono', monospace; }
+    .amber-text { color: #F59E0B; }
+    .amber-border { border-color: #F59E0B; }
+    .amber-bg { background-color: #F59E0B; }
+    .gradient-text { background: linear-gradient(135deg, #F8FAFC 0%, #F59E0B 60%, #FCD34D 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .terminal-header { display: flex; gap: 6px; align-items: center; padding: 12px 16px; background: #1a2235; border-bottom: 1px solid #2d3f5a; border-radius: 8px 8px 0 0; }
+    .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .dot-red { background: #ff5f57; }
+    .dot-yellow { background: #febc2e; }
+    .dot-green { background: #28c840; }
+    .terminal-body { background: #1a2235; border: 1px solid #2d3f5a; border-top: none; border-radius: 0 0 8px 8px; padding: 20px; }
+    .term-line { font-family: 'Geist Mono', monospace; font-size: 13px; line-height: 1.7; color: #94A3B8; }
+    .term-cmd { color: #F59E0B; }
+    .term-ok { color: #34D399; }
+    .term-dim { color: #64748B; }
+    .term-white { color: #F8FAFC; }
+    .feature-card { background: #1E293B; border: 1px solid #334155; border-radius: 8px; padding: 20px; transition: border-color 0.2s; }
+    .feature-card:hover { border-color: #F59E0B44; }
+    .profile-card { background: #1E293B; border: 1px solid #334155; border-radius: 10px; padding: 28px; }
+    .pricing-card { background: #1E293B; border: 1px solid #334155; border-radius: 10px; padding: 28px; }
+    .pricing-featured { border-color: #F59E0B; box-shadow: 0 0 40px #F59E0B18; }
+    .faq-item { border-bottom: 1px solid #334155; }
+    .faq-btn { width: 100%; text-align: left; padding: 20px 0; display: flex; justify-content: space-between; align-items: center; cursor: pointer; background: none; border: none; color: #F8FAFC; font-size: 15px; font-weight: 500; font-family: 'DM Sans', sans-serif; }
+    .faq-answer { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
+    .faq-answer.open { max-height: 300px; }
+    .faq-chevron { transition: transform 0.3s; color: #94A3B8; font-size: 20px; }
+    .faq-chevron.open { transform: rotate(180deg); }
+    .nd-section { background: linear-gradient(135deg, #1E293B 0%, #1a2235 100%); border-top: 1px solid #334155; border-bottom: 1px solid #334155; }
+    .stack-pill { background: #243044; border: 1px solid #334155; border-radius: 6px; padding: 6px 14px; font-family: 'Geist Mono', monospace; font-size: 12px; color: #94A3B8; display: inline-flex; align-items: center; gap: 6px; }
+    .not-item { color: #94A3B8; display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; font-size: 14px; }
+    .not-x { color: #F87171; font-weight: 700; flex-shrink: 0; }
+    .waitlist-input { background: #1E293B; border: 1px solid #334155; border-radius: 8px; padding: 14px 18px; color: #F8FAFC; font-size: 15px; font-family: 'DM Sans', sans-serif; outline: none; flex: 1; transition: border-color 0.2s; }
+    .waitlist-input:focus { border-color: #F59E0B; }
+    .waitlist-input::placeholder { color: #64748B; }
+    .btn-primary { background: #F59E0B; color: #0F172A; font-weight: 600; border: none; cursor: pointer; border-radius: 8px; padding: 14px 24px; font-size: 15px; font-family: 'DM Sans', sans-serif; transition: background 0.2s, transform 0.1s; white-space: nowrap; }
+    .btn-primary:hover { background: #FCD34D; }
+    .btn-primary:active { transform: scale(0.98); }
+    .btn-secondary { background: transparent; border: 1px solid #334155; color: #94A3B8; cursor: pointer; border-radius: 8px; padding: 12px 22px; font-size: 14px; font-family: 'DM Sans', sans-serif; transition: border-color 0.2s, color 0.2s; }
+    .btn-secondary:hover { border-color: #64748B; color: #F8FAFC; }
+    .section-label { font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #F59E0B; margin-bottom: 16px; display: block; }
+    .trust-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748B; }
+    .trust-check { color: #34D399; font-size: 12px; }
+    .nav-link { color: #64748B; font-size: 14px; font-weight: 500; text-decoration: none; transition: color 0.2s; }
+    .nav-link:hover { color: #F8FAFC; }
+    .pain-icon { font-size: 28px; margin-bottom: 14px; display: block; }
+    .arch-diagram { background: #1a2235; border: 1px solid #2d3f5a; border-radius: 8px; padding: 20px; font-family: 'Geist Mono', monospace; font-size: 12px; line-height: 1.6; color: #94A3B8; overflow-x: auto; }
+    .arch-you { color: #F59E0B; }
+    .arch-done { color: #34D399; }
+    .feature-tag { font-family: 'Geist Mono', monospace; font-size: 10px; background: #F59E0B18; color: #F59E0B; padding: 2px 8px; border-radius: 4px; display: inline-block; margin-bottom: 10px; }
+    .check-yes { color: #34D399; font-weight: 600; }
+    .check-no { color: #475569; }
+    .table-featured-col { background: #F59E0B08; }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="sticky top-0 z-50 border-b border-surface-border backdrop-blur-sm" style="background: rgba(15,23,42,0.92);">
+  <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+    <a href="#" class="mono font-medium text-text-primary text-xl tracking-tight">
+      kaven<span class="amber-text">.</span>
+    </a>
+    <div class="hidden md:flex items-center gap-6">
+      <a href="#features" class="nav-link">Features</a>
+      <a href="#pricing" class="nav-link">Pricing</a>
+      <a href="#faq" class="nav-link">FAQ</a>
+      <a href="https://github.com/kaven-co" target="_blank" rel="noopener" class="nav-link">GitHub ↗</a>
+    </div>
+    <a href="#waitlist" class="btn-primary" style="padding: 9px 18px; font-size: 13px;">Join Waitlist →</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="max-w-6xl mx-auto px-6 pt-20 pb-16">
+  <div class="max-w-3xl">
+    <span class="section-label">Production-ready SaaS infrastructure — launching March 31</span>
+    <h1 class="text-5xl md:text-6xl font-semibold leading-tight mb-6" style="letter-spacing: -1.5px;">
+      Stop rebuilding<br class="hidden md:block" /> the same foundation.<br />
+      <span class="gradient-text">Ship the SaaS.</span>
+    </h1>
+    <p class="text-text-secondary text-lg leading-relaxed mb-8 max-w-2xl">
+      Kaven is a complete, multi-tenant SaaS framework built for developers who are tired of setting up auth, payments, roles, and observability from scratch — every single time.<br />
+      <span class="text-text-primary font-medium mt-2 block">22 production features. 400+ pages of docs. One codebase. Zero compromises.</span>
+    </p>
+    <div class="flex flex-wrap gap-3 mb-10">
+      <a href="#waitlist" class="btn-primary">Join the Waitlist →</a>
+      <a href="https://github.com/kaven-co" target="_blank" rel="noopener" class="btn-secondary">View on GitHub ↗</a>
+    </div>
+    <div class="flex flex-wrap gap-x-6 gap-y-2">
+      <div class="trust-item"><span class="trust-check">✔</span> Next.js 14 + Fastify + PostgreSQL</div>
+      <div class="trust-item"><span class="trust-check">✔</span> Lifetime updates</div>
+      <div class="trust-item"><span class="trust-check">✔</span> Source code included</div>
+    </div>
+  </div>
+
+  <!-- Terminal -->
+  <div class="mt-14 max-w-2xl">
+    <div class="terminal-header">
+      <div class="dot dot-red"></div>
+      <div class="dot dot-yellow"></div>
+      <div class="dot dot-green"></div>
+      <span class="mono text-text-muted ml-2 text-xs">~/my-saas</span>
+    </div>
+    <div class="terminal-body">
+      <div class="term-line"><span class="term-dim">$</span> <span class="term-cmd">kaven init my-saas --template complete</span></div>
+      <div class="term-line term-dim">  Bootstrapping project...</div>
+      <div class="term-line"><span class="term-ok">✓</span> <span class="term-white">Multi-tenancy</span> <span class="term-dim">— tenantId isolation, RLS middleware</span></div>
+      <div class="term-line"><span class="term-ok">✓</span> <span class="term-white">Auth + RBAC</span> <span class="term-dim">— JWT, refresh tokens, 3-level roles</span></div>
+      <div class="term-line"><span class="term-ok">✓</span> <span class="term-white">Payments</span> <span class="term-dim">— Stripe, PIX, Paddle wired</span></div>
+      <div class="term-line"><span class="term-ok">✓</span> <span class="term-white">Observability</span> <span class="term-dim">— Prometheus, Grafana, 36+ metrics</span></div>
+      <div class="term-line"><span class="term-ok">✓</span> <span class="term-white">985 tests passing</span> <span class="term-dim">— 0 failures</span></div>
+      <div class="term-line mt-2"><span class="term-dim">$</span> <span class="term-cmd">npm run dev</span></div>
+      <div class="term-line"><span class="term-ok">▶</span> <span class="term-white">Your product.</span> <span class="amber-text">Starting now.</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- PROBLEM -->
+<section class="max-w-6xl mx-auto px-6 py-20 border-t border-surface-border">
+  <span class="section-label">Sound familiar?</span>
+  <div class="grid md:grid-cols-3 gap-6">
+    <div class="feature-card">
+      <span class="pain-icon">🔁</span>
+      <h3 class="font-semibold text-text-primary mb-3">You're rebuilding auth again</h3>
+      <p class="text-text-secondary text-sm leading-relaxed">JWT, refresh tokens, password reset, email verification — for the 4th time this year. Same code. Different project.</p>
+    </div>
+    <div class="feature-card">
+      <span class="pain-icon">💸</span>
+      <h3 class="font-semibold text-text-primary mb-3">Multi-tenancy isn't "just a flag"</h3>
+      <p class="text-text-secondary text-sm leading-relaxed">Data isolation, tenant slugs, role hierarchy, per-tenant features. You know it's complex. You've built it wrong before.</p>
+    </div>
+    <div class="feature-card">
+      <span class="pain-icon">📊</span>
+      <h3 class="font-semibold text-text-primary mb-3">Observability is always "later"</h3>
+      <p class="text-text-secondary text-sm leading-relaxed">Until production breaks and you have no metrics, no traces, no alerts. "Later" costs real money and real users.</p>
+    </div>
+  </div>
+  <p class="mt-8 text-center text-text-primary font-medium text-lg">
+    Kaven solves all three. Not eventually — <span class="amber-text">from day one.</span>
+  </p>
+</section>
+
+<!-- WHAT IS KAVEN -->
+<section class="max-w-6xl mx-auto px-6 py-20 border-t border-surface-border">
+  <div class="grid md:grid-cols-2 gap-16 items-center">
+    <div>
+      <span class="section-label">One framework. Everything included.</span>
+      <h2 class="text-4xl font-semibold mb-6 leading-tight" style="letter-spacing: -1px;">Not a starter kit.<br />Not a template.<br /><span class="amber-text">Infrastructure.</span></h2>
+      <p class="text-text-secondary leading-relaxed mb-6">Kaven is a production-grade, multi-tenant SaaS framework with 22 fully implemented features — each one tested, documented, and wired together.</p>
+      <p class="text-text-secondary leading-relaxed">You clone it. You build your product on top. You don't touch the foundation ever again.</p>
+    </div>
+    <div class="arch-diagram">
+      <div class="mb-1">┌─────────────────────────────────────┐</div>
+      <div class="mb-1">│         <span class="arch-you">YOUR PRODUCT</span>               │ <span class="text-text-muted text-xs">← you build this</span></div>
+      <div class="mb-1">│  [Feature A]  [Feature B]  [...]    │</div>
+      <div class="mb-1">├─────────────────────────────────────┤</div>
+      <div class="mb-1">│              <span class="arch-done">KAVEN</span>                  │ <span class="text-text-muted text-xs">← already done</span></div>
+      <div class="mb-1">│  Auth · Multi-tenancy · Payments    │</div>
+      <div class="mb-1">│  Observability · RBAC · CLI · Docs  │</div>
+      <div class="mb-1">└─────────────────────────────────────┘</div>
+      <div class="text-text-muted text-center mt-1">PostgreSQL · Redis · Docker</div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="features" class="max-w-6xl mx-auto px-6 py-20 border-t border-surface-border">
+  <span class="section-label">22 production features. Built, tested, documented.</span>
+  <h2 class="text-3xl font-semibold mb-12 leading-tight" style="letter-spacing: -0.5px;">Everything your SaaS needs.<br /><span class="text-text-secondary font-normal">Wired together from day one.</span></h2>
+
+  <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <!-- Multi-tenancy -->
+    <div class="feature-card">
+      <div class="feature-tag">Multi-tenancy</div>
+      <ul class="space-y-1.5">
+        <li class="term-line text-xs">✓ Tenant CRUD</li>
+        <li class="term-line text-xs">✓ Friendly URL slugs</li>
+        <li class="term-line text-xs">✓ Smart lookup (UUID/slug)</li>
+        <li class="term-line text-xs">✓ Data isolation (RLS)</li>
+        <li class="term-line text-xs">✓ Spaces & sub-segmentation</li>
+      </ul>
+    </div>
+    <!-- Auth -->
+    <div class="feature-card">
+      <div class="feature-tag">Auth & Security</div>
+      <ul class="space-y-1.5">
+        <li class="term-line text-xs">✓ JWT + Refresh tokens</li>
+        <li class="term-line text-xs">✓ Password recovery</li>
+        <li class="term-line text-xs">✓ Email verification</li>
+        <li class="term-line text-xs">✓ Setup wizard (4 steps)</li>
+        <li class="term-line text-xs">✓ RBAC — 3 levels</li>
+      </ul>
+    </div>
+    <!-- Payments -->
+    <div class="feature-card">
+      <div class="feature-tag">Payments</div>
+      <ul class="space-y-1.5">
+        <li class="term-line text-xs">✓ Stripe integration</li>
+        <li class="term-line text-xs">✓ PIX via PagueBit (BR)</li>
+        <li class="term-line text-xs">✓ Paddle (digital goods)</li>
+        <li class="term-line text-xs">✓ QR code generation</li>
+        <li class="term-line text-xs">✓ Webhook handler HMAC v2</li>
+      </ul>
+    </div>
+    <!-- Observability -->
+    <div class="feature-card">
+      <div class="feature-tag">Observability</div>
+      <ul class="space-y-1.5">
+        <li class="term-line text-xs">✓ 36+ metrics (Golden Signals)</li>
+        <li class="term-line text-xs">✓ Prometheus export</li>
+        <li class="term-line text-xs">✓ 4 Grafana dashboards</li>
+        <li class="term-line text-xs">✓ Circuit breaker pattern</li>
+        <li class="term-line text-xs">✓ 7-tab admin dashboard</li>
+      </ul>
+    </div>
+    <!-- Design System -->
+    <div class="feature-card">
+      <div class="feature-tag">Design System</div>
+      <ul class="space-y-1.5">
+        <li class="term-line text-xs">✓ 76+ UI components</li>
+        <li class="term-line text-xs">✓ Dark mode built-in</li>
+        <li class="term-line text-xs">✓ Responsive (mobile-first)</li>
+        <li class="term-line text-xs">✓ White-label branding</li>
+        <li class="term-line text-xs">✓ Fluent UI + Shadcn adapters</li>
+      </ul>
+    </div>
+    <!-- i18n -->
+    <div class="feature-card">
+      <div class="feature-tag">i18n & Timezones</div>
+      <ul class="space-y-1.5">
+        <li class="term-line text-xs">✓ PT-BR + EN-US</li>
+        <li class="term-line text-xs">✓ 170+ translations</li>
+        <li class="term-line text-xs">✓ 22 IANA timezones</li>
+        <li class="term-line text-xs">✓ Auto browser detection</li>
+        <li class="term-line text-xs">✓ Pluralization support</li>
+      </ul>
+    </div>
+    <!-- Email -->
+    <div class="feature-card">
+      <div class="feature-tag">Email System</div>
+      <ul class="space-y-1.5">
+        <li class="term-line text-xs">✓ AWS SES (rate limiting)</li>
+        <li class="term-line text-xs">✓ Welcome templates (HTML)</li>
+        <li class="term-line text-xs">✓ Notification center</li>
+        <li class="term-line text-xs">✓ In-app notifications</li>
+        <li class="term-line text-xs">✓ Audit log export (CSV)</li>
+      </ul>
+    </div>
+    <!-- CLI -->
+    <div class="feature-card">
+      <div class="feature-tag">CLI + Marketplace</div>
+      <ul class="space-y-1.5">
+        <li class="term-line text-xs">✓ kaven module add/remove</li>
+        <li class="term-line text-xs">✓ Split-schema Prisma</li>
+        <li class="term-line text-xs">✓ Module marketplace</li>
+        <li class="term-line text-xs">✓ Device code auth flow</li>
+        <li class="term-line text-xs">✓ Module doctor</li>
+      </ul>
+    </div>
+  </div>
+
+  <p class="mt-8 text-text-muted text-sm flex items-start gap-2">
+    <span class="amber-text">⚠</span>
+    <span>Community & Gamification (XP, Badges, Discord) — post-launch roadmap. Everything above is built and tested today.</span>
+  </p>
+</section>
+
+<!-- STACK -->
+<section class="max-w-6xl mx-auto px-6 py-16 border-t border-surface-border">
+  <span class="section-label">Built on tools you already know.</span>
+  <div class="flex flex-wrap gap-3 mt-4">
+    <span class="stack-pill">Next.js 14 (App Router)</span>
+    <span class="stack-pill">Fastify</span>
+    <span class="stack-pill">PostgreSQL 16</span>
+    <span class="stack-pill">Prisma ORM</span>
+    <span class="stack-pill">TypeScript (strict)</span>
+    <span class="stack-pill">Redis</span>
+    <span class="stack-pill">Docker Compose</span>
+    <span class="stack-pill">pnpm workspaces</span>
+    <span class="stack-pill">Tailwind CSS</span>
+    <span class="stack-pill">Vitest</span>
+    <span class="stack-pill">Prometheus</span>
+    <span class="stack-pill">Grafana</span>
+  </div>
+</section>
+
+<!-- WHO IT'S FOR -->
+<section class="max-w-6xl mx-auto px-6 py-20 border-t border-surface-border">
+  <span class="section-label">Who it's for</span>
+  <h2 class="text-3xl font-semibold mb-10" style="letter-spacing: -0.5px;">Kaven is for developers who <span class="amber-text">ship.</span></h2>
+  <div class="grid md:grid-cols-3 gap-6">
+    <div class="profile-card">
+      <div class="text-2xl mb-4">👤</div>
+      <h3 class="font-semibold text-text-primary mb-3">Indie dev / solo builder</h3>
+      <p class="text-text-secondary text-sm leading-relaxed">Building a SaaS on the side or full-time. You've done auth 10 times. You're sick of it. You want to spend energy on the product that makes money — not the plumbing underneath it.<br /><br /><span class="amber-text font-medium">Kaven gives you the plumbing on day one.</span></p>
+    </div>
+    <div class="profile-card">
+      <div class="text-2xl mb-4">👥</div>
+      <h3 class="font-semibold text-text-primary mb-3">Agency / freelancer</h3>
+      <p class="text-text-secondary text-sm leading-relaxed">Client wants a multi-tenant platform. You quote 3 months for the foundation alone. With Kaven, that becomes 3 weeks.<br /><br /><span class="amber-text font-medium">More margin. Faster delivery. Same quality.</span></p>
+    </div>
+    <div class="profile-card">
+      <div class="text-2xl mb-4">🏢</div>
+      <h3 class="font-semibold text-text-primary mb-3">CTO at an early-stage startup</h3>
+      <p class="text-text-secondary text-sm leading-relaxed">Series A. Enterprise clients asking: "Can you isolate our tenant data?" <br /><br />You say: <span class="amber-text font-medium">"Already done."</span><br /><br /><span class="text-text-secondary">Kaven ships with multi-tenancy baked in from day one.</span></p>
+    </div>
+  </div>
+</section>
+
+<!-- WHO IT'S NOT FOR -->
+<section class="max-w-6xl mx-auto px-6 py-16 border-t border-surface-border">
+  <div class="max-w-xl">
+    <span class="section-label">Be honest with yourself</span>
+    <h2 class="text-2xl font-semibold mb-6">Kaven is not for everyone. <span class="text-text-secondary font-normal">Seriously.</span></h2>
+    <div class="space-y-1">
+      <div class="not-item"><span class="not-x">✗</span> You want drag-and-drop builders — no code involved</div>
+      <div class="not-item"><span class="not-x">✗</span> You're not comfortable with TypeScript and the terminal</div>
+      <div class="not-item"><span class="not-x">✗</span> You're looking for a UI component library only</div>
+      <div class="not-item"><span class="not-x">✗</span> You need someone to host and maintain it for you</div>
+      <div class="not-item"><span class="not-x">✗</span> You need a CMS-first or WordPress solution</div>
+    </div>
+    <p class="mt-6 text-text-secondary text-sm leading-relaxed">If that's you — no hard feelings. Kaven is a developer tool.<br />If it's not you — keep reading.</p>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section id="pricing" class="max-w-6xl mx-auto px-6 py-20 border-t border-surface-border">
+  <span class="section-label">Pricing</span>
+  <h2 class="text-3xl font-semibold mb-4" style="letter-spacing: -0.5px;">One-time payment. Lifetime access.</h2>
+  <p class="text-text-secondary mb-12 text-lg">No subscriptions. No per-seat pricing. No lock-in.</p>
+
+  <div class="grid md:grid-cols-3 gap-6">
+    <!-- Starter -->
+    <div class="pricing-card">
+      <div class="mb-6">
+        <div class="text-text-secondary text-sm font-medium mb-2">Starter</div>
+        <div class="text-4xl font-semibold mb-1">$149</div>
+        <div class="text-text-muted text-sm">1 project license, 10 tenants</div>
+      </div>
+      <ul class="space-y-2 mb-8 text-sm">
+        <li class="flex gap-2"><span class="check-yes">✓</span> Multi-tenancy (10 tenants)</li>
+        <li class="flex gap-2"><span class="check-yes">✓</span> Auth + RBAC</li>
+        <li class="flex gap-2"><span class="check-yes">✓</span> Design System (76+ components)</li>
+        <li class="flex gap-2"><span class="check-yes">✓</span> CLI + module system</li>
+        <li class="flex gap-2"><span class="check-yes">✓</span> i18n (PT-BR + EN-US)</li>
+        <li class="flex gap-2"><span class="check-yes">✓</span> 200 pages docs</li>
+        <li class="flex gap-2 text-text-muted"><span class="check-no">—</span> Payments (Stripe, PIX, Paddle)</li>
+        <li class="flex gap-2 text-text-muted"><span class="check-no">—</span> Observability + Grafana</li>
+        <li class="flex gap-2 text-text-muted"><span class="check-no">—</span> Audit logs</li>
+        <li class="flex gap-2 text-text-muted"><span class="check-no">—</span> Marketplace access</li>
+      </ul>
+      <a href="#waitlist" class="btn-secondary w-full text-center block">Join Waitlist</a>
+    </div>
+
+    <!-- Complete (featured) -->
+    <div class="pricing-card pricing-featured relative">
+      <div class="absolute -top-3 left-1/2 -translate-x-1/2">
+        <span class="amber-bg text-text-inverse text-xs font-bold px-3 py-1 rounded-full">MOST POPULAR</span>
+      </div>
+      <div class="mb-6">
+        <div class="amber-text text-sm font-semibold mb-2">Complete ⭐</div>
+        <div class="text-4xl font-semibold mb-1">$399</div>
+        <div class="text-text-muted text-sm">1 project license, unlimited tenants</div>
+      </div>
+      <ul class="space-y-2 mb-8 text-sm">
+        <li class="flex gap-2"><span class="check-yes">✓</span> Everything in Starter</li>
+        <li class="flex gap-2"><span class="check-yes">✓</span> Unlimited tenants</li>
+        <li class="flex gap-2"><span class="check-yes">✓</span> Payments (Stripe, PIX, Paddle)</li>
+        <li class="flex gap-2"><span class="check-yes">✓</span> Observability (36+ metrics)</li>
+        <li class="flex gap-2"><span class="check-yes">✓</span> 4 Grafana dashboards</li>
+        <li class="flex gap-2"><span class="check-yes">✓</span> Audit logs + export</li>
+        <li class="flex gap-2"><span class="check-yes">✓</span> White-label branding</li>
+        <li class="flex gap-2"><span class="check-yes">✓</span> Spaces & Permissions</li>
+        <li class="flex gap-2"><span class="check-yes">✓</span> 400+ pages docs</li>
+        <li class="flex gap-2 text-text-muted"><span class="check-no">—</span> Marketplace access</li>
+      </ul>
+      <a href="#waitlist" class="btn-primary w-full text-center block">Join Waitlist</a>
+    </div>
+
+    <!-- Pro -->
+    <div class="pricing-card">
+      <div class="mb-6">
+        <div class="text-text-secondary text-sm font-medium mb-2">Pro</div>
+        <div class="text-4xl font-semibold mb-1">$799</div>
+        <div class="text-text-muted text-sm">5 project licenses, marketplace</div>
+      </div>
+      <ul class="space-y-2 mb-8 text-sm">
+        <li class="flex gap-2"><span class="check-yes">✓</span> Everything in Complete</li>
+        <li class="flex gap-2"><span class="check-yes">✓</span> 5 project licenses</li>
+        <li class="flex gap-2"><span class="check-yes">✓</span> Marketplace access</li>
+        <li class="flex gap-2"><span class="check-yes">✓</span> Priority support</li>
+        <li class="flex gap-2"><span class="check-yes">✓</span> Module publishing rights</li>
+        <li class="flex gap-2"><span class="check-yes">✓</span> CLI pro features</li>
+      </ul>
+      <a href="#waitlist" class="btn-secondary w-full text-center block">Join Waitlist</a>
+    </div>
+  </div>
+
+  <div class="mt-8 p-5 rounded-lg border border-amber-500/20 bg-amber-500/5 flex gap-3 items-start max-w-2xl">
+    <span class="amber-text text-lg mt-0.5">🔐</span>
+    <div>
+      <p class="text-text-primary font-medium text-sm">Founding Member pricing — first 50 customers get 30% off. Permanently locked.</p>
+      <p class="text-text-muted text-sm mt-1">Waitlist members are notified 48h before public launch.</p>
+    </div>
+  </div>
+</section>
+
+<!-- NEURODIVERGENT NARRATIVE -->
+<section class="nd-section py-20">
+  <div class="max-w-6xl mx-auto px-6">
+    <div class="max-w-2xl mx-auto text-center">
+      <span class="section-label">Built by a neurodivergent. For people who think differently.</span>
+      <div class="space-y-4 text-text-secondary leading-relaxed mb-8">
+        <p>Most boilerplates assume you'll figure it out.</p>
+        <p class="text-text-muted text-sm">No architecture decisions explained. No "why" behind the choices. Just "here's the code, good luck."<br /><em>That doesn't work for everyone.</em></p>
+        <p>Kaven was built with 400+ pages of documentation — not because it was required, but because the person building it <span class="text-text-primary font-medium">needed a map.</span></p>
+        <p class="text-sm text-text-muted">Every decision is documented. Every pattern is explained. Every module has a clear entry point.</p>
+        <p>If you've ever built something brilliant but couldn't start because you didn't have the full picture — <span class="amber-text font-medium">Kaven is for you.</span></p>
+      </div>
+      <blockquote class="text-xl font-medium text-text-primary italic leading-relaxed">
+        "From idea to infrastructure.<br />Without losing your mind along the way."
+      </blockquote>
+    </div>
+  </div>
+</section>
+
+<!-- WAITLIST CTA -->
+<section id="waitlist" class="max-w-6xl mx-auto px-6 py-24">
+  <div class="max-w-xl mx-auto text-center">
+    <span class="section-label">Early access</span>
+    <h2 class="text-4xl font-semibold mb-4 leading-tight" style="letter-spacing: -1px;">Launch is March 31, 2026.<br /><span class="amber-text">Waitlist gets access first.</span></h2>
+    <p class="text-text-secondary mb-8">No spam. One email when we launch. Unsubscribe anytime.</p>
+
+    <form id="waitlist-form" onsubmit="handleWaitlist(event)" class="flex gap-3 flex-col sm:flex-row mb-6">
+      <input type="email" required placeholder="your@email.com" class="waitlist-input" id="email-input" />
+      <button type="submit" class="btn-primary">Join the Waitlist →</button>
+    </form>
+
+    <div id="waitlist-success" class="hidden p-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-sm font-medium">
+      ✓ You're on the list. We'll email you 48h before launch.
+    </div>
+
+    <p class="text-text-muted text-sm mt-4">Join <span class="amber-text font-semibold" id="counter">247</span> developers already on the waitlist.</p>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section id="faq" class="max-w-4xl mx-auto px-6 pb-24 border-t border-surface-border pt-20">
+  <span class="section-label">FAQ</span>
+  <h2 class="text-2xl font-semibold mb-10">Common questions</h2>
+
+  <div id="faq-list"></div>
+</section>
+
+<!-- FOOTER -->
+<footer class="border-t border-surface-border">
+  <div class="max-w-6xl mx-auto px-6 py-12">
+    <div class="flex flex-col md:flex-row justify-between items-start gap-8">
+      <div>
+        <div class="mono font-medium text-text-primary text-xl mb-3">kaven<span class="amber-text">.</span></div>
+        <p class="text-text-muted text-sm max-w-xs">Production-ready SaaS infrastructure for developers who ship.</p>
+        <div class="flex gap-4 mt-4">
+          <a href="https://github.com/kaven-co" target="_blank" rel="noopener" class="nav-link text-sm">GitHub ↗</a>
+          <a href="#" class="nav-link text-sm">Documentation</a>
+          <a href="#" class="nav-link text-sm">Changelog</a>
+        </div>
+      </div>
+      <div class="text-right">
+        <div class="text-text-muted text-xs mono space-y-1">
+          <div>kaven-cli — open source (Apache 2.0)</div>
+          <div>kaven-framework — proprietary (license required)</div>
+        </div>
+      </div>
+    </div>
+    <div class="mt-10 pt-6 border-t border-surface-border flex flex-col md:flex-row justify-between items-center gap-4">
+      <p class="text-text-muted text-sm">© 2026 Kaven</p>
+      <div class="flex gap-4">
+        <a href="/terms" class="nav-link text-xs">Terms</a>
+        <a href="/privacy" class="nav-link text-xs">Privacy</a>
+        <a href="/refund" class="nav-link text-xs">Refund Policy</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // FAQ data
+  const faqs = [
+    { q: "Is this really a one-time payment? No subscription?", a: "Yes. You pay once, you get the source code and all 22 features. Lifetime security updates included." },
+    { q: "What does \"lifetime updates\" mean exactly?", a: "Security patches and bug fixes — forever. New feature updates included for 12 months from purchase date." },
+    { q: "I'm not fluent in TypeScript. Can I still use this?", a: "You'll need working TypeScript knowledge. Kaven is a production codebase, not a tutorial. If you're comfortable reading and writing TypeScript, you're fine." },
+    { q: "Does this include hosting?", a: "No. Kaven is self-hosted. You deploy it yourself (Vercel, Railway, your VPS). Docs cover all major platforms." },
+    { q: "Is the source code included?", a: "Yes. All tiers include full source code access. Starter/Complete = 1 project license. Pro = 5 project licenses." },
+    { q: "What's the difference between Starter and Complete?", a: "Complete adds: payment integrations (Stripe, PIX, Paddle), advanced observability (36+ metrics, Grafana), audit logs, white-label branding, and Spaces & Permissions. If you're building something serious — get Complete." },
+    { q: "I'm a developer in Brazil. Does PIX support work?", a: "Yes. Kaven includes native PIX integration via PagueBit — QR code generation, HMAC webhook verification, expiration logic, and proration support. Built with Brazil in mind." },
+    { q: "When is launch?", a: "March 31, 2026. Waitlist members get notified 48h before and have first access to Founding Member pricing." }
+  ];
+
+  const faqList = document.getElementById('faq-list');
+  faqs.forEach((faq, i) => {
+    faqList.innerHTML += `
+      <div class="faq-item">
+        <button class="faq-btn" onclick="toggleFaq(${i})">
+          <span>${faq.q}</span>
+          <span class="faq-chevron" id="chevron-${i}">▾</span>
+        </button>
+        <div class="faq-answer" id="answer-${i}">
+          <p class="text-text-secondary text-sm leading-relaxed pb-5">${faq.a}</p>
+        </div>
+      </div>
+    `;
+  });
+
+  function toggleFaq(i) {
+    const answer = document.getElementById('answer-' + i);
+    const chevron = document.getElementById('chevron-' + i);
+    answer.classList.toggle('open');
+    chevron.classList.toggle('open');
+  }
+
+  // Waitlist form
+  function handleWaitlist(e) {
+    e.preventDefault();
+    const form = document.getElementById('waitlist-form');
+    const success = document.getElementById('waitlist-success');
+    const counter = document.getElementById('counter');
+    form.style.display = 'none';
+    success.classList.remove('hidden');
+    const current = parseInt(counter.textContent);
+    counter.textContent = current + 1;
+  }
+</script>
+</body>
+</html>

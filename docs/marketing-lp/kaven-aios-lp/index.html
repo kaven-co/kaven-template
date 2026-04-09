@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>O layer que faltava no AIOS — Kaven</title>
+  <meta name="description" content="AIOS orquestra o que construir. Kaven garante que funciona quando escalar. Você só precisa dirigir." />
+
+  <!-- Fonts: DM Sans + Geist Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/geist@1.3.1/dist/fonts/geist-mono/style.css" rel="stylesheet" />
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['DM Sans', 'system-ui', 'sans-serif'],
+            mono: ['Geist Mono', 'ui-monospace', 'monospace'],
+          },
+          colors: {
+            surface: {
+              base: '#0F172A',
+              elevated: '#1E293B',
+              border: '#334155',
+            },
+            amber: {
+              400: '#FBBF24',
+              500: '#F59E0B',
+              600: '#D97706',
+              subtle: 'rgba(245,158,11,0.12)',
+            },
+          },
+          animation: {
+            'fade-up': 'fadeUp 0.6s ease forwards',
+            'blink': 'blink 1s step-end infinite',
+          },
+          keyframes: {
+            fadeUp: {
+              '0%': { opacity: '0', transform: 'translateY(20px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
+            },
+            blink: {
+              '0%, 100%': { opacity: '1' },
+              '50%': { opacity: '0' },
+            },
+          },
+        },
+      },
+    }
+  </script>
+
+  <style>
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { background: #0F172A; color: #F8FAFC; font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+
+    /* Amber underline decoration */
+    .amber-line { position: relative; display: inline-block; }
+    .amber-line::after { content: ''; position: absolute; left: 0; bottom: -4px; width: 100%; height: 3px; background: #F59E0B; border-radius: 2px; }
+
+    /* Terminal block */
+    .terminal { background: #0F172A; border: 1px solid #334155; border-radius: 8px; font-family: 'Geist Mono', monospace; font-size: 0.85rem; padding: 1.5rem; position: relative; }
+    .terminal::before { content: '● ● ●'; position: absolute; top: 12px; left: 16px; color: #475569; letter-spacing: 4px; font-size: 10px; }
+    .terminal-body { padding-top: 1.5rem; }
+    .t-green { color: #10B981; }
+    .t-amber { color: #F59E0B; }
+    .t-muted { color: #475569; }
+    .t-white { color: #F8FAFC; }
+    .t-blue { color: #60A5FA; }
+
+    /* Divider */
+    .divider { border: none; border-top: 1px solid #334155; margin: 0; }
+
+    /* Feature row hover */
+    .feat-row:hover { background: rgba(245,158,11,0.05); }
+
+    /* Scroll indicator */
+    .scroll-arrow { animation: bounce 2s infinite; }
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(8px); }
+    }
+
+    /* Gradient text */
+    .gradient-text { background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+    /* Video placeholder */
+    .video-placeholder { background: #1E293B; border: 1px solid #334155; border-radius: 8px; aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+    .video-placeholder::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at center, rgba(245,158,11,0.06) 0%, transparent 70%); }
+
+    /* Stat card */
+    .stat-card { background: #1E293B; border: 1px solid #334155; border-radius: 8px; padding: 1.5rem; transition: border-color 0.2s; }
+    .stat-card:hover { border-color: #F59E0B; }
+
+    /* CTA button */
+    .btn-primary { background: #F59E0B; color: #0F172A; font-weight: 600; padding: 0.875rem 2.5rem; border-radius: 6px; border: none; cursor: pointer; font-size: 1rem; transition: background 0.2s, transform 0.1s; display: inline-block; text-decoration: none; font-family: 'DM Sans', sans-serif; }
+    .btn-primary:hover { background: #FBBF24; transform: translateY(-1px); }
+    .btn-primary:active { transform: translateY(0); }
+
+    /* Tier card */
+    .tier-card { background: #1E293B; border: 1px solid #334155; border-radius: 8px; padding: 2rem; transition: border-color 0.2s, transform 0.2s; }
+    .tier-card:hover { border-color: rgba(245,158,11,0.4); transform: translateY(-2px); }
+    .tier-card.featured { border-color: #F59E0B; }
+
+    /* Section spacing */
+    section { padding: 5rem 0; }
+
+    /* Responsive table */
+    .feat-table { width: 100%; border-collapse: collapse; }
+    .feat-table th { text-align: left; padding: 0.75rem 1rem; border-bottom: 1px solid #334155; color: #94A3B8; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 500; }
+    .feat-table td { padding: 0.75rem 1rem; border-bottom: 1px solid rgba(51,65,85,0.5); vertical-align: middle; }
+
+    @media (max-width: 640px) {
+      section { padding: 3rem 0; }
+      .feat-table thead { display: none; }
+      .feat-table tr { display: block; margin-bottom: 1rem; background: #1E293B; border-radius: 8px; padding: 1rem; border: 1px solid #334155; }
+      .feat-table td { display: flex; justify-content: space-between; padding: 0.4rem 0; border-bottom: none; }
+      .feat-table td::before { content: attr(data-label); color: #94A3B8; font-size: 0.8rem; }
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- ============================================
+  NAV
+============================================ -->
+<nav class="sticky top-0 z-50 border-b border-surface-border" style="background: rgba(15,23,42,0.92); backdrop-filter: blur(8px);">
+  <div class="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <span class="font-mono text-amber-500 font-semibold text-lg tracking-tight">kaven</span>
+      <span class="text-slate-600 text-sm">×</span>
+      <span class="font-mono text-slate-400 text-sm">AIOS</span>
+    </div>
+    <a href="#proposta" class="btn-primary" style="padding: 0.5rem 1.25rem; font-size: 0.875rem;">
+      Conversar
+    </a>
+  </div>
+</nav>
+
+<!-- ============================================
+  HERO — FIRST FOLD
+============================================ -->
+<section style="padding: 5rem 0 3rem;">
+  <div class="max-w-5xl mx-auto px-6">
+
+    <!-- Label -->
+    <div class="inline-flex items-center gap-2 mb-6 px-3 py-1.5 rounded-full border border-surface-border" style="background: rgba(245,158,11,0.08);">
+      <span class="w-2 h-2 rounded-full bg-amber-500 inline-block" style="animation: pulse 2s infinite;"></span>
+      <span class="text-amber-500 text-xs font-mono font-medium tracking-wide">Para os founders do AIOS</span>
+    </div>
+
+    <!-- Headline -->
+    <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight tracking-tight mb-6" style="max-width: 820px;">
+      O <span class="gradient-text">layer</span> que faltava<br class="hidden sm:block"/> no AIOS.
+    </h1>
+
+    <!-- Sub -->
+    <p class="text-lg sm:text-xl text-slate-400 mb-10 leading-relaxed" style="max-width: 600px;">
+      AIOS orquestra o que construir.<br/>
+      Kaven garante que funciona quando escalar.<br/>
+      <span class="text-slate-300 font-medium">Você só precisa dirigir.</span>
+    </p>
+
+    <!-- Scroll indicator -->
+    <div class="flex items-center gap-2 text-slate-500 text-sm mb-12">
+      <span>Ver como funciona</span>
+      <svg class="scroll-arrow w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+    </div>
+
+    <!-- Video block -->
+    <div class="video-placeholder">
+      <div class="text-center z-10 relative">
+        <!-- Play icon -->
+        <div class="w-16 h-16 rounded-full border-2 border-amber-500 flex items-center justify-center mx-auto mb-4" style="background: rgba(245,158,11,0.12);">
+          <svg class="w-6 h-6 text-amber-500 ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        </div>
+        <p class="text-slate-400 text-sm font-mono">Demo: AIOS + Kaven em produção</p>
+        <p class="text-slate-600 text-xs mt-1">~70 segundos</p>
+      </div>
+    </div>
+
+    <!-- Quick stats below video -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8">
+      <div class="stat-card text-center">
+        <div class="text-2xl font-bold text-amber-500 font-mono">985</div>
+        <div class="text-xs text-slate-400 mt-1">testes passando</div>
+      </div>
+      <div class="stat-card text-center">
+        <div class="text-2xl font-bold text-amber-500 font-mono">33</div>
+        <div class="text-xs text-slate-400 mt-1">modelos IDOR protegidos</div>
+      </div>
+      <div class="stat-card text-center">
+        <div class="text-2xl font-bold text-amber-500 font-mono">42+</div>
+        <div class="text-xs text-slate-400 mt-1">composite indexes</div>
+      </div>
+      <div class="stat-card text-center">
+        <div class="text-2xl font-bold text-amber-500 font-mono">v1.0</div>
+        <div class="text-xs text-slate-400 mt-1">release candidate</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<hr class="divider max-w-5xl mx-auto" />
+
+<!-- ============================================
+  PROBLEMA
+============================================ -->
+<section>
+  <div class="max-w-5xl mx-auto px-6">
+
+    <div class="max-w-3xl">
+      <p class="text-amber-500 font-mono text-sm uppercase tracking-widest mb-4">O Problema</p>
+
+      <h2 class="text-3xl sm:text-4xl font-bold mb-8 leading-tight">
+        AIOS constrói rápido.<br/>
+        <span class="text-slate-400">E depois?</span>
+      </h2>
+
+      <div class="space-y-5 text-lg text-slate-300 leading-relaxed">
+        <p>
+          Você tem orquestração de agentes. Squads especializados. Automação que transforma semanas em horas.
+        </p>
+        <p>
+          Mas quando o produto sai do forno e vai para o mundo real — quando precisa de
+          <strong class="text-slate-100">1.000 tenants simultâneos</strong>, auditoria de compliance,
+          gestão de pagamentos multi-gateway, rate limiting por plano, design system consistente em
+          produção —
+        </p>
+        <p class="text-xl font-semibold text-white">
+          quem cuida disso?
+        </p>
+      </div>
+    </div>
+
+    <!-- Terminal showing the gap -->
+    <div class="terminal mt-10 max-w-3xl">
+      <div class="terminal-body">
+        <div class="space-y-2">
+          <p><span class="t-green">✓</span> <span class="t-white">aios scaffold --template saas</span></p>
+          <p><span class="t-green">✓</span> <span class="t-white">Agents coordenados. Produto gerado.</span></p>
+          <p><span class="t-green">✓</span> <span class="t-white">Deploy para produção...</span></p>
+          <p class="mt-4"><span class="t-amber">?</span> <span class="t-muted">Multi-tenancy configurado?</span></p>
+          <p><span class="t-amber">?</span> <span class="t-muted">IDOR protegido nos 33 models?</span></p>
+          <p><span class="t-amber">?</span> <span class="t-muted">Compliance LGPD/GDPR auditado?</span></p>
+          <p><span class="t-amber">?</span> <span class="t-muted">Rate limiting por plano configurado?</span></p>
+          <p><span class="t-amber">?</span> <span class="t-muted">985 edge cases cobertos?</span></p>
+          <p class="mt-4 text-slate-500"># O AIOS resolve velocidade.</p>
+          <p class="text-slate-500"># O gap está em robustez.</p>
+          <p class="mt-2"><span class="t-amber">→</span> <span class="t-white">Eu construí a resposta.</span></p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<hr class="divider max-w-5xl mx-auto" />
+
+<!-- ============================================
+  O QUE É O KAVEN
+============================================ -->
+<section>
+  <div class="max-w-5xl mx-auto px-6">
+
+    <p class="text-amber-500 font-mono text-sm uppercase tracking-widest mb-4">O Kaven</p>
+    <h2 class="text-3xl sm:text-4xl font-bold mb-3 leading-tight">
+      v1.0.0-rc1 — Feature-complete<br class="hidden sm:block"/>
+      <span class="text-slate-400">SaaS boilerplate.</span>
+    </h2>
+    <p class="text-slate-400 mb-10 text-lg">Construído para ser a fundação que você nunca mais vai reconstruir.</p>
+
+    <!-- Features table -->
+    <div class="border border-surface-border rounded-lg overflow-hidden">
+      <table class="feat-table">
+        <thead style="background: #1E293B;">
+          <tr>
+            <th>Componente</th>
+            <th>Status</th>
+            <th>Detalhe</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="feat-row">
+            <td data-label="Componente" class="font-medium text-slate-100">Multi-tenancy nativo</td>
+            <td data-label="Status"><span class="text-green-400 font-mono text-sm">✓ pronto</span></td>
+            <td data-label="Detalhe" class="text-slate-400 text-sm">tenantId em 100% das queries, RLS middleware cobrindo 30+ models</td>
+          </tr>
+          <tr class="feat-row">
+            <td data-label="Componente" class="font-medium text-slate-100">Segurança</td>
+            <td data-label="Status"><span class="text-green-400 font-mono text-sm">✓ pronto</span></td>
+            <td data-label="Detalhe" class="text-slate-400 text-sm">IDOR em 33 modelos, CSRF/SQLi/XSS test suite, soft delete global</td>
+          </tr>
+          <tr class="feat-row">
+            <td data-label="Componente" class="font-medium text-slate-100">Auth & Permissões</td>
+            <td data-label="Status"><span class="text-green-400 font-mono text-sm">✓ pronto</span></td>
+            <td data-label="Detalhe" class="text-slate-400 text-sm">Roles, RBAC, GDPR/LGPD compliance, grant validation</td>
+          </tr>
+          <tr class="feat-row">
+            <td data-label="Componente" class="font-medium text-slate-100">Pagamentos</td>
+            <td data-label="Status"><span class="text-green-400 font-mono text-sm">✓ pronto</span></td>
+            <td data-label="Detalhe" class="text-slate-400 text-sm">Stripe (checkout + webhooks, 5 eventos), Paddle, PIX via PagueBit</td>
+          </tr>
+          <tr class="feat-row">
+            <td data-label="Componente" class="font-medium text-slate-100">Email</td>
+            <td data-label="Status"><span class="text-green-400 font-mono text-sm">✓ pronto</span></td>
+            <td data-label="Detalhe" class="text-slate-400 text-sm">AWS SES — rate limiting, templates, SNS webhooks, bounce handling</td>
+          </tr>
+          <tr class="feat-row">
+            <td data-label="Componente" class="font-medium text-slate-100">Design System</td>
+            <td data-label="Status"><span class="text-green-400 font-mono text-sm">✓ pronto</span></td>
+            <td data-label="Detalhe" class="text-slate-400 text-sm">76+ componentes, Fluent UI + Shadcn adapters, Frost tokens</td>
+          </tr>
+          <tr class="feat-row">
+            <td data-label="Componente" class="font-medium text-slate-100">API</td>
+            <td data-label="Status"><span class="text-green-400 font-mono text-sm">✓ pronto</span></td>
+            <td data-label="Detalhe" class="text-slate-400 text-sm">Fastify (~30k req/s), TypeScript, OpenAPI 3.1, plugin ecosystem</td>
+          </tr>
+          <tr class="feat-row">
+            <td data-label="Componente" class="font-medium text-slate-100">Frontend</td>
+            <td data-label="Status"><span class="text-green-400 font-mono text-sm">✓ pronto</span></td>
+            <td data-label="Detalhe" class="text-slate-400 text-sm">Next.js App Router, Admin Panel + Tenant App, Server Components</td>
+          </tr>
+          <tr class="feat-row">
+            <td data-label="Componente" class="font-medium text-slate-100">Banco de dados</td>
+            <td data-label="Status"><span class="text-green-400 font-mono text-sm">✓ pronto</span></td>
+            <td data-label="Detalhe" class="text-slate-400 text-sm">Prisma + PostgreSQL, 42+ composite indexes, schema documentado</td>
+          </tr>
+          <tr class="feat-row">
+            <td data-label="Componente" class="font-medium text-slate-100">Feature flags</td>
+            <td data-label="Status"><span class="text-green-400 font-mono text-sm">✓ pronto</span></td>
+            <td data-label="Detalhe" class="text-slate-400 text-sm">40+ capabilities, enforcement via requireFeature() middleware, planos Starter/Pro/Enterprise</td>
+          </tr>
+          <tr class="feat-row" style="background: rgba(245,158,11,0.03);">
+            <td data-label="Componente" class="font-semibold text-amber-500">Tech debt</td>
+            <td data-label="Status"><span class="text-amber-500 font-mono text-sm font-bold">42/42</span></td>
+            <td data-label="Detalhe" class="text-slate-400 text-sm">100% resolvido. Zero dívidas técnicas abertas no v1.0.0-rc1.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</section>
+
+<hr class="divider max-w-5xl mx-auto" />
+
+<!-- ============================================
+  AIOS + KAVEN = STACK COMPLETO
+============================================ -->
+<section>
+  <div class="max-w-5xl mx-auto px-6">
+
+    <p class="text-amber-500 font-mono text-sm uppercase tracking-widest mb-4">A Integração</p>
+    <h2 class="text-3xl sm:text-4xl font-bold mb-10 leading-tight">
+      AIOS + Kaven =<br/>
+      <span class="text-slate-400">Stack completo.</span>
+    </h2>
+
+    <!-- Side by side -->
+    <div class="grid sm:grid-cols-2 gap-6 mb-10">
+      <!-- AIOS -->
+      <div class="border border-surface-border rounded-lg p-6" style="background: #1E293B;">
+        <div class="flex items-center gap-3 mb-5">
+          <div class="w-10 h-10 rounded-lg flex items-center justify-center text-lg font-mono font-bold text-slate-300 border border-surface-border" style="background: #0F172A;">AI</div>
+          <div>
+            <p class="font-semibold text-slate-100">AIOS</p>
+            <p class="text-xs text-slate-500">O Cérebro</p>
+          </div>
+        </div>
+        <ul class="space-y-2.5 text-sm text-slate-300">
+          <li class="flex items-start gap-2"><span class="text-green-400 mt-0.5">✓</span> Orquestração de agentes AI</li>
+          <li class="flex items-start gap-2"><span class="text-green-400 mt-0.5">✓</span> Squads especializados</li>
+          <li class="flex items-start gap-2"><span class="text-green-400 mt-0.5">✓</span> Automação de workflows</li>
+          <li class="flex items-start gap-2"><span class="text-green-400 mt-0.5">✓</span> Velocidade de desenvolvimento</li>
+          <li class="flex items-start gap-2"><span class="text-green-400 mt-0.5">✓</span> System design assistido por IA</li>
+          <li class="flex items-start gap-2 text-slate-500"><span class="mt-0.5">—</span> Multi-tenancy enterprise</li>
+          <li class="flex items-start gap-2 text-slate-500"><span class="mt-0.5">—</span> Infraestrutura de compliance</li>
+          <li class="flex items-start gap-2 text-slate-500"><span class="mt-0.5">—</span> Pagamentos multi-gateway</li>
+        </ul>
+      </div>
+
+      <!-- Kaven -->
+      <div class="border border-amber-500 rounded-lg p-6 relative" style="background: #1E293B;">
+        <div class="absolute top-4 right-4 px-2 py-0.5 rounded text-xs font-mono text-amber-500 border border-amber-500" style="background: rgba(245,158,11,0.1);">NEW</div>
+        <div class="flex items-center gap-3 mb-5">
+          <div class="w-10 h-10 rounded-lg flex items-center justify-center text-lg font-mono font-bold text-amber-500 border border-amber-500" style="background: rgba(245,158,11,0.1);">K</div>
+          <div>
+            <p class="font-semibold text-slate-100">Kaven</p>
+            <p class="text-xs text-slate-500">O Corpo</p>
+          </div>
+        </div>
+        <ul class="space-y-2.5 text-sm text-slate-300">
+          <li class="flex items-start gap-2 text-slate-500"><span class="mt-0.5">—</span> Orquestração de agentes</li>
+          <li class="flex items-start gap-2 text-slate-500"><span class="mt-0.5">—</span> Squads automatizados</li>
+          <li class="flex items-start gap-2"><span class="text-amber-400 mt-0.5">✓</span> Multi-tenancy nativo</li>
+          <li class="flex items-start gap-2"><span class="text-amber-400 mt-0.5">✓</span> Segurança enterprise (985 testes)</li>
+          <li class="flex items-start gap-2"><span class="text-amber-400 mt-0.5">✓</span> Pagamentos multi-gateway</li>
+          <li class="flex items-start gap-2"><span class="text-amber-400 mt-0.5">✓</span> Auth, RBAC, compliance LGPD</li>
+          <li class="flex items-start gap-2"><span class="text-amber-400 mt-0.5">✓</span> Design System production-ready</li>
+          <li class="flex items-start gap-2"><span class="text-amber-400 mt-0.5">✓</span> CI/CD e quality gates</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Analogy -->
+    <div class="border border-surface-border rounded-lg p-6 text-center" style="background: rgba(245,158,11,0.04); border-color: rgba(245,158,11,0.2);">
+      <p class="text-slate-300 text-lg leading-relaxed">
+        AIOS constrói o carro de Fórmula 1.<br/>
+        Kaven fornece <span class="text-amber-500 font-semibold">a pista, o pit stop, a regulamentação e os patrocinadores</span>.<br/>
+        <span class="text-white font-semibold">O founder só precisa dirigir.</span>
+      </p>
+    </div>
+
+  </div>
+</section>
+
+<hr class="divider max-w-5xl mx-auto" />
+
+<!-- ============================================
+  PARA FOUNDERS R$1M+
+============================================ -->
+<section>
+  <div class="max-w-5xl mx-auto px-6">
+
+    <p class="text-amber-500 font-mono text-sm uppercase tracking-widest mb-4">Para os eventos</p>
+    <h2 class="text-3xl sm:text-4xl font-bold mb-8 leading-tight">
+      Para founders que faturam<br/>
+      <span class="text-slate-400">R$1M+ por mês.</span>
+    </h2>
+
+    <div class="grid sm:grid-cols-2 gap-8 items-center">
+      <div class="space-y-5 text-slate-300 text-lg leading-relaxed">
+        <p>
+          Você já sabe o custo de cada semana sem o produto certo.
+        </p>
+        <p>
+          Para um negócio de R$1M/mês, cada semana de dev perdida em infraestrutura que já existe equivale a
+          <strong class="text-white">R$250k que poderiam ir para produto real</strong>.
+        </p>
+        <p>
+          O Kaven elimina esse custo.
+        </p>
+        <p class="text-base text-slate-400">
+          Não é um template. É a fundação que você não vai precisar reconstruir em 18 meses porque "cresceu demais".
+        </p>
+      </div>
+
+      <!-- Cost calculator -->
+      <div class="terminal">
+        <div class="terminal-body">
+          <p class="t-muted mb-3"># Custo real sem o Kaven</p>
+          <div class="space-y-2">
+            <p><span class="t-muted">dev_cost_month    =</span> <span class="t-white">R$ 30.000</span></p>
+            <p><span class="t-muted">infra_setup_weeks =</span> <span class="t-white">16 semanas</span></p>
+            <p><span class="t-muted">opportunity_cost  =</span> <span class="t-amber">R$ 960.000</span></p>
+            <p class="mt-3 pt-3 border-t border-slate-700"><span class="t-muted">with_kaven        =</span> <span class="t-green">dias, não meses</span></p>
+            <p><span class="t-muted">saved             =</span> <span class="t-green">R$ 900.000+</span></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<hr class="divider max-w-5xl mx-auto" />
+
+<!-- ============================================
+  MODELO DE NEGÓCIO
+============================================ -->
+<section>
+  <div class="max-w-5xl mx-auto px-6">
+
+    <p class="text-amber-500 font-mono text-sm uppercase tracking-widest mb-4">O Modelo</p>
+    <h2 class="text-3xl sm:text-4xl font-bold mb-10 leading-tight">
+      Como funcionaria<br/>
+      <span class="text-slate-400">a integração.</span>
+    </h2>
+
+    <div class="grid sm:grid-cols-3 gap-6">
+
+      <!-- kaven-lite -->
+      <div class="tier-card">
+        <p class="font-mono text-sm text-slate-400 mb-2">FREE</p>
+        <h3 class="text-xl font-bold text-slate-100 mb-1">kaven-lite</h3>
+        <p class="text-slate-400 text-sm mb-4">Open source, integrado ao AIOS CLI</p>
+        <hr class="divider mb-4" />
+        <ul class="space-y-2.5 text-sm text-slate-300">
+          <li class="flex items-start gap-2"><span class="text-green-400">✓</span> Template mínimo funcional</li>
+          <li class="flex items-start gap-2"><span class="text-green-400">✓</span> <span class="font-mono text-xs bg-slate-800 px-1 py-0.5 rounded">aios new --template kaven-lite</span></li>
+          <li class="flex items-start gap-2"><span class="text-green-400">✓</span> Scaffolding greenfield</li>
+          <li class="flex items-start gap-2"><span class="text-green-400">✓</span> Comunidade AIOS</li>
+        </ul>
+      </div>
+
+      <!-- Kaven Pro -->
+      <div class="tier-card featured">
+        <div class="flex items-center justify-between mb-2">
+          <p class="font-mono text-sm text-amber-500">PRO</p>
+          <span class="text-xs px-2 py-0.5 rounded-full font-mono" style="background: rgba(245,158,11,0.15); color: #F59E0B;">Recomendado</span>
+        </div>
+        <h3 class="text-xl font-bold text-slate-100 mb-1">Kaven</h3>
+        <p class="text-slate-400 text-sm mb-4">Framework completo para escala</p>
+        <hr class="divider mb-4" />
+        <ul class="space-y-2.5 text-sm text-slate-300">
+          <li class="flex items-start gap-2"><span class="text-amber-400">✓</span> 985 testes + full stack</li>
+          <li class="flex items-start gap-2"><span class="text-amber-400">✓</span> Multi-tenancy enterprise</li>
+          <li class="flex items-start gap-2"><span class="text-amber-400">✓</span> Payments, auth, email</li>
+          <li class="flex items-start gap-2"><span class="text-amber-400">✓</span> Design system completo</li>
+          <li class="flex items-start gap-2"><span class="text-amber-400">✓</span> CI/CD + quality gates</li>
+        </ul>
+      </div>
+
+      <!-- Enterprise -->
+      <div class="tier-card">
+        <p class="font-mono text-sm text-blue-400 mb-2">ENTERPRISE</p>
+        <h3 class="text-xl font-bold text-slate-100 mb-1">Custom</h3>
+        <p class="text-slate-400 text-sm mb-4">Para founders dos eventos AIOS</p>
+        <hr class="divider mb-4" />
+        <ul class="space-y-2.5 text-sm text-slate-300">
+          <li class="flex items-start gap-2"><span class="text-blue-400">✓</span> Stack completo + onboarding</li>
+          <li class="flex items-start gap-2"><span class="text-blue-400">✓</span> Customização por vertical</li>
+          <li class="flex items-start gap-2"><span class="text-blue-400">✓</span> Fintech, edtech, marketplace</li>
+          <li class="flex items-start gap-2"><span class="text-blue-400">✓</span> Integração direta com AIOS Pro</li>
+          <li class="flex items-start gap-2"><span class="text-blue-400">✓</span> Suporte dedicado</li>
+        </ul>
+      </div>
+
+    </div>
+
+  </div>
+</section>
+
+<hr class="divider max-w-5xl mx-auto" />
+
+<!-- ============================================
+  SOBRE O FOUNDER
+============================================ -->
+<section>
+  <div class="max-w-5xl mx-auto px-6">
+
+    <div class="grid sm:grid-cols-2 gap-12 items-start">
+      <div>
+        <p class="text-amber-500 font-mono text-sm uppercase tracking-widest mb-6">Sobre</p>
+        <h2 class="text-3xl font-bold mb-6 leading-tight">
+          Enquanto vocês construíam<br/>
+          <span class="text-slate-400">o cérebro...</span>
+        </h2>
+        <div class="space-y-4 text-slate-300 leading-relaxed">
+          <p>Construí o Kaven porque precisava dele.</p>
+          <p>Reconstruí auth três vezes antes de decidir documentar tudo e não deixar nenhum outro dev fazer o mesmo.</p>
+          <p>Comecei a usar o AIOS para acelerar meu próprio desenvolvimento. Fiquei tão obcecado que fiz a documentação de tudo e construí o site deles.</p>
+          <p>Foi aí que vi o gap — e percebi que tinha a peça que faltava.</p>
+          <p class="text-slate-400 text-sm pt-2 border-t border-surface-border">
+            Sou neurodivergente (Autista + TDAH + AH/SD).<br/>
+            Penso em sistemas, não em hacks.<br/>
+            Construo para durar, não para impressionar.
+          </p>
+        </div>
+      </div>
+
+      <!-- Timeline/proof -->
+      <div class="terminal">
+        <div class="terminal-body">
+          <p class="t-muted mb-4"># evidências</p>
+          <div class="space-y-3">
+            <div class="flex items-start gap-3">
+              <span class="t-amber mt-0.5">→</span>
+              <div>
+                <p class="t-white text-sm">7 sprints completos</p>
+                <p class="t-muted text-xs">46 stories entregues, 985 testes</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-3">
+              <span class="t-amber mt-0.5">→</span>
+              <div>
+                <p class="t-white text-sm">Site da documentação AIOS</p>
+                <p class="t-muted text-xs">Construí antes de pedir qualquer coisa</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-3">
+              <span class="t-amber mt-0.5">→</span>
+              <div>
+                <p class="t-white text-sm">Pedro respondeu</p>
+                <p class="t-muted text-xs">"Legal, vou passar pro Alan"</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-3">
+              <span class="t-green mt-0.5">✓</span>
+              <div>
+                <p class="t-white text-sm">v1.0.0-rc1 taggeado</p>
+                <p class="t-muted text-xs">Produto pronto para integração</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<hr class="divider max-w-5xl mx-auto" />
+
+<!-- ============================================
+  CTA FINAL
+============================================ -->
+<section id="proposta" style="padding: 6rem 0;">
+  <div class="max-w-5xl mx-auto px-6 text-center">
+
+    <div class="max-w-2xl mx-auto">
+      <h2 class="text-3xl sm:text-4xl font-bold mb-4 leading-tight">
+        Vocês têm a comunidade.<br/>
+        <span class="gradient-text">Eu tenho a fundação.</span>
+      </h2>
+      <p class="text-slate-400 text-lg mb-10">
+        Juntos, completamos o stack.
+      </p>
+
+      <a href="https://instagram.com/direct/" target="_blank" class="btn-primary text-lg">
+        Quero conversar
+      </a>
+
+      <p class="text-slate-600 text-sm mt-6 font-mono">
+        @oalanicolas / @pedrovaleriolopez
+      </p>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============================================
+  FOOTER
+============================================ -->
+<footer class="border-t border-surface-border py-8">
+  <div class="max-w-5xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+    <span class="font-mono text-slate-500 text-sm">kaven × aios — 2026</span>
+    <span class="text-slate-600 text-xs font-mono">
+      AIOS orquestra. Kaven sustenta. Você constrói.
+    </span>
+  </div>
+</footer>
+
+<style>
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+</style>
+
+</body>
+</html>

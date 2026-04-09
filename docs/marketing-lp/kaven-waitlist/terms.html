@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Terms of Service — Kaven</title>
+  <meta name="description" content="Terms of Service for Kaven SaaS Framework." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            surface: { base: '#0F172A', elevated: '#1E293B', card: '#243044', border: '#334155' },
+            frost: { amber: '#F59E0B', 'amber-dim': '#B45309', 'amber-glow': '#FCD34D', blue: '#3B82F6' },
+            text: { primary: '#F8FAFC', secondary: '#94A3B8', muted: '#64748B' }
+          },
+          fontFamily: { sans: ['DM Sans', 'system-ui', 'sans-serif'], mono: ['Geist Mono', 'monospace'] }
+        }
+      }
+    }
+  </script>
+  <style>
+    * { -webkit-font-smoothing: antialiased; }
+    body { background: #0F172A; color: #F8FAFC; font-family: 'DM Sans', system-ui, sans-serif; }
+    .mono { font-family: 'Geist Mono', monospace; }
+    .prose h2 { font-size: 1.25rem; font-weight: 600; color: #F8FAFC; margin-top: 2.5rem; margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 1px solid #334155; }
+    .prose h3 { font-size: 1rem; font-weight: 600; color: #F59E0B; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+    .prose p { color: #94A3B8; line-height: 1.8; margin-bottom: 1rem; font-size: 0.9375rem; }
+    .prose ul { color: #94A3B8; line-height: 1.8; margin-bottom: 1rem; padding-left: 1.5rem; font-size: 0.9375rem; }
+    .prose ul li { margin-bottom: 0.375rem; }
+    .prose a { color: #F59E0B; text-decoration: none; }
+    .prose a:hover { text-decoration: underline; }
+    .prose strong { color: #F8FAFC; font-weight: 600; }
+    .toc-link { color: #64748B; font-size: 0.875rem; text-decoration: none; padding: 4px 0; display: block; transition: color 0.15s; }
+    .toc-link:hover { color: #F59E0B; }
+    .callout { background: #1E293B; border-left: 3px solid #F59E0B; padding: 14px 18px; border-radius: 0 6px 6px 0; margin: 1.5rem 0; }
+    .callout p { margin: 0; font-size: 0.875rem; }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="sticky top-0 z-50 border-b border-[#334155] backdrop-blur-sm" style="background: rgba(15,23,42,0.92);">
+  <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+    <a href="/" class="mono font-medium text-[#F8FAFC] text-xl tracking-tight">
+      kaven<span style="color:#F59E0B">.</span>
+    </a>
+    <div class="flex items-center gap-6">
+      <a href="/terms.html" class="text-[#F59E0B] text-sm font-medium">Terms</a>
+      <a href="/privacy.html" class="text-[#64748B] hover:text-[#F8FAFC] text-sm font-medium transition-colors">Privacy</a>
+      <a href="/refund.html" class="text-[#64748B] hover:text-[#F8FAFC] text-sm font-medium transition-colors">Refund</a>
+    </div>
+  </div>
+</nav>
+
+<!-- CONTENT -->
+<div class="max-w-6xl mx-auto px-6 py-16">
+  <div class="flex gap-16">
+
+    <!-- TOC (Desktop) -->
+    <aside class="hidden lg:block w-56 flex-shrink-0">
+      <div class="sticky top-24">
+        <p class="mono text-[10px] tracking-widest uppercase text-[#F59E0B] mb-4">Contents</p>
+        <nav class="space-y-1">
+          <a href="#acceptance" class="toc-link">1. Acceptance</a>
+          <a href="#product" class="toc-link">2. Product Description</a>
+          <a href="#license" class="toc-link">3. License Grant</a>
+          <a href="#restrictions" class="toc-link">4. Restrictions</a>
+          <a href="#payments" class="toc-link">5. Payments & Paddle</a>
+          <a href="#updates" class="toc-link">6. Updates & Support</a>
+          <a href="#ip" class="toc-link">7. Intellectual Property</a>
+          <a href="#warranty" class="toc-link">8. Warranty Disclaimer</a>
+          <a href="#liability" class="toc-link">9. Limitation of Liability</a>
+          <a href="#termination" class="toc-link">10. Termination</a>
+          <a href="#governing" class="toc-link">11. Governing Law</a>
+          <a href="#contact" class="toc-link">12. Contact</a>
+        </nav>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="flex-1 max-w-3xl prose">
+
+      <!-- Header -->
+      <div class="mb-10">
+        <span class="mono text-[11px] tracking-widest uppercase text-[#F59E0B] mb-3 block">Legal</span>
+        <h1 class="text-3xl font-bold text-[#F8FAFC] mb-3">Terms of Service</h1>
+        <p class="text-[#64748B] text-sm">Last updated: February 24, 2026 &nbsp;·&nbsp; Effective: February 24, 2026</p>
+      </div>
+
+      <div class="callout">
+        <p>Please read these Terms carefully before purchasing or using Kaven. By completing a purchase, you agree to be bound by these Terms. If you do not agree, do not purchase or use the product.</p>
+      </div>
+
+      <h2 id="acceptance">1. Acceptance of Terms</h2>
+      <p>These Terms of Service ("Terms") constitute a legally binding agreement between you ("Buyer," "Licensee," or "you") and Chris Rodrigues, operating as Kaven ("Kaven," "we," "us," or "our"), the developer and distributor of the Kaven SaaS Framework.</p>
+      <p>By purchasing, downloading, or using the Kaven SaaS Framework or any associated materials, you acknowledge that you have read, understood, and agree to be bound by these Terms and our <a href="/privacy.html">Privacy Policy</a>.</p>
+
+      <h2 id="product">2. Product Description</h2>
+      <p>Kaven is a <strong>commercial software product</strong> — a multi-tenant SaaS boilerplate framework ("Framework") that includes:</p>
+      <ul>
+        <li>Source code (TypeScript/JavaScript) — Fastify API, Next.js Admin, Next.js Tenant applications</li>
+        <li>Documentation (up to 400 pages depending on tier)</li>
+        <li>Video course content (up to 8 hours depending on tier)</li>
+        <li>Kaven CLI tooling (open source, Apache 2.0 licensed separately)</li>
+        <li>Access to updates for the duration specified in your tier</li>
+        <li>Community Discord access</li>
+      </ul>
+      <p>The Framework is a <strong>developer tool</strong>. You are responsible for the SaaS products you build using it, including their compliance, functionality, and operation.</p>
+
+      <h2 id="license">3. License Grant</h2>
+      <h3>3.1 One-Time License</h3>
+      <p>Upon purchase, Kaven grants you a <strong>non-exclusive, non-transferable, perpetual license</strong> to use the Framework source code to build and deploy your own software products, subject to the restrictions below and the tier limitations outlined at the time of purchase.</p>
+
+      <h3>3.2 License Tiers</h3>
+      <ul>
+        <li><strong>Starter ($149)</strong> — 1 project, 10 tenant limit, 3 months of updates</li>
+        <li><strong>Complete ($399)</strong> — 1 project, unlimited tenants, 12 months of updates</li>
+        <li><strong>Pro ($799)</strong> — 5 projects, unlimited tenants, lifetime updates, 1-hour consultation</li>
+      </ul>
+      <p>A "project" refers to a distinct, independently deployed application or product. Using the Framework to build client projects as a freelancer or agency counts toward your project limit.</p>
+
+      <h3>3.3 What You Can Do</h3>
+      <ul>
+        <li>Build commercial SaaS products for yourself or your clients</li>
+        <li>Modify and customize the source code</li>
+        <li>Deploy the application to production servers</li>
+        <li>White-label the resulting product under your own brand</li>
+        <li>Build up to the number of projects permitted by your tier</li>
+      </ul>
+
+      <h2 id="restrictions">4. Restrictions</h2>
+      <p>You may <strong>not</strong>:</p>
+      <ul>
+        <li>Redistribute, resell, sublicense, or otherwise transfer the Framework source code or documentation to third parties</li>
+        <li>Share your license access (GitHub repo access, course credentials, Discord invite) with others not covered by your license</li>
+        <li>Use the Framework to build a competing product that is substantially similar to Kaven itself (a SaaS boilerplate/template product for resale)</li>
+        <li>Remove or alter any copyright, trademark, or proprietary notices</li>
+        <li>Use the Framework beyond the project limits of your purchased tier without upgrading</li>
+      </ul>
+
+      <h2 id="payments">5. Payments & Paddle</h2>
+      <h3>5.1 Payment Processing</h3>
+      <p>All payments for Kaven are processed by <strong>Paddle Payments Inc.</strong> ("Paddle"), which acts as the Merchant of Record for all transactions. When you purchase Kaven, you enter into a sales contract with Paddle, which in turn licenses the product to you on our behalf.</p>
+      <p>Paddle handles payment processing, tax collection and remittance, fraud prevention, and buyer protection. Paddle's own <a href="https://www.paddle.com/legal/buyers" target="_blank" rel="noopener">Buyer Terms</a> also apply to your purchase.</p>
+
+      <h3>5.2 Pricing</h3>
+      <p>All prices are listed in USD. Paddle may display local currency equivalents and handles currency conversion. Prices are subject to applicable sales taxes and VAT, which Paddle calculates and remits.</p>
+
+      <h3>5.3 Refunds</h3>
+      <p>Please refer to our <a href="/refund.html">Refund Policy</a> for full details. We offer a 30-day money-back guarantee on all purchases.</p>
+
+      <h2 id="updates">6. Updates & Support</h2>
+      <h3>6.1 Updates</h3>
+      <p>Updates include bug fixes, security patches, feature additions, and compatibility improvements released during your update entitlement period. Updates are provided on a best-effort basis. We do not guarantee any specific update cadence or that all features will remain unchanged.</p>
+
+      <h3>6.2 Support</h3>
+      <p>Support is provided via email and Discord, as specified by your tier. Response times are targets, not guarantees. We reserve the right to determine what constitutes a support request versus a feature request or consulting engagement.</p>
+
+      <h3>6.3 No Service Level Agreement</h3>
+      <p>Unless explicitly agreed in writing, no SLA is provided. The Framework is provided as-is for use in your own projects.</p>
+
+      <h2 id="ip">7. Intellectual Property</h2>
+      <p>The Kaven Framework, including all source code, documentation, course content, design assets, and the Kaven name and logo, are the exclusive intellectual property of Chris Rodrigues / Kaven. These Terms do not transfer any ownership to you.</p>
+      <p>The Kaven CLI is open source (Apache 2.0 License) and governed separately by its respective open source license.</p>
+
+      <h2 id="warranty">8. Warranty Disclaimer</h2>
+      <p>THE FRAMEWORK IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT.</p>
+      <p>We do not warrant that the Framework will be error-free, uninterrupted, or meet your specific requirements. You assume all risk associated with the use of the Framework.</p>
+
+      <h2 id="liability">9. Limitation of Liability</h2>
+      <p>TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL KAVEN, ITS DEVELOPER, OR CONTRIBUTORS BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING LOST PROFITS, LOST DATA, LOSS OF BUSINESS OPPORTUNITY, OR BUSINESS INTERRUPTION, ARISING FROM OR RELATED TO YOUR USE OF THE FRAMEWORK, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.</p>
+      <p>OUR TOTAL CUMULATIVE LIABILITY TO YOU FOR ALL CLAIMS ARISING FROM OR RELATED TO THESE TERMS SHALL NOT EXCEED THE AMOUNT YOU PAID FOR YOUR LICENSE.</p>
+
+      <h2 id="termination">10. Termination</h2>
+      <p>Your license will terminate automatically if you materially breach these Terms and fail to cure the breach within 14 days of written notice. Upon termination, you must cease using the Framework and destroy all copies in your possession. Termination does not entitle you to a refund beyond the 30-day refund window.</p>
+      <p>We reserve the right to suspend or terminate access to the Discord community, course platform, or update access if the Terms are violated.</p>
+
+      <h2 id="governing">11. Governing Law & Dispute Resolution</h2>
+      <p>These Terms are governed by and construed in accordance with the laws of Brazil, without regard to conflicts of law principles. If you are located in the European Union, you may have additional rights under applicable consumer protection laws. Brazilian customers have rights under the <em>Código de Defesa do Consumidor</em> (CDC) and LGPD.</p>
+      <p>Any dispute arising from these Terms shall first be attempted to be resolved through good-faith negotiation. If unresolved, disputes shall be submitted to binding arbitration or the competent courts of São Paulo, Brazil.</p>
+
+      <h2 id="contact">12. Contact</h2>
+      <p>For questions about these Terms, contact us at:</p>
+      <ul>
+        <li>Email: <a href="mailto:legal@kaven.site">legal@kaven.site</a></li>
+        <li>Website: <a href="https://kaven.site">kaven.site</a></li>
+      </ul>
+      <p>For payment and billing inquiries, contact Paddle directly at <a href="https://www.paddle.com" target="_blank" rel="noopener">paddle.com</a>.</p>
+
+    </main>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer class="border-t border-[#334155] mt-20">
+  <div class="max-w-6xl mx-auto px-6 py-10">
+    <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+      <p class="text-[#64748B] text-sm">© 2026 Kaven. All rights reserved.</p>
+      <div class="flex gap-6">
+        <a href="/terms.html" class="text-[#F59E0B] text-xs font-medium">Terms</a>
+        <a href="/privacy.html" class="text-[#64748B] hover:text-[#F8FAFC] text-xs transition-colors">Privacy</a>
+        <a href="/refund.html" class="text-[#64748B] hover:text-[#F8FAFC] text-xs transition-colors">Refund Policy</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -308,7 +308,7 @@ This document consolidates **all technical debts** identified during the Brownfi
 
 #### FE-M3: Image Remote Patterns Hardcoded -- DONE
 
-**Resolution:** Extracted hardcoded image hostnames (flagcdn.com, api.dicebear.com) to `IMAGE_REMOTE_HOSTNAMES` env var in both admin and tenant next.config.ts. CSP img-src directive also driven from same source. Defaults preserved as fallback so nothing breaks without the env var. Updated .env.example files.
+**Resolution:** Extracted hardcoded image hostnames (flagcdn.com, api.dicebear.com) to `IMAGE_REMOTE_HOSTNAMES` env var in both admin and tenant next.config.ts. CSP img-src directive also driven from same source. Defaults preserved as fallback so nothing breaks without the env var.
 **Resolved:** 2026-02-16 | Sprint 7 | feat/sprint-7-final-push
 
 ---
@@ -492,3 +492,34 @@ This document consolidates **all technical debts** identified during the Brownfi
 **Medium Priority (P2):** CLEAR -- all 9 P2 items resolved
 **Low Priority (P3):** CLEAR -- all 7 P3 items resolved
 **Status:** COMPLETE — 100% TECH DEBT RESOLVED ✅
+---
+
+## POST-LAUNCH TECHNICAL DEBT (Identified After 2026-02-17)
+
+### INFRASTRUCTURE (1 item)
+
+#### TD-43: Pre-commit Hook Overwrite Fragility
+
+-   **Priority:** HIGH (P1)
+-   **Estimated Effort:** 4h
+-   **Status:** IDENTIFIED
+-   **Owner:** @kaven-devops
+-   **Identified:** 2026-04-05
+
+**Problem:**
+The project utilizes a custom pre-commit hook (`.husky/pre-commit`) that is essential for development consistency (git signing checks, quality gates, and IDE agent sync). Separately, the `kaven-cli`'s `init` command can trigger `npx aiox-core install`.
+
+**Risk (Impact): HIGH**
+The `aiox-core install` command contains a destructive `writeFileSync` operation that **blindly overwrites** the existing `.husky/pre-commit` file with its own generic template (`npx lint-staged`). If this command is run on an already configured project, it will **silently delete** the Kaven ecosystem's critical pre-commit logic, breaking quality gates and the agent synchronization process without any warning. This makes the development environment fragile and dependent on an implicit installation order.
+
+**Technical Analysis:**
+-   The `kaven-framework` uses a robust, custom `pre-commit` script found in other Kaven repositories, responsible for more than just linting.
+-   The `aiox-core` installation logic in `.aiox-core/cli/commands/install.js` does not check for an existing hook file before writing its own.
+-   This creates a race condition based on installation order.
+
+**Proposed Solutions (for future implementation):**
+
+1.  **Recommended: Wrapper Script (Control via `kaven-cli`):** Modify the `kaven-cli` `init` command. It should first run the `npx aiox-core install` and, as a final, guaranteed last step, it runs a script that installs or reinstalls the correct Kaven-specific pre-commit hook. This centralizes control and enforces the correct final state.
+2.  **Alternative: Post-install "Guardian" Hook:** Add a `postinstall` script to the root `package.json`. This script would act as a guardian, checking the content of `.husky/pre-commit` on every `pnpm install`. If the Kaven-specific logic is missing, the script would automatically re-inject it. This is more defensive but less clean than the wrapper approach.
+
+---

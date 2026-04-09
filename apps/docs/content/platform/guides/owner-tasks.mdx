@@ -1,45 +1,63 @@
 ---
 title: "Owner Tasks"
-description: Migrated from legacy docs
+description: Complete manual actions and launch checklist for the Kaven Ecosystem
 ---
 
 # Owner Tasks & Manual Actions
 
-This document tracks tasks that require manual intervention, configuration, or decision-making by the project owner to fully leverage the Kaven Boilerplate features.
+This document tracks tasks that require manual intervention, configuration, or decision-making by the project owner to fully leverage the Kaven Boilerplate features and ensure a successful launch.
+
+## 🛑 P0 — Launch Blockers (Current Reality)
+
+### 1. Marketplace Registry URLs (F1.4)
+- [ ] Replace ficticious `registry.kaven.dev` domains with real production URLs (S3/Cloud Run).
+- [ ] Verify that `kaven module install` successfully pulls artifacts in production.
+
+### 2. Template Hygiene & Cleanup
+- [ ] Run deep cleanup on `kaven-template` (branch `fix/template-bootstrap-issues`).
+- [ ] Remove `debug-prisma.ts`, `lint_results.txt`, and IA session logs.
+- [ ] Merge cleanup into `main` to ensure `kaven init` starts clean.
+
+### 3. Production Secrets Audit
+- [ ] Finalize the rotation of all temporary development keys.
+- [ ] Ensure `JWT_SECRET` and `SIGNING_PUBLIC_KEY` are consistent between CLI and Marketplace.
+
+## 🔴 P1 — Product Readiness
+
+### 1. kaven-site Landing Page (Sprint S1)
+- [ ] Implement Hero section, Features showcase, and Pricing table on `kaven.site`.
+- [ ] Fix broken documentation and changelog links in the footer.
+
+### 2. Marketing Tracking Module
+- [ ] Extract tracking logic from `seja-eleito` (GA4, CAPI, GTM) into a reusable Kaven module.
+- [ ] Enable server-side event tracking for the main Kaven site.
 
 ## 🎨 Branding & Customization
 
 ### 1. Define Brand Colors
-
-The system supports color presets. To create a custom brand palette beyond the defaults:
-
 - [ ] Edit `apps/admin/tailwind.config.ts` to define your `primary` range if not using CSS variables.
 - [ ] Update `apps/admin/app/globals.css` if using the CSS Variable engine.
 
 ### 2. Logo Configuration
-
 - [ ] Replace `public/logo.svg` and `public/favicon.ico` with your brand assets.
 - [ ] Update `appName` in `apps/admin/lib/config.ts` (to be created).
 
 ## 🔐 Environment Variables
 
 ### 1. Authentication Providers (if extending beyond JWT)
-
-If you enable Auth0, Firebase, or other providers:
-
-- [ ] Create accounts on the respective platforms.
-- [ ] Populate the `NEXT_PUBLIC_AUTH0_*` or `NEXT_PUBLIC_FIREBASE_*` variables in `.env`.
+- [ ] Create accounts on respective platforms (Auth0, Firebase, etc.).
+- [ ] Populate `NEXT_PUBLIC_AUTH0_*` or `NEXT_PUBLIC_FIREBASE_*` variables in `.env`.
 
 ### 2. Maps (Optional)
-
 - [ ] Get a Mapbox API Key if using map features: `NEXT_PUBLIC_MAPBOX_API_KEY`.
 
 ## ⚙️ SaaS Configuration
 
 ### 1. Feature Flags
-
 - [ ] Decide which modules are active by default for new tenants in the database or config.
 
 ### 2. Multi-Language
-
 - [ ] If supporting multiple languages, prepare translation JSON files in `apps/admin/locales/`.
+
+---
+**Last Updated:** 2026-04-07 (Reality Sync Audit & Restoration)

@@ -1,0 +1,15 @@
+{
+  "name": "Kaven Payments",
+  "slug": "payments",
+  "version": "1.0.0",
+  "description": "Multi-tenant payment integration (Stripe + Paddle) — subscriptions, invoices, webhooks, usage tracking",
+  "author": "kaven-co",
+  "license": "commercial",
+  "tier": "pro",
+  "env": [
+    "STRIPE_SECRET_KEY",
+    "STRIPE_WEBHOOK_SECRET",
+    "PADDLE_API_KEY",
+    "PADDLE_WEBHOOK_SECRET"
+  ]
+}

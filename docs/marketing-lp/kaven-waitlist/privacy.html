@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Privacy Policy — Kaven</title>
+  <meta name="description" content="Privacy Policy for Kaven SaaS Framework. GDPR and LGPD compliant." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            surface: { base: '#0F172A', elevated: '#1E293B', card: '#243044', border: '#334155' },
+            frost: { amber: '#F59E0B', blue: '#3B82F6' },
+            text: { primary: '#F8FAFC', secondary: '#94A3B8', muted: '#64748B' }
+          },
+          fontFamily: { sans: ['DM Sans', 'system-ui', 'sans-serif'], mono: ['Geist Mono', 'monospace'] }
+        }
+      }
+    }
+  </script>
+  <style>
+    * { -webkit-font-smoothing: antialiased; }
+    body { background: #0F172A; color: #F8FAFC; font-family: 'DM Sans', system-ui, sans-serif; }
+    .mono { font-family: 'Geist Mono', monospace; }
+    .prose h2 { font-size: 1.25rem; font-weight: 600; color: #F8FAFC; margin-top: 2.5rem; margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 1px solid #334155; }
+    .prose h3 { font-size: 1rem; font-weight: 600; color: #F59E0B; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+    .prose p { color: #94A3B8; line-height: 1.8; margin-bottom: 1rem; font-size: 0.9375rem; }
+    .prose ul { color: #94A3B8; line-height: 1.8; margin-bottom: 1rem; padding-left: 1.5rem; font-size: 0.9375rem; }
+    .prose ul li { margin-bottom: 0.375rem; }
+    .prose a { color: #F59E0B; text-decoration: none; }
+    .prose a:hover { text-decoration: underline; }
+    .prose strong { color: #F8FAFC; font-weight: 600; }
+    .toc-link { color: #64748B; font-size: 0.875rem; text-decoration: none; padding: 4px 0; display: block; transition: color 0.15s; }
+    .toc-link:hover { color: #F59E0B; }
+    .callout { background: #1E293B; border-left: 3px solid #F59E0B; padding: 14px 18px; border-radius: 0 6px 6px 0; margin: 1.5rem 0; }
+    .callout p { margin: 0; font-size: 0.875rem; }
+    .rights-table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.875rem; }
+    .rights-table th { text-align: left; padding: 10px 14px; background: #1E293B; color: #F8FAFC; font-weight: 600; border-bottom: 1px solid #334155; }
+    .rights-table td { padding: 10px 14px; color: #94A3B8; border-bottom: 1px solid #243044; vertical-align: top; }
+    .rights-table tr:last-child td { border-bottom: none; }
+    .tag { display: inline-block; background: #F59E0B18; color: #F59E0B; padding: 2px 8px; border-radius: 4px; font-family: 'Geist Mono', monospace; font-size: 11px; margin-right: 4px; }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="sticky top-0 z-50 border-b border-[#334155] backdrop-blur-sm" style="background: rgba(15,23,42,0.92);">
+  <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+    <a href="/" class="mono font-medium text-[#F8FAFC] text-xl tracking-tight">
+      kaven<span style="color:#F59E0B">.</span>
+    </a>
+    <div class="flex items-center gap-6">
+      <a href="/terms.html" class="text-[#64748B] hover:text-[#F8FAFC] text-sm font-medium transition-colors">Terms</a>
+      <a href="/privacy.html" class="text-[#F59E0B] text-sm font-medium">Privacy</a>
+      <a href="/refund.html" class="text-[#64748B] hover:text-[#F8FAFC] text-sm font-medium transition-colors">Refund</a>
+    </div>
+  </div>
+</nav>
+
+<!-- CONTENT -->
+<div class="max-w-6xl mx-auto px-6 py-16">
+  <div class="flex gap-16">
+
+    <!-- TOC (Desktop) -->
+    <aside class="hidden lg:block w-56 flex-shrink-0">
+      <div class="sticky top-24">
+        <p class="mono text-[10px] tracking-widest uppercase text-[#F59E0B] mb-4">Contents</p>
+        <nav class="space-y-1">
+          <a href="#overview" class="toc-link">1. Overview</a>
+          <a href="#data-collected" class="toc-link">2. Data We Collect</a>
+          <a href="#how-used" class="toc-link">3. How We Use Data</a>
+          <a href="#processors" class="toc-link">4. Third-Party Processors</a>
+          <a href="#cookies" class="toc-link">5. Cookies</a>
+          <a href="#retention" class="toc-link">6. Data Retention</a>
+          <a href="#security" class="toc-link">7. Security</a>
+          <a href="#rights-gdpr" class="toc-link">8. Rights (GDPR)</a>
+          <a href="#rights-lgpd" class="toc-link">9. Rights (LGPD)</a>
+          <a href="#transfers" class="toc-link">10. International Transfers</a>
+          <a href="#children" class="toc-link">11. Children</a>
+          <a href="#changes" class="toc-link">12. Changes</a>
+          <a href="#contact-dpo" class="toc-link">13. Contact / DPO</a>
+        </nav>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="flex-1 max-w-3xl prose">
+
+      <!-- Header -->
+      <div class="mb-10">
+        <span class="mono text-[11px] tracking-widest uppercase text-[#F59E0B] mb-3 block">Legal</span>
+        <h1 class="text-3xl font-bold text-[#F8FAFC] mb-3">Privacy Policy</h1>
+        <p class="text-[#64748B] text-sm">Last updated: February 24, 2026 &nbsp;·&nbsp; Effective: February 24, 2026</p>
+        <div class="flex gap-2 mt-3">
+          <span class="tag">GDPR</span>
+          <span class="tag">LGPD</span>
+          <span class="tag">CCPA</span>
+        </div>
+      </div>
+
+      <div class="callout">
+        <p>Kaven is built on a privacy-first architecture. The framework you purchase includes LGPD/GDPR compliance features. This policy governs how we collect and process data related to the Kaven website and purchase flow — not the data your tenants process using the framework.</p>
+      </div>
+
+      <h2 id="overview">1. Overview</h2>
+      <p>This Privacy Policy explains how Chris Rodrigues, operating as Kaven ("Kaven," "we," "us," or "our"), collects, uses, stores, and protects personal data when you visit <a href="https://kaven.site">kaven.site</a>, join our waitlist, or purchase our products.</p>
+      <p>We process personal data in compliance with:</p>
+      <ul>
+        <li><strong>LGPD</strong> — Lei Geral de Proteção de Dados (Brazil, Law No. 13,709/2018)</li>
+        <li><strong>GDPR</strong> — General Data Protection Regulation (EU/EEA)</li>
+        <li><strong>CCPA</strong> — California Consumer Privacy Act (where applicable)</li>
+      </ul>
+
+      <h2 id="data-collected">2. Data We Collect</h2>
+      <h3>2.1 Waitlist Registration</h3>
+      <p>When you join our waitlist, we collect:</p>
+      <ul>
+        <li><strong>Email address</strong> — to send launch notifications and product updates</li>
+        <li><strong>Name</strong> (optional) — for personalized communication</li>
+        <li><strong>IP address</strong> — for fraud prevention and geographic analytics</li>
+        <li><strong>Browser/device information</strong> — for analytics</li>
+      </ul>
+      <p><strong>Legal basis (LGPD/GDPR):</strong> Consent (Art. 7, I — LGPD; Art. 6(1)(a) — GDPR). You can withdraw consent at any time via unsubscribe link.</p>
+
+      <h3>2.2 Purchase Data</h3>
+      <p>When you purchase Kaven, payment processing is handled entirely by <strong>Paddle Payments Inc.</strong> We receive only the following from Paddle after a successful transaction:</p>
+      <ul>
+        <li>Email address associated with your purchase</li>
+        <li>Purchased tier and transaction ID</li>
+        <li>Country (for tax purposes, handled by Paddle)</li>
+      </ul>
+      <p>We do <strong>not</strong> receive or store credit card numbers, billing addresses, or payment method details. These are processed and retained by Paddle under their <a href="https://www.paddle.com/legal/privacy" target="_blank" rel="noopener">Privacy Policy</a>.</p>
+      <p><strong>Legal basis:</strong> Contract performance (Art. 7, V — LGPD; Art. 6(1)(b) — GDPR).</p>
+
+      <h3>2.3 Product Access</h3>
+      <p>To grant access to the GitHub repository, course platform, and Discord community, we process:</p>
+      <ul>
+        <li>Email address (for account provisioning)</li>
+        <li>GitHub username (if you connect via GitHub OAuth)</li>
+        <li>Discord user ID (for server access role assignment)</li>
+      </ul>
+
+      <h3>2.4 Support Communications</h3>
+      <p>When you contact us for support, we retain email correspondence to provide assistance and improve our product. We do not use support data for marketing without explicit consent.</p>
+
+      <h3>2.5 Analytics</h3>
+      <p>We may collect anonymized, aggregated analytics data about website usage (page views, click patterns, referral sources). Where analytics tools are used, we configure them to minimize personal data collection. We do not sell analytics data.</p>
+
+      <h2 id="how-used">3. How We Use Your Data</h2>
+      <ul>
+        <li><strong>Order fulfillment</strong> — provisioning GitHub access, course access, Discord roles</li>
+        <li><strong>Transactional emails</strong> — purchase confirmation, access credentials, update notifications</li>
+        <li><strong>Product updates</strong> — notifying you of new releases during your update entitlement period</li>
+        <li><strong>Customer support</strong> — responding to inquiries and resolving issues</li>
+        <li><strong>Security & fraud prevention</strong> — detecting abuse, unauthorized access, or policy violations</li>
+        <li><strong>Legal compliance</strong> — meeting obligations under applicable law</li>
+      </ul>
+      <p>We do <strong>not</strong>: sell your data, share it with advertisers, use it for profiling unrelated to product improvement, or send unsolicited marketing without consent.</p>
+
+      <h2 id="processors">4. Third-Party Data Processors</h2>
+      <p>We share data with the following third-party processors under data processing agreements:</p>
+      <table class="rights-table">
+        <thead>
+          <tr>
+            <th>Processor</th>
+            <th>Purpose</th>
+            <th>Data Shared</th>
+            <th>Location</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Paddle Payments Inc.</strong></td>
+            <td>Payment processing, Merchant of Record</td>
+            <td>Email, purchase details, billing data</td>
+            <td>USA / UK</td>
+          </tr>
+          <tr>
+            <td><strong>GitHub (Microsoft)</strong></td>
+            <td>Code repository access</td>
+            <td>Email, GitHub username</td>
+            <td>USA</td>
+          </tr>
+          <tr>
+            <td><strong>Discord Inc.</strong></td>
+            <td>Community access</td>
+            <td>Email (invite), Discord ID</td>
+            <td>USA</td>
+          </tr>
+          <tr>
+            <td><strong>Amazon Web Services (AWS SES)</strong></td>
+            <td>Transactional email delivery</td>
+            <td>Email address, message content</td>
+            <td>USA (us-east-1)</td>
+          </tr>
+          <tr>
+            <td><strong>Vercel Inc.</strong></td>
+            <td>Website hosting</td>
+            <td>IP address, request logs</td>
+            <td>USA / Global</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>Each processor is bound by their own privacy policy and applicable data protection regulations. Transfers to the USA are conducted under Standard Contractual Clauses (SCCs) where applicable.</p>
+
+      <h2 id="cookies">5. Cookies & Tracking</h2>
+      <p>The Kaven website uses minimal cookies:</p>
+      <ul>
+        <li><strong>Strictly necessary cookies</strong> — essential for website functionality (no consent required)</li>
+        <li><strong>Analytics cookies</strong> — anonymous usage statistics (opt-out available)</li>
+      </ul>
+      <p>We do not use third-party advertising cookies or tracking pixels. You can disable cookies via your browser settings without affecting core site functionality.</p>
+
+      <h2 id="retention">6. Data Retention</h2>
+      <ul>
+        <li><strong>Waitlist emails</strong> — retained until you unsubscribe or request deletion</li>
+        <li><strong>Purchase records</strong> — retained for 5 years for accounting and legal compliance (LGPD Art. 16, II)</li>
+        <li><strong>Support correspondence</strong> — retained for 2 years after case resolution</li>
+        <li><strong>Audit logs</strong> — 90 days (configurable) per our audit service implementation</li>
+        <li><strong>Analytics data</strong> — anonymized within 90 days</li>
+      </ul>
+      <p>Upon expiration of retention periods, data is permanently deleted or anonymized using secure deletion methods.</p>
+
+      <h2 id="security">7. Security Measures</h2>
+      <p>Kaven is built with security as a core architectural principle. Measures protecting your data include:</p>
+      <ul>
+        <li>HTTPS/TLS encryption for all data in transit</li>
+        <li>Encryption at rest for sensitive stored data</li>
+        <li>Row-level security and tenant isolation in all database queries</li>
+        <li>Ed25519 cryptographic signing for module distribution integrity</li>
+        <li>Audit logging for all access and modification events</li>
+        <li>OWASP Top 10 mitigations throughout the codebase</li>
+        <li>Access controls with principle of least privilege</li>
+      </ul>
+      <p>No system is 100% secure. In the event of a data breach affecting your personal data, we will notify you as required by applicable law (LGPD Art. 48; GDPR Art. 33).</p>
+
+      <h2 id="rights-gdpr">8. Your Rights (GDPR — EU/EEA Residents)</h2>
+      <p>If you are located in the EU/EEA, you have the following rights under the GDPR:</p>
+      <table class="rights-table">
+        <thead>
+          <tr><th>Right</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Access (Art. 15)</strong></td><td>Request a copy of personal data we hold about you</td></tr>
+          <tr><td><strong>Rectification (Art. 16)</strong></td><td>Correct inaccurate or incomplete personal data</td></tr>
+          <tr><td><strong>Erasure (Art. 17)</strong></td><td>Request deletion of your personal data ("right to be forgotten")</td></tr>
+          <tr><td><strong>Restriction (Art. 18)</strong></td><td>Request limited processing of your data</td></tr>
+          <tr><td><strong>Portability (Art. 20)</strong></td><td>Receive your data in a structured, machine-readable format</td></tr>
+          <tr><td><strong>Objection (Art. 21)</strong></td><td>Object to processing based on legitimate interests</td></tr>
+          <tr><td><strong>Withdraw consent</strong></td><td>Withdraw consent at any time without affecting prior processing</td></tr>
+        </tbody>
+      </table>
+      <p>To exercise these rights, contact us at <a href="mailto:privacy@kaven.site">privacy@kaven.site</a>. We will respond within 30 days. You also have the right to lodge a complaint with your national supervisory authority.</p>
+
+      <h2 id="rights-lgpd">9. Your Rights (LGPD — Brazilian Residents)</h2>
+      <p>Under Brazil's LGPD (Art. 18), you have the right to:</p>
+      <ul>
+        <li>Confirmation of the existence of processing</li>
+        <li>Access to your personal data</li>
+        <li>Correction of incomplete, inaccurate, or outdated data</li>
+        <li>Anonymization, blocking, or deletion of unnecessary or excessive data</li>
+        <li>Portability of your data to another provider</li>
+        <li>Deletion of data processed with your consent</li>
+        <li>Information about third parties with whom data has been shared</li>
+        <li>Information about the possibility of denying consent and the consequences</li>
+        <li>Revocation of consent</li>
+      </ul>
+      <p>To exercise LGPD rights, contact our Data Protection Officer (DPO) at <a href="mailto:privacy@kaven.site">privacy@kaven.site</a>. We will respond within the timeframes established by the LGPD and ANPD guidelines.</p>
+
+      <h2 id="transfers">10. International Data Transfers</h2>
+      <p>Your data may be transferred to and processed in countries outside Brazil or the EU, including the United States, where our third-party processors operate. These transfers are conducted with appropriate safeguards:</p>
+      <ul>
+        <li>Standard Contractual Clauses (SCCs) approved by the European Commission</li>
+        <li>Data Processing Agreements with all processors</li>
+        <li>Adequacy decisions where applicable</li>
+      </ul>
+
+      <h2 id="children">11. Children's Privacy</h2>
+      <p>Kaven is a developer tool intended for professionals aged 18 and older. We do not knowingly collect personal data from individuals under 18 years of age. If you believe a minor has submitted data to us, contact us at <a href="mailto:privacy@kaven.site">privacy@kaven.site</a> and we will delete it promptly.</p>
+
+      <h2 id="changes">12. Changes to This Policy</h2>
+      <p>We may update this Privacy Policy to reflect changes in our practices, legal requirements, or services. When we make material changes, we will notify you by email (if we have your email address) and update the "Last updated" date at the top of this policy. Continued use of our services after the effective date constitutes acceptance of the updated policy.</p>
+
+      <h2 id="contact-dpo">13. Contact & Data Protection Officer</h2>
+      <p>For privacy-related inquiries, data subject requests, or concerns:</p>
+      <ul>
+        <li><strong>Email:</strong> <a href="mailto:privacy@kaven.site">privacy@kaven.site</a></li>
+        <li><strong>Data Controller:</strong> Chris Rodrigues (Kaven)</li>
+        <li><strong>Website:</strong> <a href="https://kaven.site">kaven.site</a></li>
+      </ul>
+      <p>For payment-related data, contact Paddle at <a href="https://www.paddle.com/legal/privacy" target="_blank" rel="noopener">paddle.com/legal/privacy</a>.</p>
+
+    </main>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer class="border-t border-[#334155] mt-20">
+  <div class="max-w-6xl mx-auto px-6 py-10">
+    <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+      <p class="text-[#64748B] text-sm">© 2026 Kaven. All rights reserved.</p>
+      <div class="flex gap-6">
+        <a href="/terms.html" class="text-[#64748B] hover:text-[#F8FAFC] text-xs transition-colors">Terms</a>
+        <a href="/privacy.html" class="text-[#F59E0B] text-xs font-medium">Privacy</a>
+        <a href="/refund.html" class="text-[#64748B] hover:text-[#F8FAFC] text-xs transition-colors">Refund Policy</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

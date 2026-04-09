@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Refund Policy — Kaven</title>
+  <meta name="description" content="Kaven offers a 30-day no-questions-asked money-back guarantee on all purchases." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            surface: { base: '#0F172A', elevated: '#1E293B', card: '#243044', border: '#334155' },
+            frost: { amber: '#F59E0B', blue: '#3B82F6' },
+            text: { primary: '#F8FAFC', secondary: '#94A3B8', muted: '#64748B' }
+          },
+          fontFamily: { sans: ['DM Sans', 'system-ui', 'sans-serif'], mono: ['Geist Mono', 'monospace'] }
+        }
+      }
+    }
+  </script>
+  <style>
+    * { -webkit-font-smoothing: antialiased; }
+    body { background: #0F172A; color: #F8FAFC; font-family: 'DM Sans', system-ui, sans-serif; }
+    .mono { font-family: 'Geist Mono', monospace; }
+    .prose h2 { font-size: 1.25rem; font-weight: 600; color: #F8FAFC; margin-top: 2.5rem; margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 1px solid #334155; }
+    .prose h3 { font-size: 1rem; font-weight: 600; color: #F59E0B; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+    .prose p { color: #94A3B8; line-height: 1.8; margin-bottom: 1rem; font-size: 0.9375rem; }
+    .prose ul { color: #94A3B8; line-height: 1.8; margin-bottom: 1rem; padding-left: 1.5rem; font-size: 0.9375rem; }
+    .prose ul li { margin-bottom: 0.375rem; }
+    .prose a { color: #F59E0B; text-decoration: none; }
+    .prose a:hover { text-decoration: underline; }
+    .prose strong { color: #F8FAFC; font-weight: 600; }
+    .toc-link { color: #64748B; font-size: 0.875rem; text-decoration: none; padding: 4px 0; display: block; transition: color 0.15s; }
+    .toc-link:hover { color: #F59E0B; }
+    .guarantee-box { background: linear-gradient(135deg, #1E293B, #243044); border: 1px solid #F59E0B44; border-radius: 12px; padding: 28px 32px; margin: 2rem 0; text-align: center; }
+    .callout { background: #1E293B; border-left: 3px solid #F59E0B; padding: 14px 18px; border-radius: 0 6px 6px 0; margin: 1.5rem 0; }
+    .callout p { margin: 0; font-size: 0.875rem; }
+    .callout-green { border-left-color: #34D399; }
+    .process-step { display: flex; gap: 16px; margin-bottom: 16px; align-items: flex-start; }
+    .step-num { width: 28px; height: 28px; border-radius: 50%; background: #F59E0B18; border: 1px solid #F59E0B44; color: #F59E0B; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-family: 'Geist Mono', monospace; margin-top: 1px; }
+    .step-content p { margin: 0; color: #94A3B8; font-size: 0.9375rem; line-height: 1.6; }
+    .step-content strong { color: #F8FAFC; }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="sticky top-0 z-50 border-b border-[#334155] backdrop-blur-sm" style="background: rgba(15,23,42,0.92);">
+  <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+    <a href="/" class="mono font-medium text-[#F8FAFC] text-xl tracking-tight">
+      kaven<span style="color:#F59E0B">.</span>
+    </a>
+    <div class="flex items-center gap-6">
+      <a href="/terms.html" class="text-[#64748B] hover:text-[#F8FAFC] text-sm font-medium transition-colors">Terms</a>
+      <a href="/privacy.html" class="text-[#64748B] hover:text-[#F8FAFC] text-sm font-medium transition-colors">Privacy</a>
+      <a href="/refund.html" class="text-[#F59E0B] text-sm font-medium">Refund</a>
+    </div>
+  </div>
+</nav>
+
+<!-- CONTENT -->
+<div class="max-w-6xl mx-auto px-6 py-16">
+  <div class="flex gap-16">
+
+    <!-- TOC (Desktop) -->
+    <aside class="hidden lg:block w-56 flex-shrink-0">
+      <div class="sticky top-24">
+        <p class="mono text-[10px] tracking-widest uppercase text-[#F59E0B] mb-4">Contents</p>
+        <nav class="space-y-1">
+          <a href="#guarantee" class="toc-link">1. Our Guarantee</a>
+          <a href="#eligible" class="toc-link">2. Eligible Purchases</a>
+          <a href="#not-eligible" class="toc-link">3. Non-Refundable Items</a>
+          <a href="#process" class="toc-link">4. How to Request</a>
+          <a href="#timeline" class="toc-link">5. Processing Time</a>
+          <a href="#paddle" class="toc-link">6. Paddle & Disputes</a>
+          <a href="#partial" class="toc-link">7. Partial Refunds</a>
+          <a href="#abuse" class="toc-link">8. Abuse Policy</a>
+          <a href="#contact-refund" class="toc-link">9. Contact</a>
+        </nav>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="flex-1 max-w-3xl prose">
+
+      <!-- Header -->
+      <div class="mb-10">
+        <span class="mono text-[11px] tracking-widest uppercase text-[#F59E0B] mb-3 block">Legal</span>
+        <h1 class="text-3xl font-bold text-[#F8FAFC] mb-3">Refund Policy</h1>
+        <p class="text-[#64748B] text-sm">Last updated: February 24, 2026 &nbsp;·&nbsp; Effective: February 24, 2026</p>
+      </div>
+
+      <!-- Guarantee Hero Box -->
+      <div class="guarantee-box">
+        <div class="text-5xl mb-4">🛡️</div>
+        <h2 class="text-2xl font-bold text-[#F8FAFC] mb-2" style="border:none;margin-top:0;padding-bottom:0;">30-Day Money-Back Guarantee</h2>
+        <p class="text-[#94A3B8] text-base max-w-md mx-auto" style="margin-bottom:0;">If Kaven doesn't work for you — for any reason — contact us within 30 days of purchase and we'll issue a full refund. No questions asked.</p>
+      </div>
+
+      <h2 id="guarantee">1. Our Guarantee</h2>
+      <p>We stand behind Kaven. If you're not satisfied within the first 30 days, we'll refund your purchase in full. We built Kaven to save developers weeks of work — if it doesn't do that for you, you shouldn't pay for it.</p>
+
+      <div class="callout callout-green">
+        <p style="color:#34D399;font-weight:600;">Simple rule: Within 30 days → full refund, no questions. After 30 days → no refund.</p>
+      </div>
+
+      <p>This guarantee exists because we're confident in the product. Most successful refund-backed products (Stripe, Vercel, Supabase competitors) offer 30-day windows as the industry standard. We follow that standard.</p>
+
+      <h2 id="eligible">2. Eligible Purchases</h2>
+      <p>All Kaven tier purchases are eligible for a refund if requested within 30 calendar days of the original purchase date:</p>
+      <ul>
+        <li><strong>Starter ($149)</strong> — eligible for full $149 refund within 30 days</li>
+        <li><strong>Complete ($399)</strong> — eligible for full $399 refund within 30 days</li>
+        <li><strong>Pro ($799)</strong> — eligible for full $799 refund within 30 days, subject to the consultation condition below</li>
+      </ul>
+      <p>The refund window is calculated from the original Paddle transaction date, which is sent to you via Paddle's confirmation email.</p>
+
+      <h2 id="not-eligible">3. Non-Refundable Items</h2>
+      <p>The following are <strong>not eligible for refund</strong>:</p>
+      <ul>
+        <li>Requests made more than 30 calendar days after the purchase date</li>
+        <li><strong>1-hour architecture consultation call</strong> (Pro tier) — once the call has been delivered, the $150 consultation value is non-refundable. If the call has not yet occurred, it does not affect refund eligibility.</li>
+        <li>Purchases where the license key or repository access has been shared with third parties in violation of our Terms of Service</li>
+        <li>Tier upgrades: if you upgrade from Starter to Complete, the upgrade cost follows the 30-day window from the upgrade date, not the original purchase</li>
+      </ul>
+
+      <h2 id="process">4. How to Request a Refund</h2>
+      <p>Requesting a refund is straightforward:</p>
+
+      <div style="margin: 1.5rem 0;">
+        <div class="process-step">
+          <div class="step-num">1</div>
+          <div class="step-content"><p><strong>Email us</strong> at <a href="mailto:refunds@kaven.site">refunds@kaven.site</a> with subject line: <span class="mono" style="background:#1E293B;padding:2px 8px;border-radius:4px;font-size:13px;color:#F59E0B;">Refund Request — [your order ID]</span></p></div>
+        </div>
+        <div class="process-step">
+          <div class="step-num">2</div>
+          <div class="step-content"><p><strong>Include:</strong> Your purchase email address and Paddle transaction ID (found in your Paddle receipt email)</p></div>
+        </div>
+        <div class="process-step">
+          <div class="step-num">3</div>
+          <div class="step-content"><p><strong>Optional:</strong> Tell us what didn't work for you. We use this feedback to improve Kaven — not to deny your refund.</p></div>
+        </div>
+        <div class="process-step">
+          <div class="step-num">4</div>
+          <div class="step-content"><p><strong>We process</strong> the refund via Paddle within 2 business days of receiving your request.</p></div>
+        </div>
+      </div>
+
+      <p>You do not need to explain your reason. You do not need to delete the code from your machine before requesting. You simply need to be within the 30-day window.</p>
+
+      <h2 id="timeline">5. Processing Time</h2>
+      <ul>
+        <li><strong>Our response:</strong> Within 1 business day of your request</li>
+        <li><strong>Refund initiation:</strong> Within 2 business days after approval</li>
+        <li><strong>Time to appear in your account:</strong> 5–10 business days, depending on your bank/card issuer</li>
+      </ul>
+      <p>Refunds are issued to the original payment method used at checkout. Paddle handles the actual refund disbursement.</p>
+
+      <h2 id="paddle">6. Paddle Merchant of Record & Buyer Protection</h2>
+      <p>All purchases are processed by <strong>Paddle Payments Inc.</strong>, which acts as the Merchant of Record for all Kaven transactions. This means:</p>
+      <ul>
+        <li>Your purchase contract is technically between you and Paddle</li>
+        <li>Paddle provides their own <a href="https://www.paddle.com/legal/buyers" target="_blank" rel="noopener">Buyer Protection</a> on top of our guarantee</li>
+        <li>If you cannot reach us, you may contact Paddle directly to initiate a refund request</li>
+        <li>Chargebacks initiated with your bank are handled by Paddle. We ask that you contact us first — chargebacks create administrative overhead and may result in your license being revoked before a resolution is reached</li>
+      </ul>
+
+      <div class="callout">
+        <p>If you have a billing dispute or payment issue, please email us at <a href="mailto:refunds@kaven.site" style="color:#F59E0B;">refunds@kaven.site</a> before initiating a chargeback. We resolve all legitimate requests promptly.</p>
+      </div>
+
+      <h2 id="partial">7. Partial Refunds & Upgrade Credits</h2>
+      <p>If you purchased the Starter tier and upgrade to Complete or Pro within 30 days of the original purchase, the upgrade is treated as a new transaction. Both the original purchase and the upgrade have their own 30-day refund windows calculated from their respective transaction dates.</p>
+      <p>We do not offer partial refunds for unused update periods (e.g., you purchased Complete with 12 months of updates and request a refund at month 11). The 30-day window is the sole criterion.</p>
+
+      <h2 id="abuse">8. Abuse Prevention</h2>
+      <p>Our guarantee is built on trust. We reserve the right to deny refund requests in cases of:</p>
+      <ul>
+        <li>Repeat purchases and refunds by the same individual (serial refund abuse)</li>
+        <li>Evidence that the request is intended to obtain the source code without payment</li>
+        <li>Clear violation of our Terms of Service prior to the refund request</li>
+      </ul>
+      <p>These cases are rare and require documented evidence before denial. If you believe a refund was denied in error, you may escalate to Paddle's buyer protection process.</p>
+
+      <h2 id="contact-refund">9. Contact</h2>
+      <p>For refund requests or questions about this policy:</p>
+      <ul>
+        <li><strong>Email:</strong> <a href="mailto:refunds@kaven.site">refunds@kaven.site</a></li>
+        <li><strong>Subject line:</strong> <code style="background:#1E293B;padding:2px 8px;border-radius:4px;font-size:13px;color:#F59E0B;font-family:'Geist Mono',monospace;">Refund Request — [Paddle Transaction ID]</code></li>
+        <li><strong>Response time:</strong> Within 1 business day</li>
+      </ul>
+      <p>For payment-related issues, Paddle support: <a href="https://www.paddle.com" target="_blank" rel="noopener">paddle.com</a></p>
+
+    </main>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer class="border-t border-[#334155] mt-20">
+  <div class="max-w-6xl mx-auto px-6 py-10">
+    <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+      <p class="text-[#64748B] text-sm">© 2026 Kaven. All rights reserved.</p>
+      <div class="flex gap-6">
+        <a href="/terms.html" class="text-[#64748B] hover:text-[#F8FAFC] text-xs transition-colors">Terms</a>
+        <a href="/privacy.html" class="text-[#64748B] hover:text-[#F8FAFC] text-xs transition-colors">Privacy</a>
+        <a href="/refund.html" class="text-[#F59E0B] text-xs font-medium">Refund Policy</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

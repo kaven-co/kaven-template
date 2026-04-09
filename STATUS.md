@@ -1,10 +1,21 @@
 ---
 project: kaven-framework
 phase: sprint-2-execution
-updated: 2026-02-11T01:31:00Z
+updated: 2026-04-07T12:00:00Z
 ---
 
 # Kaven Framework - Current Status
+
+## 🌐 Ecosystem Reality Check (Marketplace)
+
+| Item | Status | Detalhes |
+|------|--------|----------|
+| **Kaven Marketplace** | 🟡 UPDATED | Migrado para **Prisma 7.4.1** (PR #42 ✅). Singleton instanciado. |
+| **Download Blocker** | 🛑 P0 | Blocker **F1.4**: URLs de download ainda apontam para domínios fictícios (\`registry.kaven.dev\`). |
+| **CI/CD** | ✅ OK | Dependabot #36 mergeado. PRs #18/19 substituídos por novos agrupamentos. |
+| **Docs** | ✅ SYNCED | \`MARKETPLACE-STATUS.md\` e \`README.md\` atualizados no repositório do marketplace. |
+
+---
 
 ## 📍 Brownfield Discovery
 

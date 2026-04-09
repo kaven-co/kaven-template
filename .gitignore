@@ -148,8 +148,6 @@ __pycache__/
 # Temp / downloaded files
 downloaded-logs-*.json
 migrate-workflow-*.py
-validate-squad.js
-2026-*-por-favor-*.txt
+2026-*-*.txt
 Kaven-Limbo/
-COMPANIOS-PRE-PRD.md
 /src/

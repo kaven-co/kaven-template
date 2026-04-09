@@ -31,19 +31,27 @@
     "policy:design-system": "bash scripts/policies/check-design-system.sh",
     "policy:design-system-docs": "bash scripts/policies/check-design-system-docs.sh",
     "report:ui-imports": "bash scripts/migration/ui-import-report.sh",
-    "check:ui-migration-clean": "bash scripts/migration/check-ui-migration-clean.sh"
+    "check:ui-migration-clean": "bash scripts/migration/check-ui-migration-clean.sh",
+    "sync:ide:aiox": "node .aiox-core/infrastructure/scripts/ide-sync/index.js sync",
+    "sync:ide:kaven": "node squads/kaven-squad/scripts/sync-kaven-ide.js",
+    "sync:ide:all": "npm run sync:ide:aiox && npm run sync:ide:kaven",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@types/node-cron": "^3.0.11",
+    "husky": "^9.1.7",
     "kill-port": "^2.0.1",
     "prettier": "^3.4.2",
     "prisma": "^5.22.0",
     "turbo": "^2.8.9",
-    "typescript": "^6.0.2"
+    "typescript": "^5.7.2"
   },
   "packageManager": "pnpm@9.15.4",
   "dependencies": {
     "@prisma/client": "5.22.0",
+    "fs-extra": "^11.3.4",
+    "handlebars": "^4.7.8",
+    "js-yaml": "^4.1.1",
     "node-cron": "^3.0.3",
     "systeminformation": "^5.31.0"
   },
