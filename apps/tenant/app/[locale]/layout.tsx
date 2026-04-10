@@ -47,6 +47,7 @@ import { ThemeProvider } from '@/providers/theme-provider';
 import { TooltipProvider } from '@kaven/ui-base';
 import { prisma } from '@/lib/prisma';
 import { generatePalette } from '@/utils/color';
+// [KAVEN_MODULE_PROVIDERS]
 
 export default async function RootLayout({
   children,
