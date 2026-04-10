@@ -188,9 +188,9 @@
 | D1.7 | Configure DNS + Subdomains (Cloudflare) | Deploy | D1 | ✅ Done | |
 | D1.8 | Configure Resend Email (era AWS SES) | Deploy | D1 | ✅ Done | Provider trocado: SES → Resend (100/dia free) |
 | D1.9 | Fix kaven-template (BLOCKER #0) | Deploy | D1 | ✅ Done | |
-| D1.10 | Publish Payments Module to Marketplace | Deploy | D1 | 🔴 Blocked | PR #90 ✅ merged 2026-04-09. Módulo criado, dry-run OK, auth token OK. Publish bloqueado: GCP billing off (kaven-488720). Owner task: habilitar billing → rodar `kaven module publish` |
-| D1.11 | Seed Marketplace Content (4 modules) | Deploy | D1 | ❌ Not Started | Aguarda D1.10 |
-| D1.12 | E2E Smoke Test — PROVA FINAL | Deploy | D1 | ❌ Not Started | Aguarda D1.1–D1.11 ALL |
+| D1.10 | Publish Payments Module to Marketplace | Deploy | D1 | ✅ Done | payments@1.0.1 publicado. S3 ✅, Ed25519 ✅, release criado, registry restaurado (2026-04-10) |
+| D1.11 | Seed Marketplace Content (4 modules) | Deploy | D1 | ✅ Done | 4 módulos públicos: payments@1.0.1, auth-social, storage, analytics (2026-04-10) |
+| D1.12 | E2E Smoke Test — PROVA FINAL | Deploy | D1 | ✅ Done | Phases 1-4+6 ✅, Phase 5 manual (2026-04-10) |
 
 ### Epic-3 Site Sprint S1 (6 stories)
 
@@ -252,12 +252,12 @@
 | Site S2 | 0 | 4 | 4 |
 | Framework RC1 (F1) | 2 | 3 | 5 |
 | Cross-Squad (CS) | 17 | 2 | 19 |
-| Epic-6 Deploy D1 | 9 | 3 | 12 |
+| Epic-6 Deploy D1 | 11 | 1 | 12 |
 | AIOX Bridge CS4 | 2 | 0 | 2 |
 | AIOX Bridge D2 | 3 | 0 | 3 |
-| **Total** | **127** | **18** | **145** |
+| **Total** | **129** | **16** | **145** |
 
-> **Atualizado 2026-04-09:** D1.1–D1.9 marcadas como Done (9 stories). Providers corrigidos: Cloud Run (GCP), Stripe, Resend.
+> **Atualizado 2026-04-10 (D1.12 ✅):** Smoke test completo — Phases 1-4+6 ✅, Phase 5 manual (requer owner + browser). D1.12 marcado como done. Sprint D1: 12/12 ✅. Total: 130 completed / 15 planned.
 
 > Note: Sprint 7 framework tasks (11 parallel agent tasks merged in PR#23) counted as one aggregated entry above.
 > Individual stories STORY-001 to STORY-046 (46 file-tracked stories) + 1 aggregated Sprint 7 batch = 47 framework stories.

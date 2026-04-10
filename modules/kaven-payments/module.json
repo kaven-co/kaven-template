@@ -1,7 +1,7 @@
 {
   "name": "kaven-payments",
   "slug": "payments",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Stripe and Paddle payment integration with subscriptions, invoices, and webhook handling",
   "author": "kaven-co",
   "license": "proprietary",
@@ -23,7 +23,7 @@
     { "src": "backend/routes/subscriptions.ts", "dest": "apps/api/src/modules/subscriptions/routes.ts" },
     { "src": "backend/routes/webhooks/stripe.ts", "dest": "apps/api/src/modules/webhooks/stripe.ts" },
     { "src": "backend/routes/webhooks/paddle.ts", "dest": "apps/api/src/modules/webhooks/paddle.ts" },
-    { "src": "backend/services/billing.service.ts", "dest": "apps/api/src/modules/billing/services/payment.service.ts" },
+    { "src": "backend/services/billing.service.ts", "dest": "apps/api/src/modules/billing/services/billing.service.ts" },
     { "src": "backend/services/payment.service.ts", "dest": "apps/api/src/modules/billing/services/payment.service.ts" },
     { "src": "backend/services/subscription.service.ts", "dest": "apps/api/src/modules/subscriptions/services/subscription.service.ts" },
     { "src": "backend/services/stripe-client.ts", "dest": "apps/api/src/lib/stripe.ts" },
@@ -36,13 +36,21 @@
   "injections": [
     {
       "file": "apps/api/src/app.ts",
-      "marker": "payments",
-      "code": "import { billingRoutes } from './modules/billing/routes';\nimport { checkoutRoutes } from './modules/checkout/routes';\nimport { subscriptionRoutes } from './modules/subscriptions/routes';\nimport { stripeWebhookRoutes } from './modules/webhooks/stripe';\nimport { paddleWebhookRoutes } from './modules/webhooks/paddle';\napp.register(billingRoutes, { prefix: '/api/billing' });\napp.register(checkoutRoutes, { prefix: '/api/checkout' });\napp.register(subscriptionRoutes, { prefix: '/api/subscriptions' });\napp.register(stripeWebhookRoutes, { prefix: '/api/webhooks/stripe' });\napp.register(paddleWebhookRoutes, { prefix: '/api/webhooks/paddle' });"
+      "anchor": "// [KAVEN_MODULE_IMPORTS]",
+      "moduleName": "payments-imports",
+      "code": "import { billingRoutes } from './modules/billing/routes';\nimport { checkoutRoutes } from './modules/checkout/routes';\nimport { subscriptionRoutes } from './modules/subscriptions/routes';\nimport { stripeWebhookRoutes } from './modules/webhooks/stripe';\nimport { paddleWebhookRoutes } from './modules/webhooks/paddle';"
     },
     {
-      "file": "apps/tenant/app/layout.tsx",
-      "marker": "payments",
-      "code": "import { PaddleScript } from '../lib/paddle';"
+      "file": "apps/api/src/app.ts",
+      "anchor": "// [KAVEN_MODULE_ROUTES]",
+      "moduleName": "payments-routes",
+      "code": "app.register(billingRoutes, { prefix: '/api/billing' });\napp.register(checkoutRoutes, { prefix: '/api/checkout' });\napp.register(subscriptionRoutes, { prefix: '/api/subscriptions' });\napp.register(stripeWebhookRoutes, { prefix: '/api/webhooks/stripe' });\napp.register(paddleWebhookRoutes, { prefix: '/api/webhooks/paddle' });"
+    },
+    {
+      "file": "apps/tenant/app/[locale]/layout.tsx",
+      "anchor": "// [KAVEN_MODULE_PROVIDERS]",
+      "moduleName": "payments-providers",
+      "code": "import { PaddleScript } from '@/lib/paddle';"
     }
   ],
   "prisma": {
