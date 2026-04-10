@@ -188,7 +188,7 @@
 | D1.7 | Configure DNS + Subdomains (Cloudflare) | Deploy | D1 | ✅ Done | |
 | D1.8 | Configure Resend Email (era AWS SES) | Deploy | D1 | ✅ Done | Provider trocado: SES → Resend (100/dia free) |
 | D1.9 | Fix kaven-template (BLOCKER #0) | Deploy | D1 | ✅ Done | |
-| D1.10 | Publish Payments Module to Marketplace | Deploy | D1 | ❌ Not Started | |
+| D1.10 | Publish Payments Module to Marketplace | Deploy | D1 | 🔴 Blocked | PR #90 ✅ merged 2026-04-09. Módulo criado, dry-run OK, auth token OK. Publish bloqueado: GCP billing off (kaven-488720). Owner task: habilitar billing → rodar `kaven module publish` |
 | D1.11 | Seed Marketplace Content (4 modules) | Deploy | D1 | ❌ Not Started | Aguarda D1.10 |
 | D1.12 | E2E Smoke Test — PROVA FINAL | Deploy | D1 | ❌ Not Started | Aguarda D1.1–D1.11 ALL |
 
