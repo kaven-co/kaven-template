@@ -1,22 +1,22 @@
 # KAVEN FRAMEWORK - SYSTEM ARCHITECTURE
 
-**Date:** 2026-02-03
-**Phase:** Brownfield Discovery - Phase 1
+**Date:** 2026-04-11
+**Version:** v1.0.0-rc1 LIVE
 **Analyst:** Specialized Architect Agent
 
 ---
 
 ## 📋 EXECUTIVE SUMMARY
 
-O **Kaven Framework** é uma plataforma SaaS **enterprise-grade, multi-tenant** construída em Fastify (API) + Next.js 14 App Router (Admin e Tenant Apps). A arquitetura implementa padrões modernos de engenharia com foco em:
+O **Kaven Framework** é uma plataforma SaaS **enterprise-grade, multi-tenant** construída em Fastify (API) + Next.js 16 App Router (Admin e Tenant Apps). A arquitetura implementa padrões modernos de engenharia com foco em:
 
 1. **Multi-tenancy nativo** - Isolamento de dados via tenantId com middleware de detecção automática
 2. **Segurança em camadas** - JWT + Refresh Tokens, RBAC, Capabilities, Policies, 2FA/MFA
 3. **Observabilidade enterprise** - Stack PLG (Prometheus/Loki/Grafana) com métricas de negócio
-4. **Monetização completa** - Planos, produtos, subscriptions, pagamentos (Stripe/Paddle/PIX)
-5. **Qualidade garantida** - 32 testes unitários, 105+ casos de teste, quality gates stritos
+4. **Monetização completa** - Planos, produtos, subscriptions, pagamentos (Stripe/PIX)
+5. **Qualidade garantida** - ~2100+ testes, 136 test files, quality gates stritos
 
-**Status Atual:** Week 4 completa (28 features validadas), Week 5 em andamento (Marketplace + Landing)
+**Status Atual:** v1.0.0-rc1 LIVE — admin.kaven.site + tenant.kaven.site. Sprints 1–7 ✅, Marketplace M1–M3 ✅, CLI C1–C3 ✅, Deploy D1 ✅ (12/12), D2 ✅, Cross-squad CS1–CS4 ✅. PRs #1–#93 mergeados.
 
 ---
 
@@ -45,12 +45,12 @@ O **Kaven Framework** é uma plataforma SaaS **enterprise-grade, multi-tenant** 
 - `@fastify/static` - Servir assets estáticos
 - `@fastify/swagger` + `@fastify/swagger-ui` - Documentação OpenAPI automática
 
-### Frontend - Next.js 14 App Router
+### Frontend - Next.js 16 App Router
 
 | App | Propósito | Tecnologias |
 |-----|-----------|-------------|
-| **Admin** (porta 3000) | Painel administrativo da plataforma | Next.js 14, React 19, Radix UI, TailwindCSS 4 |
-| **Tenant** (porta 3001) | Aplicação multi-tenant dos clientes | Next.js 14, React 19, Radix UI, TailwindCSS 4 |
+| **Admin** (porta 3000) | Painel administrativo da plataforma | Next.js 16, React 19, Radix UI, TailwindCSS 4 |
+| **Tenant** (porta 3001) | Aplicação multi-tenant dos clientes | Next.js 16, React 19, Radix UI, TailwindCSS 4 |
 | **Docs** (porta 3002) | Documentação do framework | Nextra, MDX, Pagefind search |
 
 **Bibliotecas Compartilhadas (ambos Admin/Tenant):**
@@ -87,10 +87,10 @@ kaven-framework/
 
 ### Schema Overview
 
-- **Total de Models:** 54 modelos Prisma
-- **Total de Enums:** 28 tipos enumerados
-- **Arquivo Principal:** `schema.prisma` (2.271 linhas)
-- **Estrutura:** `schema.base.prisma` (core imutável) + `schema.extended.prisma` (features customizáveis)
+- **Total de Models:** 261 modelos Prisma
+- **Total de Enums:** 183 tipos enumerados
+- **Arquivo Principal:** `schema.extended.prisma` (source) → `schema.prisma` (gerado)
+- **Estrutura:** `schema.base.prisma` (core imutável) + `schema.extended.prisma` (source completo com 261 models) → `schema.prisma` (gerado automaticamente via merge)
 
 ### Modelos Críticos (Multi-tenancy)
 
@@ -159,35 +159,59 @@ model Invoice {
 
 ## 🏛️ API STRUCTURE (apps/api/)
 
-### Modules (21 total)
+### Modules (50 total)
 
 ```
 apps/api/src/modules/
-├── auth/                   # JWT + 2FA + Password Reset (100% tested)
-├── users/                  # CRUD + Invites (100% tested)
-├── tenants/                # Multi-tenancy (100% tested)
-├── subscriptions/          # Gating logic (100% tested)
-├── payments/               # Stripe + Paddle + PagueBit
-├── invoices/               # Invoice generation (100% tested)
-├── orders/                 # Order processing (100% tested)
-├── products/               # Products CRUD (100% tested)
-├── plans/                  # Plans CRUD
-├── files/                  # File upload with quotas (100% tested)
+├── admin/                  # Admin panel routes
+├── ads/                    # Ads attribution (Meta CAPI, GA4 — EPIC-2.5)
+├── ai/                     # AI features
+├── app/                    # App-level (projects, tasks)
 ├── audit/                  # Audit logging (100% tested)
-├── notifications/          # In-app + Email (100% tested)
-├── security/               # 2FA + Policies (100% tested)
-├── spaces/                 # Workspace isolation
-├── roles/                  # RBAC
-├── grants/                 # Capability grants
-├── policies/               # Access restrictions
-├── observability/          # Prometheus + Loki (100% tested)
-├── platform/               # Email integration + Config
+├── auth/                   # JWT + 2FA + Password Reset (100% tested)
+├── billing/                # Billing core
+├── case-matter/            # Case & matter management
+├── checkout/               # Checkout flow
+├── clients/                # Client management
+├── compliance/             # Compliance & regulatory
+├── content-ops/            # Content operations
 ├── currencies/             # Multi-currency support
-├── app/projects/           # Demo CRM feature
-├── app/tasks/              # Demo Task feature
+├── dashboard/              # Dashboard analytics
+├── documents/              # Document management
 ├── export/                 # Data export
-├── webhooks/               # Webhook integrations
-└── licensing/              # License generation
+├── files/                  # File upload with quotas (100% tested)
+├── finance/                # Finance module
+├── finances-bi/            # Finance BI analytics
+├── governance/             # Governance & policies
+├── grants/                 # Capability grants
+├── inventory/              # Inventory management
+├── invoices/               # Invoice generation (100% tested)
+├── legal/                  # Legal module
+├── marketing/              # Marketing & CRM
+├── notifications/          # In-app + Email (100% tested)
+├── observability/          # Prometheus + Loki (100% tested)
+├── operations/             # Operations management
+├── orders/                 # Order processing (100% tested)
+├── people/                 # People & HR
+├── plans/                  # Plans CRUD
+├── platform/               # Email integration + Config
+├── policies/               # Access restrictions
+├── products/               # Products CRUD (100% tested)
+├── projects/               # Project management
+├── property-management/    # Property management
+├── remote-work/            # Remote work features
+├── roles/                  # RBAC
+├── saas-ops/               # SaaS operations
+├── security/               # 2FA + Policies (100% tested)
+├── service-tokens/         # Service tokens (D2.1)
+├── spaces/                 # Workspace isolation
+├── subscriptions/          # Gating logic (100% tested)
+├── team-collaboration/     # Team collaboration
+├── tenants/                # Multi-tenancy (100% tested)
+├── theme/                  # Theme customization
+├── usage/                  # Usage tracking
+├── users/                  # CRUD + Invites (100% tested)
+└── webhooks/               # Webhook integrations
 ```
 
 ### Middleware Chain
@@ -343,13 +367,14 @@ Layer 7 - Audit Trail → auditService
 
 | Categoria | Quantidade | Status |
 |-----------|------------|--------|
-| Unit Tests (Services) | 11/42 | 26% coverage |
-| Test Cases | 105+ | All passing |
-| E2E Tests (Tenant) | 2 | auth, checkout |
-| Playwright Tests | 284 files | Mixed |
-| Spec Files | 32 | .spec.ts |
+| Total testes passando | ~2100+ | All passing |
+| Spec Files (test files) | 136 | .spec.ts |
+| Tech Debt resolvido | 42/42 | 100% ✅ |
+| Sprints completos | 7/7 — 46/46 stories | ✅ |
+| IDOR models protegidos | 33 | ✅ |
+| Composite indexes | 42+ | ✅ |
 
-### 100% Tested Services
+### Serviços com cobertura extensiva (exemplos)
 
 ✅ auth.service.ts
 ✅ tenant.service.ts
@@ -362,37 +387,15 @@ Layer 7 - Audit Trail → auditService
 ✅ business-metrics.service.ts
 ✅ security-request.service.ts
 ✅ authorization.service.ts
+✅ + demais serviços dos 50 módulos
 
 ---
 
-## 🚨 TECHNICAL DEBT IDENTIFIED
+## ✅ TECHNICAL DEBT STATUS
 
-### CRITICAL (Launch Blockers)
+**Tech Debt:** 42/42 itens resolvidos (100%) — verificado ao fim do Sprint 7.
 
-| ID | Debt | Impact | Effort |
-|----|------|--------|--------|
-| TD-001 | Tenant App: Theme API not implemented | Clients can't customize design | 8h |
-| TD-002 | Tenant App: Real data fetching hardcoded | Sidebar shows "Kaven HQ" instead of real tenant | 4h |
-| TD-003 | Admin routes: Missing authorization | Products/Plans/Features routes unprotected | 8h |
-| TD-004 | AWS SES: Integration commented out | Email provider incomplete | 12h |
-
-### HIGH (User Experience)
-
-| ID | Debt | Location | Effort |
-|----|------|----------|--------|
-| TD-005 | Actor ID undefined in audit logs | users.service.ts | 2h |
-| TD-006 | Theme provider needs API calls | tenant theme-provider | 6h |
-| TD-007 | Grant approval missing middleware | grant-request.routes.ts | 4h |
-| TD-008 | Role CRUD missing space validation | role.controller.ts | 4h |
-
-### MEDIUM (Code Smells)
-
-| ID | Debt | Count | Type |
-|----|------|-------|------|
-| TD-009 | Generic TODOs | 20+ | Incomplete comments |
-| TD-010 | Test coverage gaps | 31 services | Only 11 tested |
-| TD-011 | No E2E tests (Admin) | 0 | Only tenant app |
-| TD-012 | Hardcoded strings | 5+ | Email templates |
+Para histórico detalhado: `docs/prd/technical-debt.md`.
 
 ---
 
@@ -495,38 +498,20 @@ if (!canUse) {
 ✅ Solid architecture with clear separation of concerns
 ✅ Native multi-tenancy with automatic detection
 ✅ 7-layer security with audit trail
-✅ Robust testing (11 services 100% covered)
+✅ ~2100+ tests passing, 42/42 tech debt items resolved
 ✅ Complete observability (PLG stack)
 ✅ Excellent DX (Turborepo, Docker, automation)
+✅ LIVE em produção — admin.kaven.site + tenant.kaven.site
 
-### Weaknesses
-⚠️ Tenant App incomplete (theme + data fetching)
-⚠️ Authorization gaps in admin routes
-⚠️ Partial test coverage (26% services)
-⚠️ AWS SES not implemented
-⚠️ No E2E tests for Admin app
-
-### Recommendations
-
-**P0 (Before Launch):**
-1. Implement authorization middleware in admin routes
-2. Complete Tenant App theme customization API
-3. Implement real tenant data fetching
-4. Add E2E tests for admin app
-
-**P1 (Post-Launch):**
-5. Test remaining 31 services
-6. Implement AWS SES integration
-7. Add PostgreSQL RLS
-8. Sync documentation with code
-
-**P2 (Q2 2026):**
-9. Finalize Marketplace API
-10. Complete Landing page
-11. Investigate AIOS AI Layer
+### Status Atual (2026-04-11)
+- Framework v1.0.0-rc1 LIVE
+- 50 API modules, 261 schema models, 183 enums
+- Marketplace LIVE (marketplace.kaven.site, Cloud Run GCP kaven-prod)
+- AIOX Integration completa (GAPs 1–8 resolvidos)
+- Blocker principal: kaven-site Sprint S1 (landing page) pendente
 
 ---
 
-**Report Compiled:** 2026-02-03
-**Analyst:** Specialized Architect Agent (agentId: ac4ab50)
-**Next Phase:** Database Audit (Phase 2)
+**Report Compiled:** 2026-04-11
+**Version:** v1.0.0-rc1 LIVE
+**PRs mergeados:** #1–#93

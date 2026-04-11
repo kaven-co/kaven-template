@@ -1,7 +1,7 @@
 # KAVEN FRAMEWORK - DATABASE SCHEMA
 
-**Date:** 2026-02-03
-**Phase:** Brownfield Discovery - Phase 2
+**Date:** 2026-04-11
+**Version:** v1.0.0-rc1 LIVE
 **Analyst:** Data Engineer - PostgreSQL + Prisma Specialist
 
 ---
@@ -10,13 +10,13 @@
 
 ### Statistics
 
-- **Total Models:** 54
-- **Total Enums:** 38
-- **Migrations:** 16 registered
-- **Cascade Deletes:** 43 occurrences
-- **Unique Constraints:** 44 fields
-- **Tenant References:** 55 in schema
-- **Soft Delete Fields:** 6 (deletedAt)
+- **Total Models:** 261
+- **Total Enums:** 183
+- **Migrations:** 37+ applied em produção (Neon)
+- **Cascade Deletes:** 43+ occurrences
+- **Unique Constraints:** 44+ fields
+- **Tenant References:** 55+ in schema
+- **Soft Delete Fields:** 6+ (deletedAt)
 
 ### Modular Structure
 
@@ -25,11 +25,11 @@ O schema usa estratégia modular inovadora:
 ```
 packages/database/prisma/
 ├── schema.base.prisma          # Core imutável (Tenant, User, Auth, Billing)
-├── schema.extended.prisma      # Features customizáveis (Project, Task demo)
+├── schema.extended.prisma      # Source real com todas as features (261 models)
 └── schema.prisma               # Gerado automaticamente (merged base + extended)
 ```
 
-**Tamanho:** 2.271 linhas totais
+> **Nota:** `schema.extended.prisma` é o source canônico — `schema.prisma` é gerado a partir do merge. Edite sempre em `schema.extended.prisma`.
 
 ---
 
@@ -98,12 +98,20 @@ packages/database/prisma/
 | InviteSpace | id, inviteId, spaceId | Invite → Space mapping |
 | SpaceOwner | id, userId, spaceId | Space ownership |
 
-### DEMO FEATURES
+### WORKSPACE & PROJECT MANAGEMENT
 
 | Model | Fields | Purpose |
 |-------|--------|---------|
-| Project | id, tenantId, name, status, createdBy | CRM demo feature |
-| Task | id, tenantId, projectId, title, status, priority | Task management demo |
+| Project | id, tenantId, name, status, createdBy | CRM/Project management |
+| Task | id, tenantId, projectId, title, status, priority | Task management |
+
+### MARKETING & CRM
+
+Models para atribuição, analytics, campanhas e customer success (adicionados via sprints 3–7 + EPIC-2.5).
+
+### OUTROS DOMÍNIOS (261 models total)
+
+O schema v1.0.0-rc1 inclui modelos para: ads/attribution (Meta CAPI, GA4), compliance, content-ops, documents, finance/BI, governance, inventory, legal, people, property management, remote work, saas-ops, service tokens, team collaboration e outros 22 módulos expandidos além do core inicial.
 
 ### INFRASTRUCTURE
 
@@ -191,7 +199,7 @@ User ←→ SpaceRole (via UserSpaceRole)
 
 ---
 
-## 📋 ENUMS (38 TOTAL)
+## 📋 ENUMS (183 TOTAL)
 
 ### Status Enums
 - TenantStatus: ACTIVE, INACTIVE, SUSPENDED
@@ -328,7 +336,7 @@ User ←→ SpaceRole (via UserSpaceRole)
 
 ## 💾 SOFT DELETE IMPLEMENTATION
 
-**Models com deletedAt (6):**
+**Models com deletedAt (6+ no core):**
 1. Tenant
 2. User
 3. Subscription
@@ -366,30 +374,11 @@ User ←→ SpaceRole (via UserSpaceRole)
 
 ## 📊 MIGRATIONS HISTORY
 
-**Total:** 16 migrations
+**Total:** 37+ migrations aplicadas em produção (Neon — verificado 2026-04-10)
 
-| Date | Migration | Type | Status |
-|------|-----------|------|--------|
-| 2026-01-29 | init | CREATE | ✓ Latest |
-| 2026-01-21 | add_ui_config_to_spaces | ALTER | ✓ |
-| 2026-01-16 | add_headers_to_email_queue | ALTER | ✓ |
-| 2026-01-16 | add_token_used_at | DROP+CREATE | ✓ |
-| 2026-01-16 | add_email_infrastructure | CREATE | ✓ |
-| 2026-01-15 | add_icon_svg_viewbox_fix | ALTER | ✓ |
-| 2026-01-15 | add_icon_svg_viewbox | ALTER | ⚠️ Empty |
-| 2026-01-14 | add_icon_color_mode (dup) | ALTER | ⚠️ Duplicate |
-| 2026-01-14 | add_icon_color_mode | ALTER | ✓ |
-| 2026-01-14 | add_currency_model | CREATE | ✓ |
-| 2026-01-14 | add_datetime_smtp_fields | ALTER | ✓ |
-| 2026-01-14 | add_datetime_format_fields | ALTER | ⚠️ Empty |
-| 2026-01-12 | add_projects_tasks_models | CREATE | ✓ |
-| 2026-01-12 | add_spaces_system | CREATE | ✓ |
-| 2026-01-12 | fix_tenant_invite_multitenancy | ALTER | ✓ |
-| 2026-01-12 | add_invite_and_reset_tokens | CREATE | ✓ |
-
-**Issues:** 2 empty migrations, 1 duplicate
+O histórico completo de migrations está em `packages/database/prisma/migrations/`. As migrations iniciais (Jan 2026) cobrem o core; as subsequentes (Fev–Abr 2026) expandem o schema com os 22+ módulos dos Sprints 1–7 e EPIC-2.5.
 
 ---
 
-**Schema Documentation Compiled:** 2026-02-03
-**Next:** Security Audit Report
+**Schema Documentation Compiled:** 2026-04-11
+**Status:** v1.0.0-rc1 LIVE — admin.kaven.site + tenant.kaven.site
