@@ -71,7 +71,7 @@ kaven-framework/
 ├── packages/
 │   ├── database/                     # @kaven/database
 │   │   ├── prisma/
-│   │   │   ├── schema.prisma         # Schema principal (54 models, 28 enums)
+│   │   │   ├── schema.prisma         # Schema principal (261 models, 183 enums)
 │   │   │   ├── schema.base.prisma    # Core imutável
 │   │   │   ├── schema.extended.prisma # Features customizáveis
 │   │   │   ├── migrations/           # Histórico de migrations

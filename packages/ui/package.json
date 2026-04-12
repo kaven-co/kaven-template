@@ -30,6 +30,12 @@
     "./themes/glassmorphism/glass-tokens.css": "./src/themes/glassmorphism/glass-tokens.css",
     "./themes/glassmorphism/glass-panel.css": "./src/themes/glassmorphism/glass-panel.css"
   },
+  "typesVersions": {
+    "*": {
+      "lite": ["./dist/lite.d.ts"],
+      "tailwind-preset": ["./dist/tailwind-preset.d.ts"]
+    }
+  },
   "files": [
     "dist",
     "src/styles/tokens.css",
@@ -37,10 +43,11 @@
     "src/themes/glassmorphism/glass-panel.css"
   ],
   "scripts": {
-    "build": "tsup",
+    "build": "rimraf dist && tsup",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "pnpm run build"
+    "prepublishOnly": "pnpm run build",
+    "clean": "rimraf dist"
   },
   "peerDependencies": {
     "react": ">=18.0.0",
@@ -73,6 +80,7 @@
   },
   "devDependencies": {
     "@types/react": "^19",
+    "rimraf": "^5.0.0",
     "tsup": "^8.5.1",
     "typescript": "^5"
   }

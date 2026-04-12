@@ -190,7 +190,7 @@ system_prompt: |
       expect(await prisma.user.findUnique({ where: { id: user.id } })).toBeNull();
       expect(await prisma.auditLog.findMany({ where: { userId: user.id } })).toHaveLength(0);
       expect(await prisma.task.findMany({ where: { assigneeId: user.id } })).toHaveLength(0);
-      // ... check all 54 models with userId reference
+      // ... check all 261 models with userId reference
     });
   });
   ```

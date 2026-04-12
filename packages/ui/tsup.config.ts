@@ -6,7 +6,9 @@ export default defineConfig([
     entry:      { index: 'src/index.ts' },
     format:     ['esm', 'cjs'],
     dts:        { compilerOptions: { incremental: false } },
-    clean:      true,
+    // clean is intentionally omitted here — tsup runs array configs concurrently,
+    // so clean:true on one config can race-delete dist files produced by the others.
+    // Cleaning is handled by the "build" script in package.json instead.
     external:   ['react', 'react-dom', 'tailwindcss'],
     outDir:     'dist',
     sourcemap:  true,
