@@ -1,6 +1,6 @@
 ---
 description: "Schema — Database Engineer Prisma/PostgreSQL. Use para novos models Prisma, migrations, indexes, auditoria de integridade do schema, e relações de banco."
-mode: agent
+mode: subagent
 ---
 # kaven-db-engineer
 

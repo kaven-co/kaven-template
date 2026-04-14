@@ -1,6 +1,6 @@
 ---
 description: "Forge — Module Creator CLI/Marketplace. Use para criar novos módulos Kaven CLI, packaging para o marketplace, e sistema de injeção com markers."
-mode: agent
+mode: subagent
 ---
 # kaven-module-creator
 

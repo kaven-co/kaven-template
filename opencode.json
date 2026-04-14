@@ -1,4 +1,9 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "instructions": "Você está trabalhando no **Kaven Framework** (v1.0.0-rc1) — SaaS boilerplate enterprise-grade multi-tenant.\n\n## Idioma\nPT-BR obrigatório em toda interação, comentários e logs. EN obrigatório em código-fonte, commits, nomes de arquivo.\n\n## Stack\n- Backend: Fastify 5.6 · Prisma 5.22 · PostgreSQL 17 · Redis 7 · BullMQ\n- Frontend: Next.js 16 · React 19 · TailwindCSS 4 · Radix UI\n- Multi-tenancy: RLS middleware, `tenantId` obrigatório em todas as queries\n- Tests: ~2100 (Vitest)\n\n## Estrutura\n- API backend: `apps/api/src/` (Fastify, 49 módulos)\n- Admin: `apps/admin/src/`\n- Tenant: `apps/tenant/src/`\n- DB schema: `packages/database/prisma/schema.prisma`\n- Agents: `squads/kaven-squad/agents/`\n- Docs: `docs/architecture/`\n\n## Regras operacionais\n- NUNCA trabalhar direto na `main` — criar branch (`feat/`, `fix/`, `docs/`, `chore/`)\n- NUNCA declarar concluído sem evidência (`git diff --stat`, logs, testes)\n- Ler schema completo antes de propor mudanças no banco\n- Commits: Conventional Commits, inglês, ≤72 chars\n\n## Agents do kaven-squad\nUse `@kai` para orquestração operacional. Specialists disponíveis:\n- `@kai` — Squad Head, roteia requests para specialists\n- `@kaven-squad-lead` — Steave, meta-agent estratégico\n- `@kaven-architect` — Atlas, arquitetura e design de sistema\n- `@kaven-api-dev` — Bolt, Fastify API e backend\n- `@kaven-frontend-dev` — Pixel, Next.js e design system\n- `@kaven-db-engineer` — Schema, Prisma e PostgreSQL\n- `@kaven-qa` — Shield, testes e segurança\n- `@kaven-devops` — Deploy, CI/CD e infraestrutura\n- `@kaven-test-engineer` — Spec, Vitest e coverage\n- `@kaven-module-creator` — Forge, CLI modules e marketplace\n- `@kaven-docs` — Docs, documentação técnica\n- `@kaven-lp-copywriter` — Quill, LP copy e marketing\n- `@kaven-product-intel` — Trace, product intelligence"
+  "model": "anthropic/claude-3-5-sonnet-20241022",
+  "theme": "opencode",
+  "permission": {
+    "edit": "ask",
+    "bash": "ask"
+  }
 }

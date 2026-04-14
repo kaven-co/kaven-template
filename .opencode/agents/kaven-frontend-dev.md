@@ -1,6 +1,6 @@
 ---
 description: "Pixel — Frontend Developer Next.js. Use para criar páginas, componentes React, hooks, stores, e trabalho com @kaven/ui design system."
-mode: agent
+mode: subagent
 ---
 # kaven-frontend-dev
 

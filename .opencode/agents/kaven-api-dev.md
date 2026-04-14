@@ -1,6 +1,6 @@
 ---
 description: "Bolt — Desenvolvedor Fastify API. Use para criar endpoints, services, middleware, background jobs, e qualquer lógica backend na API layer."
-mode: agent
+mode: subagent
 ---
 # kaven-api-dev
 

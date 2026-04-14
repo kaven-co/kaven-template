@@ -1,0 +1,17 @@
+{
+  "name": "Cloud Storage",
+  "slug": "storage",
+  "version": "1.0.0",
+  "description": "S3, R2, and GCS storage providers with presigned URLs and multi-bucket support",
+  "author": "kaven-co",
+  "license": "proprietary",
+  "tier": "starter",
+  "kavenVersion": ">=1.0.0-rc1",
+  "dependencies": {
+    "npm": ["@aws-sdk/client-s3"],
+    "modules": []
+  },
+  "env": [],
+  "files": [],
+  "injections": []
+}

@@ -1,0 +1,17 @@
+{
+  "name": "Social Authentication",
+  "slug": "auth-social",
+  "version": "1.0.0",
+  "description": "Google, GitHub, and Apple social login providers for Kaven",
+  "author": "kaven-co",
+  "license": "proprietary",
+  "tier": "starter",
+  "kavenVersion": ">=1.0.0-rc1",
+  "dependencies": {
+    "npm": ["@fastify/oauth2"],
+    "modules": []
+  },
+  "env": [],
+  "files": [],
+  "injections": []
+}

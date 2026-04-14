@@ -83,6 +83,15 @@ export async function seedAiFeatureFlags() {
       category: 'ai',
       sortOrder: 215,
     },
+    {
+      code: 'MAX_AGENT_API_CALLS_HOUR',
+      name: 'Agent API Calls per Hour',
+      description: 'Maximum number of API calls an agent can make per hour (-1 = unlimited)',
+      type: 'QUOTA' as const,
+      unit: 'calls',
+      category: 'ai',
+      sortOrder: 216,
+    },
   ];
 
   const featureMap: Record<string, string> = {};
@@ -121,6 +130,7 @@ export async function seedAiFeatureFlags() {
       { featureCode: 'AI_DOMAIN_EVENTS', enabled: false, limitValue: null },
       { featureCode: 'MAX_AI_RULES', enabled: true, limitValue: 0 },
       { featureCode: 'MAX_AI_MONTHLY_USD', enabled: true, limitValue: 0 },
+      { featureCode: 'MAX_AGENT_API_CALLS_HOUR', enabled: true, limitValue: 100 },
     ],
     pro: [
       { featureCode: 'AI_AUTOMATION', enabled: true, limitValue: null },
@@ -129,6 +139,7 @@ export async function seedAiFeatureFlags() {
       { featureCode: 'AI_DOMAIN_EVENTS', enabled: true, limitValue: null },
       { featureCode: 'MAX_AI_RULES', enabled: true, limitValue: 10 },
       { featureCode: 'MAX_AI_MONTHLY_USD', enabled: true, limitValue: 50 },
+      { featureCode: 'MAX_AGENT_API_CALLS_HOUR', enabled: true, limitValue: 1000 },
     ],
     enterprise: [
       { featureCode: 'AI_AUTOMATION', enabled: true, limitValue: null },
@@ -137,6 +148,7 @@ export async function seedAiFeatureFlags() {
       { featureCode: 'AI_DOMAIN_EVENTS', enabled: true, limitValue: null },
       { featureCode: 'MAX_AI_RULES', enabled: true, limitValue: -1 },
       { featureCode: 'MAX_AI_MONTHLY_USD', enabled: true, limitValue: -1 },
+      { featureCode: 'MAX_AGENT_API_CALLS_HOUR', enabled: true, limitValue: -1 },
     ],
   };
 

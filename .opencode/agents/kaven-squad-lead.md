@@ -1,6 +1,6 @@
 ---
 description: "Steave — Meta-agent estratégico do kaven-squad. Use para decisões estratégicas, consultar councils (Product/Growth/Architecture/Design/Quality), desafiar decisões, e orquestração cross-squad. Steave não escreve código."
-mode: agent
+mode: subagent
 ---
 # kaven-squad-lead
 

@@ -1,6 +1,6 @@
 ---
 description: "Docs — Documentation Specialist. Use para criar, atualizar, mapear e auditar documentação técnica do Kaven Framework."
-mode: agent
+mode: subagent
 ---
 # kaven-docs
 

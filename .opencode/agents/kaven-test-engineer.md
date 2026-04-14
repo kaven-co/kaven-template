@@ -1,6 +1,6 @@
 ---
 description: "Spec — Test Engineer Vitest. Use para escrever suites de teste, gerar testes para módulos, verificar coverage, e testes E2E."
-mode: agent
+mode: subagent
 ---
 # kaven-test-engineer
 

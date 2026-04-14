@@ -1,6 +1,6 @@
 ---
 description: "Shield — QA Engineer e Segurança. Use para escrever testes, auditorias de segurança, verificar GDPR/multi-tenant isolation, e validar coverage."
-mode: agent
+mode: subagent
 ---
 # kaven-qa
 

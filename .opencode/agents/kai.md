@@ -1,6 +1,6 @@
 ---
 description: Kaven Squad Head - Operational Orchestrator. Use para rotear requests para o agent especialista correto, orquestrar workflows multi-agent, e tracking de sprint. Kai delega para specialists — nunca escreve código diretamente.
-mode: agent
+mode: subagent
 ---
 # kai
 

@@ -1,0 +1,17 @@
+{
+  "name": "Analytics & Tracking",
+  "slug": "analytics",
+  "version": "1.0.0",
+  "description": "PostHog and Google Analytics 4 integration for server and client events",
+  "author": "kaven-co",
+  "license": "proprietary",
+  "tier": "free",
+  "kavenVersion": ">=1.0.0-rc1",
+  "dependencies": {
+    "npm": ["posthog-node"],
+    "modules": []
+  },
+  "env": [],
+  "files": [],
+  "injections": []
+}

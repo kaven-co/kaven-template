@@ -1,6 +1,6 @@
 ---
 description: "Deploy — DevOps Engineer. Use para setup de ambiente dev, debugging CI pipelines, Docker, monitoring, e troubleshooting de infraestrutura."
-mode: agent
+mode: subagent
 ---
 # kaven-devops
 

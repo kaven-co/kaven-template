@@ -1,6 +1,6 @@
 ---
 description: "Atlas — Arquiteto do Kaven Framework. Use para design de sistema, revisão arquitetural, auditoria de segurança, análise de impacto, e design de schemas Prisma."
-mode: agent
+mode: subagent
 ---
 # kaven-architect
 
