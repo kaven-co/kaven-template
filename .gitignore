@@ -116,6 +116,11 @@ temp/
 *.key
 *.pem
 
+# Local artifacts (never commit)
+lp/
+marketplace_restoration.sql
+.github/workflows/marketplace-publish-module.yml
+
 # Dependencies (AIOS)
 node_modules
 
