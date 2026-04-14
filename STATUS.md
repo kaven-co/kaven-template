@@ -1,19 +1,20 @@
 ---
 project: kaven-framework
 phase: sprint-2-execution
-updated: 2026-04-07T12:00:00Z
+updated: 2026-04-14T12:00:00Z
 ---
 
 # Kaven Framework - Current Status
 
-## 🌐 Ecosystem Reality Check (Marketplace)
+## 🌐 Ecosystem Reality Check (Marketplace + CLI)
 
 | Item | Status | Detalhes |
 |------|--------|----------|
-| **Kaven Marketplace** | 🟡 UPDATED | Migrado para **Prisma 7.4.1** (PR #42 ✅). Singleton instanciado. |
-| **Download Blocker** | 🛑 P0 | Blocker **F1.4**: URLs de download ainda apontam para domínios fictícios (\`registry.kaven.dev\`). |
-| **CI/CD** | ✅ OK | Dependabot #36 mergeado. PRs #18/19 substituídos por novos agrupamentos. |
-| **Docs** | ✅ SYNCED | \`MARKETPLACE-STATUS.md\` e \`README.md\` atualizados no repositório do marketplace. |
+| **Kaven Marketplace** | 🟡 UPDATED | Prisma 7 + singleton no repo marketplace; deploy Cloud Run. |
+| **Download / artefatos** | 🛑 P0 dados | Runtime usa S3 + `artifactUrl` no DB. Seeds antigos ainda citam `registry.kaven.dev` — alinhar DB + bucket (F1.4). |
+| **CLI `marketplace browse`** | ✅ FIX 2026-04-14 | `getCategories()` agora chama **`GET /categories`** (JSON array). Antes: `/modules/categories` (404). Versão **kaven-cli ≥ 0.4.2-alpha.0**. |
+| **CI/CD** | ✅ OK | Últimos merges marketplace/framework conforme GitHub. |
+| **Docs** | ✅ SYNCED | `CLAUDE.md` (dir pai), `ECOSYSTEM_STATUS.md`, `MARKETPLACE-STATUS.md` reconciliados 2026-04-14. |
 
 ---
 
