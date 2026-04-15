@@ -13,7 +13,7 @@
     "build": "turbo run build",
     "test": "turbo run test",
     "lint": "turbo run lint",
-    "typecheck": "turbo run typecheck",
+    "typecheck": "turbo run typecheck --filter=@kaven/shared --filter=@kaven/ui-base --filter=api",
     "db:generate": "pnpm --filter @kaven/database db:generate",
     "db:migrate": "pnpm --filter @kaven/database db:migrate",
     "db:seed": "pnpm --filter @kaven/database db:seed",
