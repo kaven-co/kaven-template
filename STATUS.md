@@ -1,10 +1,41 @@
 ---
-project: kaven-framework
-phase: sprint-2-execution
-updated: 2026-04-14T12:00:00Z
+project: kaven-template
+phase: baseline-stabilization
+updated: 2026-04-15T19:45:00Z
 ---
 
-# Kaven Framework - Current Status
+# Kaven Template — Current Status
+
+> **Nota (2026-04-15):** este arquivo estava incorretamente espelhando conteúdo do `kaven-framework`. O conteúdo antigo foi **preservado** abaixo em “Archive (stale)”, e o status real do template está no topo.
+
+## Estado geral
+
+| Item | Status | Detalhes |
+|------|--------|----------|
+| CI | ✅ Baseline restaurada | PRs **#42** e **#43** (mergeados) |
+| Objetivo | 🟡 Template “installable” | `pnpm i` + `pnpm run lint/typecheck/build` sem hacks |
+| Qualidade | 🟡 Parcial | CI foi reduzida para baseline; majors ainda pendentes |
+
+## PRs recentes (mergeados)
+
+- **#42** fix(template): restore baseline CI typecheck
+- **#43** chore(deps): bump axios + GitHub Actions (checkout/setup-node v6)
+
+## Débitos remanescentes (majors)
+
+> Estes upgrades precisam PRs humanos dedicados (um por major), com migração + CI verde.
+
+- **Stripe 20 → 22**
+- **TypeScript 5.9 → 6.0**
+- **@fastify/multipart 9 → 10**
+- **lucide-react 0.x → 1.x**
+- **rimraf 5 → 6**
+
+---
+
+## Archive (stale) — conteúdo antigo preservado
+
+> Abaixo está o conteúdo anterior (não confiável) que foi encontrado neste arquivo antes da correção em 2026-04-15.
 
 ## 🌐 Ecosystem Reality Check (Marketplace + CLI)
 
