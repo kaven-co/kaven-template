@@ -1,7 +1,7 @@
 {
   "name": "@kaven/ui-base",
   "version": "0.1.0-alpha.0",
-  "description": "Kaven Design System \u2014 Frost theme, React+Tailwind component library",
+  "description": "Kaven Design System — Frost theme, React+Tailwind component library",
   "keywords": [
     "kaven",
     "design-system",
@@ -32,8 +32,12 @@
   },
   "typesVersions": {
     "*": {
-      "lite": ["./dist/lite.d.ts"],
-      "tailwind-preset": ["./dist/tailwind-preset.d.ts"]
+      "lite": [
+        "./dist/lite.d.ts"
+      ],
+      "tailwind-preset": [
+        "./dist/tailwind-preset.d.ts"
+      ]
     }
   },
   "files": [
@@ -75,7 +79,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.576.0",
-    "react-hook-form": "^7.69.0",
+    "react-hook-form": "^7.72.1",
     "tailwind-merge": "^3.5.0"
   },
   "devDependencies": {

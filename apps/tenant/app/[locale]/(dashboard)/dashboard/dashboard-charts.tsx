@@ -59,7 +59,10 @@ export default function TenantDashboardCharts({
                     tickFormatter={(v) => formatCurrency(v)}
                   />
                   <Tooltip
-                    formatter={(v: number | undefined) => [formatCurrency(v ?? 0), 'Receita']}
+                    formatter={(value) => {
+                      const v = typeof value === 'number' ? value : Number(value);
+                      return [formatCurrency(Number.isFinite(v) ? v : 0), 'Receita'];
+                    }}
                     contentStyle={{ backgroundColor: 'var(--card)', borderRadius: '8px', border: '1px solid var(--border)' }}
                     labelStyle={{ color: 'var(--foreground)' }}
                   />
@@ -93,7 +96,10 @@ export default function TenantDashboardCharts({
                   <XAxis dataKey="name" stroke="var(--muted-foreground)" fontSize={12} tickLine={false} axisLine={false} />
                   <YAxis stroke="var(--muted-foreground)" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
                   <Tooltip
-                    formatter={(v: number | undefined) => [v ?? 0, 'Usuarios']}
+                    formatter={(value) => {
+                      const v = typeof value === 'number' ? value : Number(value);
+                      return [Number.isFinite(v) ? v : 0, 'Usuarios'];
+                    }}
                     contentStyle={{ backgroundColor: 'var(--card)', borderRadius: '8px', border: '1px solid var(--border)' }}
                     labelStyle={{ color: 'var(--foreground)' }}
                   />
