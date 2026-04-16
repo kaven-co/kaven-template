@@ -49,7 +49,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
           persist-credentials: false # Don't persist GITHUB_TOKEN
 
@@ -59,7 +59,7 @@ jobs:
           version: 9.15.4
 
       - name: Setup Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
           cache: "pnpm"
@@ -98,8 +98,77 @@ jobs:
       - name: Typecheck
         run: pnpm run typecheck
 
-      - name: Build packages (baseline)
+      - name: Test
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/kaven_test
+          REDIS_URL: redis://localhost:6379
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          NODE_ENV: test
+        run: pnpm run test
+
+      - name: Test summary
+        if: always()
+        run: |
+          echo "## Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "Run \`npx vitest run --dir apps/api --reporter=verbose\` for details" >> $GITHUB_STEP_SUMMARY
+
+      - name: Security Tests
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/kaven_test
+          REDIS_URL: redis://localhost:6379
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          NODE_ENV: test
+        run: pnpm test:security
+        working-directory: apps/api
+
+      - name: Check Security Coverage
+        run: |
+          cd apps/api
+          if [ -f coverage/coverage-summary.json ]; then
+            COVERAGE_PCT=$(jq '.total.lines.pct' coverage/coverage-summary.json)
+            echo "Security test coverage: ${COVERAGE_PCT}%"
+            if (( $(echo "$COVERAGE_PCT < 80" | bc -l) )); then
+              echo "Security test coverage below minimum (80%)"
+              exit 1
+            fi
+            echo "Security test coverage meets minimum requirement"
+          else
+            echo "Coverage file not found, skipping check"
+          fi
+
+      - name: Build packages
         run: pnpm turbo build --filter=@kaven/ui-base --filter=@kaven/shared --filter=@kaven/database
+
+      - name: Build API
+        run: pnpm turbo build --filter=api
+
+      - name: Build Admin
+        run: pnpm turbo build --filter=admin
+
+      - name: Build Tenant
+        run: pnpm turbo build --filter=tenant
+
+      - name: Build Docs
+        run: pnpm turbo build --filter=docs
+
+      - name: Report build sizes
+        if: always()
+        run: |
+          echo "## Build Sizes" >> $GITHUB_STEP_SUMMARY
+          echo "| App | Size |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|------|" >> $GITHUB_STEP_SUMMARY
+          for app in admin tenant docs; do
+            if [ -d "apps/$app/.next" ]; then
+              size=$(du -sh "apps/$app/.next" | cut -f1)
+              echo "| $app | $size |" >> $GITHUB_STEP_SUMMARY
+            fi
+          done
+          if [ -d "apps/api/dist" ]; then
+            size=$(du -sh "apps/api/dist" | cut -f1)
+            echo "| api | $size |" >> $GITHUB_STEP_SUMMARY
+          fi
 
       # SECURITY: Verify commit signatures (if enabled)
       - name: Verify commit signatures
