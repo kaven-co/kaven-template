@@ -371,7 +371,7 @@ model Tenant {
   ssoConfig       Json?    @map("sso_config") // SSO scaffold — implementation later
   wizardState     Json?    @map("wizard_state") // Setup wizard progress
 
-  /// Stripe Customer ID — created at tenant signup for billing identity.
+  /// Stripe Customer ID — created at tenant signup for billing identity (TD-15).
   /// Nullable: pre-migration tenants will have null until their first checkout.
   /// Uniqueness enforced via partial index (WHERE NOT NULL) in migration 20260411000000.
   stripeCustomerId String?  @unique @map("stripe_customer_id")
