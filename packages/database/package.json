@@ -12,7 +12,8 @@
     "dev": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
     "generate": "pnpm schema:merge && prisma generate",
-    "f2-4:audit": "tsx scripts/f2-4-pre-migration-audit.ts"
+    "f2-4:audit": "tsx scripts/f2-4-pre-migration-audit.ts",
+    "f2-4:backfill": "tsx scripts/f2-4-backfill.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
