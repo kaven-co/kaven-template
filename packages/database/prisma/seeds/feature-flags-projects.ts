@@ -11,9 +11,9 @@ const prisma = new PrismaClient();
  *   TIME_TRACKING   (BOOLEAN) — Access to time tracking features
  *   MILESTONES      (BOOLEAN) — Access to milestones + auto-invoicing
  *
- * Plan assignment (Free / Pro / Enterprise):
+ * Plan assignment (free / pro / enterprise — alinhado ao seed principal):
  *   PROJECTS_PM:    true / true / true
- *   MAX_PROJECTS:   3 / 50 / -1
+ *   MAX_PROJECTS:   1 / 3 / 10
  *   TIME_TRACKING:  false / true / true
  *   MILESTONES:     false / true / true
  */
@@ -94,19 +94,19 @@ export async function seedProjectFeatureFlags() {
   }>> = {
     free: [
       { featureCode: 'PROJECTS_PM', enabled: true, limitValue: null },
-      { featureCode: 'MAX_PROJECTS', enabled: true, limitValue: 3 },
+      { featureCode: 'MAX_PROJECTS', enabled: true, limitValue: 1 },
       { featureCode: 'TIME_TRACKING', enabled: false, limitValue: null },
       { featureCode: 'MILESTONES', enabled: false, limitValue: null },
     ],
     pro: [
       { featureCode: 'PROJECTS_PM', enabled: true, limitValue: null },
-      { featureCode: 'MAX_PROJECTS', enabled: true, limitValue: 50 },
+      { featureCode: 'MAX_PROJECTS', enabled: true, limitValue: 3 },
       { featureCode: 'TIME_TRACKING', enabled: true, limitValue: null },
       { featureCode: 'MILESTONES', enabled: true, limitValue: null },
     ],
     enterprise: [
       { featureCode: 'PROJECTS_PM', enabled: true, limitValue: null },
-      { featureCode: 'MAX_PROJECTS', enabled: true, limitValue: -1 },
+      { featureCode: 'MAX_PROJECTS', enabled: true, limitValue: 10 },
       { featureCode: 'TIME_TRACKING', enabled: true, limitValue: null },
       { featureCode: 'MILESTONES', enabled: true, limitValue: null },
     ],
@@ -126,20 +126,19 @@ export async function seedProjectFeatureFlags() {
       const featureId = featureMap[feat.featureCode];
       if (!featureId) continue;
 
-      const existing = await prisma.planFeature.findUnique({
+      await prisma.planFeature.upsert({
         where: { planId_featureId: { planId: plan.id, featureId } },
+        update: {
+          enabled: feat.enabled,
+          limitValue: feat.limitValue,
+        },
+        create: {
+          planId: plan.id,
+          featureId,
+          enabled: feat.enabled,
+          limitValue: feat.limitValue,
+        },
       });
-
-      if (!existing) {
-        await prisma.planFeature.create({
-          data: {
-            planId: plan.id,
-            featureId,
-            enabled: feat.enabled,
-            limitValue: feat.limitValue,
-          },
-        });
-      }
     }
     console.log(`  ✅ Plan "${planCode}": ${features.length} project features assigned`);
   }

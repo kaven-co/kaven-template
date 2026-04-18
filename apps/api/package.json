@@ -8,6 +8,7 @@
     "dev:simple": "(fuser -k -9 8000/tcp || true) && tsx watch src/server.ts",
     "build": "tsc && tsc-alias",
     "typecheck": "tsc --noEmit",
+    "lint": "eslint src --max-warnings 9999",
     "start": "node dist/src/server.js",
     "test": "vitest run",
     "test:watch": "vitest",
