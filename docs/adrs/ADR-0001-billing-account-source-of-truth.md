@@ -41,6 +41,52 @@ Corolários operacionais:
 
 5. **Readers legados**: qualquer leitura de `Tenant.stripeCustomerId` ou `Subscription.stripeCustomerId` deve ser tratada como **fallback** e tais call-sites devem ser migrados para ler de `BillingAccount` até F2.4.5. Novos readers escritos pós-F2.4.3.1 devem ler **apenas** de `BillingAccount`.
 
+## Consumers cobertos (F2.4.3.2)
+
+Regras explícitas por consumer. Adicione novas entradas aqui sempre que um novo
+fluxo tocar Stripe Customer/Subscription IDs.
+
+### 1. Signup (`auth.service.register`)
+
+- **Leitura:** nenhuma (cria do zero).
+- **Escrita:** apenas `BillingAccount.stripeCustomerId`. **Nunca** escreve em `Tenant.stripeCustomerId`.
+- **Idempotência:** `stripe.customers.create({ ... }, { idempotencyKey: "signup-customer-<newTenantId>" })`. Stripe call acontece **fora** do `$transaction`; falha de Stripe é não-fatal (BA fica com `stripeCustomerId = null`, checkout popula depois).
+- **Race:** Stripe orphan possível só se tx DB abortar *após* Stripe ter retornado. Tratado por **sweep job** (ver seção 5).
+
+### 2. Checkout (`POST /api/v1/checkout/sessions`)
+
+- **Leitura (fallback tri-camada):** `BillingAccount.stripeCustomerId` → `Tenant.stripeCustomerId` (legacy) → `Subscription.stripeCustomerId` (legacy).
+- **Escrita:** `updateMany({ where: { id, stripeCustomerId: null } })` write-once guard. Escreve em `BA.stripeCustomerId` se `tenant.billingAccountId` setado; senão em `Tenant.stripeCustomerId`.
+- **Email na criação do Customer:** deriva de `tenant.billingAccount.owner.email` (primário) → primeiro `TENANT_ADMIN` do tenant (fallback). **Nunca** do `requestingUser.email` (billing-hijack vector).
+- **AuthZ:** deny-by-default — `SUPER_ADMIN` ou `requestingUser.tenantId === tenantId` (strict). IDOR closed em F2.4.3.1 H-1.
+
+### 3. Webhook handlers (Stripe events → Kaven DB)
+
+- **Leitura da Subscription entrante:** `event.data.object.customer` (Customer ID) + `event.data.object.metadata.tenantId` (inserido no checkout).
+- **Resolução do BillingAccount:** via `Tenant.billingAccountId`. Se `Tenant.billingAccountId IS NULL` (tenant legacy pré-F2.4 sem BA), cria entry na `Subscription` com `billingAccountId = NULL` e loga warning — não é cenário esperado pós-F2.4.5.
+- **Escrita em `Subscription`:** `Subscription.billingAccountId` deve receber o valor resolvido. **Não** escreve em `Subscription.stripeCustomerId` — esse campo vira legado e é lido só em fallback. F2.4.4 implementa o `billingAccountId` setting; F2.4.5 droppa `Subscription.stripeCustomerId`.
+- **Race com signup:** se webhook chega antes da tx de signup commitar (improvável mas possível com Stripe webhook retries), o webhook deve `retry` (HTTP 202) até BA existir. Stripe re-tenta com backoff automático.
+
+### 4. Payment service (`subscription.service`, `invoice.service` futuros)
+
+- **Leitura:** exclusivamente de `BillingAccount.stripeCustomerId` via `prisma.billingAccount.findUnique`. Não re-resolve via `Tenant.stripeCustomerId`.
+- **Escrita:** nenhuma em Stripe IDs — isso fica em signup + checkout + webhook. Payment service apenas lê para invocar APIs Stripe (criar charges, update subscriptions, etc.).
+- **Acesso a Subscriptions BA-scoped:** `WHERE billing_account_id = ?` (F2.4.4). Migra query patterns pré-F2.4 que usavam `WHERE tenant_id = ?`.
+
+### 5. Jobs / Sweeps
+
+- **`f2-4-backfill.ts`:** lê `Tenant.stripeCustomerId` legacy (para tenants pré-F2.4 sem BA) e escreve em `BillingAccount.stripeCustomerId` na BA recém-criada. Marca `source = 'backfill_f2_4_2'` para rollback isolável. **Read side effects**: nenhum. **Write side effects**: apenas criação de BA e re-link de Subscription/Tenant.
+- **`stripe-orphan-sweep.ts` (F2.4.3.2):** lista Stripe Customers com `metadata.kaven = "true"` e reconcilia contra `BillingAccount.stripeCustomerId` + `Tenant.stripeCustomerId`. Reporta:
+  - Órfãos reais (Customer no Stripe sem match em DB).
+  - Metadata dangling (`metadata.tenantId` aponta para tenant deletado).
+  Default **dry-run**; escrita destrutiva (`stripe.customers.del`) exige opt-in explícito (`--delete` + `STRIPE_SWEEP_CONFIRM=yes`).
+- **Cron cadence sugerida:** semanal em prod, ad-hoc em staging. Registrar em operational playbook.
+
+### 6. Endpoints BA-scoped (F2.4.4, preview)
+
+- **Leitura:** exclusivamente de `BillingAccount.stripeCustomerId`. Nunca fallback para `Tenant` exceto com feature flag explícita `ALLOW_LEGACY_TENANT_STRIPE_ID=true` (pode cair em F2.4.5).
+- **AuthZ:** via novo helper `canActOnBillingAccount(user, billingAccountId)` — verificará ownership, plus `SUPER_ADMIN` bypass, plus futuros `BillingAccountMember` (F2.4.6).
+
 ## Alternativas consideradas
 
 ### Alt A — Dual-write permanente

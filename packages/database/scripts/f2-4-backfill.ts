@@ -54,6 +54,12 @@ type TenantRow = {
   name: string;
   slug: string;
   billing_account_id: string | null;
+  /**
+   * F2.4.3.2 — H: resolved via LEFT JOIN billing_accounts with
+   * `ba.deleted_at IS NULL`. Null when Tenant has no BA OR when BA is
+   * soft-deleted. Drives the "skip vs process" decision below.
+   */
+  effective_billing_account_id: string | null;
   stripe_customer_id: string | null;
 };
 
@@ -83,7 +89,11 @@ async function findTenantAdmin(tenantId: string): Promise<AdminRow | null> {
 }
 
 async function backfillTenant(tenant: TenantRow, result: BackfillResult): Promise<void> {
-  if (tenant.billing_account_id) {
+  // F2.4.3.2 — H: `effective_billing_account_id` is NULL when either the Tenant
+  // has no BA pointer OR the pointed-to BA is soft-deleted. In the latter case
+  // the Tenant is effectively orphaned from a live BA and must be re-processed
+  // here (we'll allocate a fresh BA and overwrite the stale pointer below).
+  if (tenant.effective_billing_account_id) {
     result.tenantsSkipped++;
     return;
   }
@@ -118,18 +128,28 @@ async function backfillTenant(tenant: TenantRow, result: BackfillResult): Promis
       },
     });
 
-    // F2.4.3.1 — B4: race-safe UPDATE. If signup F2.4.3 linked a BA between
-    // our initial SELECT and this UPDATE, rowCount returns 0 and we abort the
-    // transaction — preventing dup-BA scenarios (2 BAs pointing to 1 Tenant).
-    const tenantRowsUpdated = await tx.$executeRaw`
-      UPDATE "Tenant"
-      SET "billing_account_id" = ${ba.id}
-      WHERE id = ${tenant.id} AND "billing_account_id" IS NULL
-    `;
+    // F2.4.3.1 — B4 + F2.4.3.2 — H: race-safe UPDATE. Accepts two valid states:
+    //   (a) billing_account_id IS NULL (pristine Tenant, normal backfill path)
+    //   (b) billing_account_id = <stale_id> (pointer to a soft-deleted BA —
+    //       operator orphaned the Tenant; we overwrite with the fresh BA)
+    // rowCount === 0 means a live signup won the race after our SELECT saw a
+    // NULL/stale pointer — we abort to avoid producing duplicate BAs.
+    const staleBaId = tenant.billing_account_id;
+    const tenantRowsUpdated = staleBaId
+      ? await tx.$executeRaw`
+          UPDATE "Tenant"
+          SET "billing_account_id" = ${ba.id}
+          WHERE id = ${tenant.id} AND "billing_account_id" = ${staleBaId}
+        `
+      : await tx.$executeRaw`
+          UPDATE "Tenant"
+          SET "billing_account_id" = ${ba.id}
+          WHERE id = ${tenant.id} AND "billing_account_id" IS NULL
+        `;
 
     if (tenantRowsUpdated === 0) {
       throw new Error(
-        `Race detected: Tenant ${tenant.id} already has billing_account_id set (signup F2.4.3 won). Backfill aborting this tenant — no-op is correct.`
+        `Race detected: Tenant ${tenant.id} has a live billing_account_id now (signup F2.4.3 or concurrent operator won). Backfill aborting this tenant — no-op is correct.`
       );
     }
 
@@ -192,11 +212,23 @@ async function validatePostBackfill(): Promise<void> {
 async function main() {
   console.log(`🔧 F2.4.2 Backfill ${DRY_RUN ? '(DRY RUN)' : ''}— start`);
 
+  // F2.4.3.2 — H: LEFT JOIN to resolve whether the BA pointer is still live.
+  // `effective_billing_account_id` is NULL if the BA was soft-deleted (Tenant
+  // becomes re-processable) OR if the pointer is NULL to begin with.
   const tenants = await prisma.$queryRaw<TenantRow[]>`
-    SELECT id, name, slug, billing_account_id, stripe_customer_id
-    FROM "Tenant"
-    WHERE "deletedAt" IS NULL
-    ORDER BY "createdAt" ASC
+    SELECT
+      t.id,
+      t.name,
+      t.slug,
+      t.billing_account_id,
+      ba.id AS effective_billing_account_id,
+      t.stripe_customer_id
+    FROM "Tenant" t
+    LEFT JOIN billing_accounts ba
+      ON ba.id = t.billing_account_id
+      AND ba.deleted_at IS NULL
+    WHERE t."deletedAt" IS NULL
+    ORDER BY t."createdAt" ASC
   `;
 
   console.log(`📊 Tenants ativos encontrados: ${tenants.length}`);
