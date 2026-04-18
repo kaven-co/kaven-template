@@ -29,6 +29,26 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 const DRY_RUN = process.argv.includes('--dry-run');
 
+// F2.4.3.1 — H-3: mask PII/Stripe IDs in logs to avoid leakage.
+// Stripe Customer IDs (`cus_XXXXXXXXXXXXXX`) are sensitive for lookup in
+// Stripe Dashboard. Emails are PII (LGPD/GDPR). Mask both by default.
+function maskEmail(email: string): string {
+  const [local, domain] = email.split('@');
+  if (!local || !domain) return '***';
+  const localMasked = local.length <= 2 ? '*'.repeat(local.length) : `${local[0]}***${local[local.length - 1]}`;
+  const dotIdx = domain.lastIndexOf('.');
+  const domainName = dotIdx > 0 ? domain.slice(0, dotIdx) : domain;
+  const tld = dotIdx > 0 ? domain.slice(dotIdx) : '';
+  const domainMasked = domainName.length <= 1 ? '*' : `${domainName[0]}***${tld}`;
+  return `${localMasked}@${domainMasked}`;
+}
+
+function maskStripeId(id: string | null): string {
+  if (!id) return '(none)';
+  if (id.length <= 8) return '***';
+  return `${id.slice(0, 4)}***${id.slice(-4)}`;
+}
+
 type TenantRow = {
   id: string;
   name: string;
@@ -79,7 +99,7 @@ async function backfillTenant(tenant: TenantRow, result: BackfillResult): Promis
 
   if (DRY_RUN) {
     console.log(
-      `  [DRY] Tenant ${tenant.slug} (${tenant.id}) → create BA owner=${admin.email} stripeCustomerId=${tenant.stripe_customer_id ?? '(none)'}`
+      `  [DRY] Tenant ${tenant.slug} → create BA owner=${maskEmail(admin.email)} stripeCustomerId=${maskStripeId(tenant.stripe_customer_id)}`
     );
     result.tenantsProcessed++;
     result.billingAccountsCreated++;
@@ -88,19 +108,30 @@ async function backfillTenant(tenant: TenantRow, result: BackfillResult): Promis
 
   // Transação: criar BA + atualizar Tenant + atualizar Subscriptions atomicamente.
   await prisma.$transaction(async (tx) => {
+    // F2.4.3.1 — B3: mark records as backfill-origin so rollback can distinguish.
     const ba = await tx.billingAccount.create({
       data: {
         ownerUserId: admin.id,
         stripeCustomerId: tenant.stripe_customer_id,
         name: tenant.name,
+        source: 'backfill_f2_4_2',
       },
     });
 
-    await tx.$executeRaw`
+    // F2.4.3.1 — B4: race-safe UPDATE. If signup F2.4.3 linked a BA between
+    // our initial SELECT and this UPDATE, rowCount returns 0 and we abort the
+    // transaction — preventing dup-BA scenarios (2 BAs pointing to 1 Tenant).
+    const tenantRowsUpdated = await tx.$executeRaw`
       UPDATE "Tenant"
       SET "billing_account_id" = ${ba.id}
-      WHERE id = ${tenant.id}
+      WHERE id = ${tenant.id} AND "billing_account_id" IS NULL
     `;
+
+    if (tenantRowsUpdated === 0) {
+      throw new Error(
+        `Race detected: Tenant ${tenant.id} already has billing_account_id set (signup F2.4.3 won). Backfill aborting this tenant — no-op is correct.`
+      );
+    }
 
     // Subscriptions deste tenant que ainda não têm billing_account_id.
     const subscriptions = await tx.$queryRaw<SubscriptionRow[]>`
@@ -114,7 +145,7 @@ async function backfillTenant(tenant: TenantRow, result: BackfillResult): Promis
       await tx.$executeRaw`
         UPDATE subscriptions
         SET billing_account_id = ${ba.id}
-        WHERE id = ${sub.id}
+        WHERE id = ${sub.id} AND billing_account_id IS NULL
       `;
       result.subscriptionsLinked++;
     }
@@ -123,7 +154,7 @@ async function backfillTenant(tenant: TenantRow, result: BackfillResult): Promis
     result.tenantsProcessed++;
 
     console.log(
-      `  ✓ Tenant ${tenant.slug} → BA ${ba.id} (owner=${admin.email}, ${subscriptions.length} subs)`
+      `  ✓ Tenant ${tenant.slug} → BA ${maskStripeId(ba.id)} (owner=${maskEmail(admin.email)}, ${subscriptions.length} subs)`
     );
   });
 }

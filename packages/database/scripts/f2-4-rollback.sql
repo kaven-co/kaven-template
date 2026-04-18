@@ -1,50 +1,62 @@
--- F2.4.2 Rollback SQL
+-- F2.4.2 Rollback SQL (hardened by F2.4.3.1)
 --
--- Reverte o backfill criado por f2-4-backfill.ts.
+-- Reverts the data changes made by f2-4-backfill.ts WITHOUT losing
+-- BillingAccounts created by the F2.4.3 signup flow.
 --
--- Uso (emergência):
+-- Key fix (F2.4.3.1 — B3): this script now filters by `source` column
+-- added in migration 20260418040000. BAs created via signup
+-- (source='signup') are NEVER touched. Only BAs created by the backfill
+-- script (source='backfill_f2_4_2') are deleted.
+--
+-- Usage:
 --   psql $DATABASE_URL -f packages/database/scripts/f2-4-rollback.sql
 --
--- IMPORTANTE: Este rollback NÃO desfaz a migração de schema F2.4.1 —
--- apenas zera os dados populados pelo backfill F2.4.2. O schema
--- (tabela billing_accounts + colunas billing_account_id) permanece.
--- Para reverter o schema também, dropar as colunas e a tabela manualmente
--- (ver rollback SQL na PR de F2.4.1 / migration 20260418030000).
+-- SCOPE:
+--   - Does NOT roll back the F2.4.1 schema (billing_accounts table + columns).
+--   - Does NOT roll back the F2.4.3.1 `source` column.
+--   - Only reverts DATA populated by f2-4-backfill.ts.
 --
--- Pré-requisitos:
---   - F2.4.3 signup flow NÃO estar em produção (senão novos tenants
---     seriam criados COM billing_account_id, mas eles não podem ser
---     rollback-ados por este script — apenas tenants pré-F2.4 são).
---   - F2.4.4 endpoint de POST /api/billing-accounts/:id/tenants NÃO
---     estar em uso (mesma razão).
+-- Preconditions:
+--   - Migration 20260418040000 must be applied (source column exists).
+--   - If you applied backfill BEFORE this migration was in place, you must
+--     first UPDATE rows to set `source='backfill_f2_4_2'` for backfill-origin
+--     BAs, otherwise this rollback will treat them as signup BAs and skip them.
 --
--- Em outras palavras: só rode este rollback enquanto ainda estiver em
--- F2.4.2 (pré-F2.4.3). Depois de F2.4.3 em prod, o rollback seria bem
--- mais complicado e precisaria rollback coordenado do signup flow.
+-- After this runs, any BA with source='signup' remains untouched; their
+-- Tenant.billing_account_id and Subscription.billing_account_id links are
+-- preserved.
 
 BEGIN;
 
--- 1. Zerar billing_account_id em subscriptions
-UPDATE subscriptions SET billing_account_id = NULL
-WHERE billing_account_id IS NOT NULL;
+-- 1. Unlink subscriptions from BackBAs (BAs marked as backfill-origin).
+UPDATE subscriptions s
+SET billing_account_id = NULL
+WHERE s.billing_account_id IN (
+  SELECT id FROM billing_accounts WHERE source = 'backfill_f2_4_2'
+);
 
--- 2. Zerar billing_account_id em Tenant
-UPDATE "Tenant" SET billing_account_id = NULL
-WHERE billing_account_id IS NOT NULL;
+-- 2. Unlink tenants from BackBAs.
+UPDATE "Tenant" t
+SET billing_account_id = NULL
+WHERE t.billing_account_id IN (
+  SELECT id FROM billing_accounts WHERE source = 'backfill_f2_4_2'
+);
 
--- 3. Remover BillingAccounts criadas pelo backfill.
--- Todas elas têm name igual ao Tenant correspondente e foram criadas
--- hoje. Um filtro por createdAt > '2026-04-18' é suficiente para o
--- cenário comum de rollback imediato pós-backfill.
+-- 3. Delete BackBAs. Signup BAs (source='signup') are preserved.
 DELETE FROM billing_accounts
-WHERE created_at >= '2026-04-18 00:00:00';
+WHERE source = 'backfill_f2_4_2';
 
--- 4. Verificação
+-- 4. Sanity check: no dangling FKs, signup BAs intact.
 SELECT
-  (SELECT COUNT(*) FROM billing_accounts) AS billing_accounts_remaining,
-  (SELECT COUNT(*) FROM "Tenant" WHERE billing_account_id IS NOT NULL) AS tenants_with_ba,
-  (SELECT COUNT(*) FROM subscriptions WHERE billing_account_id IS NOT NULL) AS subs_with_ba;
+  (SELECT COUNT(*) FROM billing_accounts WHERE source = 'backfill_f2_4_2') AS backfill_bas_remaining,
+  (SELECT COUNT(*) FROM billing_accounts WHERE source = 'signup') AS signup_bas_preserved,
+  (SELECT COUNT(*) FROM "Tenant" WHERE billing_account_id IS NOT NULL) AS tenants_still_linked,
+  (SELECT COUNT(*) FROM subscriptions WHERE billing_account_id IS NOT NULL) AS subs_still_linked;
 
--- Esperado: 0, 0, 0 para rollback completo.
+-- Expected after rollback:
+--   backfill_bas_remaining = 0
+--   signup_bas_preserved = <count of signup BAs, unchanged>
+--   tenants_still_linked = <count of tenants with signup-created BA>
+--   subs_still_linked = <count of subs belonging to signup BAs>
 
 COMMIT;

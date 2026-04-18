@@ -241,6 +241,9 @@ function renderReport(findings: Finding[], metrics: Record<string, number>): str
 
   lines.push('', `**Total de ocorrências:** ${totalIssues}`, '');
 
+  // F2.4.3.1 — H-3: do NOT embed raw details (tenantIds, emails, Stripe IDs)
+  // in the markdown report — that file is commonly committed to Git. Emit
+  // only counts here; PII-containing details go to a gitignored JSON sidecar.
   if (blockers.length > 0) {
     lines.push(`## 🚫 Blockers (resolver antes de F2.4.1)`, ``);
     for (const f of blockers) {
@@ -248,7 +251,10 @@ function renderReport(findings: Finding[], metrics: Record<string, number>): str
       if (f.details.length === 0) {
         lines.push(`✅ Nenhuma ocorrência.`, ``);
       } else {
-        lines.push('```json', JSON.stringify(f.details, null, 2), '```', ``);
+        lines.push(
+          `**${f.details.length} ocorrência(s).** Detalhes com PII em \`f2-4-audit-${date}-details.json\` (gitignored).`,
+          ``,
+        );
       }
     }
   }
@@ -260,7 +266,10 @@ function renderReport(findings: Finding[], metrics: Record<string, number>): str
       if (f.details.length === 0) {
         lines.push(`✅ Nenhuma ocorrência.`, ``);
       } else {
-        lines.push('```json', JSON.stringify(f.details, null, 2), '```', ``);
+        lines.push(
+          `**${f.details.length} ocorrência(s).** Detalhes com PII em \`f2-4-audit-${date}-details.json\` (gitignored).`,
+          ``,
+        );
       }
     }
   }
@@ -316,11 +325,40 @@ async function main() {
     'migrations',
     `f2-4-audit-${date}.md`
   );
+  // F2.4.3.1 — H-3: PII-bearing details in sidecar JSON, gitignored.
+  const detailsPath = join(
+    __dirname,
+    '..',
+    '..',
+    '..',
+    'docs',
+    'migrations',
+    `f2-4-audit-${date}-details.json`
+  );
 
   mkdirSync(dirname(outputPath), { recursive: true });
   writeFileSync(outputPath, renderReport(findings, metrics), 'utf-8');
+  writeFileSync(
+    detailsPath,
+    JSON.stringify(
+      {
+        generatedAt: new Date().toISOString(),
+        note: 'Contains PII (emails, Stripe IDs, tenant IDs). MUST NOT be committed to Git.',
+        findings: findings.map((f) => ({
+          category: f.category,
+          severity: f.severity,
+          count: f.details.length,
+          details: f.details,
+        })),
+      },
+      null,
+      2,
+    ),
+    { encoding: 'utf-8', mode: 0o600 },
+  );
 
-  console.log(`\n📄 Report gerado em: ${outputPath}`);
+  console.log(`\n📄 Report público: ${outputPath}`);
+  console.log(`🔒 Detalhes com PII (gitignored): ${detailsPath}`);
 
   if (blockerCount > 0) {
     console.log(`\n🚫 BLOQUEADO — ${blockerCount} blocker(s). Veja report acima.`);

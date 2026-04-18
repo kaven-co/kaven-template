@@ -686,6 +686,13 @@ model BillingAccount {
   /// Display name / razão social (opcional v1).
   name             String?
 
+  /// F2.4.3.1 — Origin of this BillingAccount record.
+  /// 'signup' (default) = created by user signup flow (auth.service.register).
+  /// 'backfill_f2_4_2' = created by f2-4-backfill.ts for pre-F2.4 tenants.
+  /// Used by f2-4-rollback.sql to distinguish which BAs are safe to delete
+  /// without losing signup data. Do NOT filter by created_at for rollback.
+  source           String    @default("signup")
+
   createdAt        DateTime  @default(now()) @map("created_at")
   updatedAt        DateTime  @updatedAt @map("updated_at")
   deletedAt        DateTime? @map("deleted_at")
