@@ -69,11 +69,28 @@ type SubscriptionRow = { id: string; billing_account_id: string | null };
 type BackfillResult = {
   tenantsProcessed: number;
   tenantsSkipped: number;
+  /**
+   * F2.4.3.3 — 3.2: races between signup tx and backfill tx are benign
+   * (signup already produced a live BA). Count them separately so the caller
+   * doesn't treat them as errors and `process.exit(1)` when everything is
+   * actually fine.
+   */
+  tenantsSkippedByRace: number;
   subscriptionsLinked: number;
   subscriptionsSkipped: number;
   billingAccountsCreated: number;
   errors: Array<{ tenantId: string; reason: string }>;
 };
+
+// F2.4.3.3 — 3.2: sentinel used by backfillTenant to communicate "race aborted
+// me; this is benign" to the top-level catch. Kept as a distinct Error subclass
+// so arbitrary thrown Errors are still surfaced as real errors.
+class RaceAbortedError extends Error {
+  constructor(public readonly tenantId: string) {
+    super(`Race aborted backfill for tenant ${tenantId} (live BA won)`);
+    this.name = 'RaceAbortedError';
+  }
+}
 
 async function findTenantAdmin(tenantId: string): Promise<AdminRow | null> {
   const rows = await prisma.$queryRaw<AdminRow[]>`
@@ -148,26 +165,49 @@ async function backfillTenant(tenant: TenantRow, result: BackfillResult): Promis
         `;
 
     if (tenantRowsUpdated === 0) {
-      throw new Error(
-        `Race detected: Tenant ${tenant.id} has a live billing_account_id now (signup F2.4.3 or concurrent operator won). Backfill aborting this tenant — no-op is correct.`
-      );
+      // F2.4.3.3 — 3.2: benign race. Top-level `main` will catch
+      // RaceAbortedError and increment tenantsSkippedByRace instead of
+      // treating this as a hard error.
+      throw new RaceAbortedError(tenant.id);
     }
 
-    // Subscriptions deste tenant que ainda não têm billing_account_id.
-    const subscriptions = await tx.$queryRaw<SubscriptionRow[]>`
-      SELECT id, billing_account_id
-      FROM subscriptions
-      WHERE tenant_id = ${tenant.id}
-        AND billing_account_id IS NULL
-    `;
+    // F2.4.3.3 — 3.1: Subscription re-link MUST cover both states:
+    //   (a) NULL billing_account_id (pristine legacy sub)
+    //   (b) billing_account_id = <staleBaId> (was linked to the soft-deleted BA
+    //       we just displaced; those subs are now orphaned from a live BA)
+    // Missing (b) would leave subs pointing at a deleted BA — violates
+    // post-validate invariant.
+    const subscriptions = staleBaId
+      ? await tx.$queryRaw<SubscriptionRow[]>`
+          SELECT id, billing_account_id
+          FROM subscriptions
+          WHERE tenant_id = ${tenant.id}
+            AND (billing_account_id IS NULL OR billing_account_id = ${staleBaId})
+        `
+      : await tx.$queryRaw<SubscriptionRow[]>`
+          SELECT id, billing_account_id
+          FROM subscriptions
+          WHERE tenant_id = ${tenant.id}
+            AND billing_account_id IS NULL
+        `;
 
     for (const sub of subscriptions) {
-      await tx.$executeRaw`
-        UPDATE subscriptions
-        SET billing_account_id = ${ba.id}
-        WHERE id = ${sub.id} AND billing_account_id IS NULL
-      `;
-      result.subscriptionsLinked++;
+      const prev = sub.billing_account_id;
+      // Race-safe UPDATE for each sub — predicate matches only the expected
+      // prior state, so concurrent writes don't clobber.
+      const subUpdated = prev
+        ? await tx.$executeRaw`
+            UPDATE subscriptions
+            SET billing_account_id = ${ba.id}
+            WHERE id = ${sub.id} AND billing_account_id = ${prev}
+          `
+        : await tx.$executeRaw`
+            UPDATE subscriptions
+            SET billing_account_id = ${ba.id}
+            WHERE id = ${sub.id} AND billing_account_id IS NULL
+          `;
+      if (subUpdated === 1) result.subscriptionsLinked++;
+      else result.subscriptionsSkipped++;
     }
 
     result.billingAccountsCreated++;
@@ -180,7 +220,7 @@ async function backfillTenant(tenant: TenantRow, result: BackfillResult): Promis
 }
 
 async function validatePostBackfill(): Promise<void> {
-  const [orphanTenants, orphanSubs] = await Promise.all([
+  const [orphanTenants, orphanSubs, subsOnDeadBa] = await Promise.all([
     prisma.$queryRaw<Array<{ count: bigint }>>`
       SELECT COUNT(*) as count
       FROM "Tenant"
@@ -194,17 +234,30 @@ async function validatePostBackfill(): Promise<void> {
       WHERE t."deletedAt" IS NULL
         AND s.billing_account_id IS NULL
     `,
+    // F2.4.3.3 — 3.1: catch subs still pointing at a soft-deleted BA. Backfill
+    // must leave every live Subscription on a live BA.
+    prisma.$queryRaw<Array<{ count: bigint }>>`
+      SELECT COUNT(*) as count
+      FROM subscriptions s
+      INNER JOIN "Tenant" t ON t.id = s.tenant_id
+      INNER JOIN billing_accounts ba ON ba.id = s.billing_account_id
+      WHERE t."deletedAt" IS NULL
+        AND s.deleted_at IS NULL
+        AND ba.deleted_at IS NOT NULL
+    `,
   ]);
 
   const orphanTenantsCount = Number(orphanTenants[0].count);
   const orphanSubsCount = Number(orphanSubs[0].count);
+  const subsOnDeadBaCount = Number(subsOnDeadBa[0].count);
 
   console.log('\n📋 Pós-backfill validation:');
   console.log(`   Tenants ativos sem BA: ${orphanTenantsCount}`);
   console.log(`   Subscriptions ativas sem BA: ${orphanSubsCount}`);
+  console.log(`   Subscriptions ligadas a BA soft-deleted: ${subsOnDeadBaCount}`);
 
-  if (orphanTenantsCount > 0 || orphanSubsCount > 0) {
-    console.error('\n❌ VALIDATION FAILED: backfill deixou tenants/subscriptions órfãos.');
+  if (orphanTenantsCount > 0 || orphanSubsCount > 0 || subsOnDeadBaCount > 0) {
+    console.error('\n❌ VALIDATION FAILED: backfill deixou tenants/subscriptions órfãos ou em BA morta.');
     process.exit(1);
   }
 }
@@ -236,6 +289,7 @@ async function main() {
   const result: BackfillResult = {
     tenantsProcessed: 0,
     tenantsSkipped: 0,
+    tenantsSkippedByRace: 0,
     subscriptionsLinked: 0,
     subscriptionsSkipped: 0,
     billingAccountsCreated: 0,
@@ -246,18 +300,28 @@ async function main() {
     try {
       await backfillTenant(tenant, result);
     } catch (e) {
-      result.errors.push({
-        tenantId: tenant.id,
-        reason: e instanceof Error ? e.message : String(e),
-      });
+      // F2.4.3.3 — 3.2: race aborts are benign — signup already created a
+      // live BA for this tenant. Count them separately so the caller doesn't
+      // misinterpret as a hard failure.
+      if (e instanceof RaceAbortedError) {
+        result.tenantsSkippedByRace++;
+        console.log(`  ↷ Tenant ${tenant.slug} → skipped (race: live BA already present)`);
+      } else {
+        result.errors.push({
+          tenantId: tenant.id,
+          reason: e instanceof Error ? e.message : String(e),
+        });
+      }
     }
   }
 
   console.log('\n📊 Resultado:');
   console.log(`   Tenants processados: ${result.tenantsProcessed}`);
   console.log(`   Tenants skipped (já tinham BA): ${result.tenantsSkipped}`);
+  console.log(`   Tenants skipped por race (benigno): ${result.tenantsSkippedByRace}`);
   console.log(`   BillingAccounts criadas: ${result.billingAccountsCreated}`);
   console.log(`   Subscriptions ligadas: ${result.subscriptionsLinked}`);
+  console.log(`   Subscriptions skipped: ${result.subscriptionsSkipped}`);
   console.log(`   Erros: ${result.errors.length}`);
 
   if (result.errors.length > 0) {
