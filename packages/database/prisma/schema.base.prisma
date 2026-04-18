@@ -374,13 +374,19 @@ model Tenant {
   /// Stripe Customer ID — created at tenant signup for billing identity (TD-15).
   /// Nullable: pre-migration tenants will have null until their first checkout.
   /// Uniqueness enforced via partial index (WHERE NOT NULL) in migration 20260411000000.
+  /// LEGACY: source of truth moves to BillingAccount.stripeCustomerId after F2.4.2 backfill.
   stripeCustomerId String?  @unique @map("stripe_customer_id")
+
+  /// F2.4 Multi-Workspace Ownership (Phase 1: nullable for backward-compat).
+  /// Phase 3 (F2.4.5) will enforce NOT NULL after backfill completes.
+  billingAccountId String?  @map("billing_account_id")
 
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
   deletedAt DateTime? // Soft delete
 
   // Relations
+  billingAccount BillingAccount? @relation(fields: [billingAccountId], references: [id])
   users         User[]
   subscriptions Subscription[]
   invoices      Invoice[]
@@ -657,6 +663,42 @@ model Tenant {
   @@index([slug])
   @@index([domain])
   @@index([status])
+  @@index([billingAccountId])
+}
+
+/// F2.4 Multi-Workspace Ownership Model.
+/// Owns N Tenants (up to MAX_TENANTS plan quota) and N Subscriptions (1:N, MVP uses 1:1).
+/// Replaces the implicit "1 Tenant = 1 Subscription = 1 Stripe Customer" model.
+/// See docs/planning/stories/epic-4-framework/sprint-f2/F2.4-multi-workspace-ownership-model.md
+model BillingAccount {
+  id               String   @id @default(uuid())
+
+  /// Billing admin / dono desta BillingAccount. Single-owner na v1.
+  /// Multi-owner via BillingAccountMember entra em F2.4.6 (deferred).
+  /// onDelete: Restrict — owner não pode ser removido enquanto for dono de uma BA
+  /// (precisa transferir ownership primeiro, flow implementado em F2.4.6).
+  ownerUserId      String   @map("owner_user_id")
+
+  /// Stripe Customer ID. Source of truth após F2.4.2 backfill move de Tenant.
+  /// Unique: uma BA mapeia 1:1 para um Customer Stripe.
+  stripeCustomerId String?  @unique @map("stripe_customer_id")
+
+  /// Display name / razão social (opcional v1).
+  name             String?
+
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+  deletedAt        DateTime? @map("deleted_at")
+
+  // Relations
+  owner            User           @relation("BillingAccountOwner", fields: [ownerUserId], references: [id], onDelete: Restrict)
+  tenants          Tenant[]
+  subscriptions    Subscription[]
+
+  @@index([ownerUserId])
+  @@index([stripeCustomerId])
+  @@index([deletedAt])
+  @@map("billing_accounts")
 }
 
 model User {
@@ -708,6 +750,7 @@ model User {
 
   // Relations
   tenant                    Tenant?                    @relation(fields: [tenantId], references: [id])
+  ownedBillingAccounts      BillingAccount[]           @relation("BillingAccountOwner")
   refreshTokens             RefreshToken[]
   auditLogs                 AuditLog[]
   files                     File[]
@@ -1024,14 +1067,20 @@ model Subscription {
   /// Additional metadata
   metadata Json?
 
+  /// F2.4 Multi-Workspace Ownership (Phase 1: nullable for backward-compat).
+  /// Phase 2 (F2.4.2) backfill liga cada Subscription existente a uma BillingAccount.
+  /// Não vira NOT NULL em F2.4.5 (permite Subscriptions de plataforma sem BA no futuro).
+  billingAccountId String? @map("billing_account_id")
+
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
   deletedAt DateTime? @map("deleted_at")
 
   // Relations
-  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  plan     Plan      @relation(fields: [planId], references: [id], onDelete: Restrict)
-  price    Price?    @relation(fields: [priceId], references: [id], onDelete: SetNull)
+  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  plan           Plan            @relation(fields: [planId], references: [id], onDelete: Restrict)
+  price          Price?          @relation(fields: [priceId], references: [id], onDelete: SetNull)
+  billingAccount BillingAccount? @relation(fields: [billingAccountId], references: [id])
   invoices Invoice[]
 
   @@index([tenantId])
@@ -1039,6 +1088,7 @@ model Subscription {
   @@index([status])
   @@index([stripeSubscriptionId])
   @@index([currentPeriodEnd])
+  @@index([billingAccountId])
   @@map("subscriptions")
 }
 
@@ -1308,6 +1358,12 @@ model Feature {
 
   /// Feature type
   type FeatureType @default(BOOLEAN)
+
+  /// F2.4: Quota scope — define qual entidade é contada contra o limite.
+  /// TENANT (default) → contagem escopada pelo tenantId (ex: MAX_PROJECTS).
+  /// BILLING_ACCOUNT → contagem escopada pelo billingAccountId (ex: MAX_TENANTS).
+  /// Ver EntitlementService.resolveQuotaCurrentUsage para o dispatch.
+  scope FeatureScope @default(TENANT)
 
   /// Default value for features not explicitly set
   defaultValue String? @map("default_value")
@@ -1708,6 +1764,12 @@ enum FeatureType {
   BOOLEAN // Feature is on/off
   QUOTA // Feature has a numeric limit
   CUSTOM // Feature has a custom string value
+}
+
+/// F2.4: escopo de contagem para quotas. Ver Feature.scope.
+enum FeatureScope {
+  TENANT // Contagem por tenantId (ex: MAX_PROJECTS, STORAGE_MB)
+  BILLING_ACCOUNT // Contagem por billingAccountId (ex: MAX_TENANTS)
 }
 
 enum PlanType {
