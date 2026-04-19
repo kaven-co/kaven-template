@@ -170,6 +170,9 @@ WHERE t.stripe_customer_id IS NOT NULL
 ```
 
 1. Grep todos os readers de `tenant.stripeCustomerId` e `subscription.stripeCustomerId`. Migrar para ler via `tenant.billingAccount.stripeCustomerId`. **Gate:** `ALLOW_LEGACY_TENANT_STRIPE_ID` deve estar `false` em prod por ≥ 7 dias sem incidentes.
+
+   **Ops — parsing da env:** em `apps/api` a variável é validada no boot. Apenas os literais `true` e `false` (ASCII, case-insensitive) são aceites; valores como `yes`, `1` ou typos (`flase`) **falham a subida** — evita “default permissivo” acidental. Omitir a variável ou string vazia equivale a `true` (transição segura).
+
 2. Migration: `ALTER TABLE "Tenant" DROP COLUMN stripe_customer_id`.
 3. Migration: `ALTER TABLE subscriptions DROP COLUMN stripe_customer_id`.
 4. Remover feature flag `ALLOW_LEGACY_TENANT_STRIPE_ID` do código (já inerte após passo 2).
