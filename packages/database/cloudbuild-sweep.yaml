@@ -1,0 +1,17 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - build
+      - '-f'
+      - 'packages/database/Dockerfile.sweep'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/kaven-stripe-sweep:$COMMIT_SHA'
+      - '.'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - push
+      - 'gcr.io/$PROJECT_ID/kaven-stripe-sweep:$COMMIT_SHA'
+
+images:
+  - 'gcr.io/$PROJECT_ID/kaven-stripe-sweep:$COMMIT_SHA'

@@ -310,6 +310,40 @@ async function main() {
     console.log(`\n📝 Audit sidecar: ${auditPath}`);
   }
 
+  // D3.2 — Emit structured audit event for observability.
+  // TODO: F2.4.5 — emitir via AuditEvent (model Prisma) quando model estiver disponível.
+  // Por ora: console.log JSON para captura pelo log aggregator do Cloud Run.
+  const sweepAuditPayload = {
+    event: 'stripe.sweep.completed',
+    actor: 'job:stripe-orphan-sweep',
+    dryRun: report.dryRun,
+    confirmed: report.confirmed,
+    keyMode: report.keyMode,
+    totalKavenCustomers: report.totalKavenCustomers,
+    deleted: report.deleted.length,
+    orphans: report.orphans.map((o) => o.customerId),
+    dangling: report.danglingMetadata.map((d) => d.customerId),
+    skippedByAge: report.skippedByAge.length,
+    skippedAlreadyDeleted: report.skippedAlreadyDeleted.length,
+    errors: report.errors.map((e) => `${e.customerId}: ${e.error}`),
+    startedAt: report.startedAt,
+    finishedAt: report.finishedAt,
+  };
+  console.log(JSON.stringify(sweepAuditPayload));
+
+  // D3.2 — Alert quando orphans >= 10 (severity: warning).
+  // TODO: F2.4.5 — emitir via AuditEvent(type='stripe.sweep.alert') quando model estiver disponível.
+  if (report.orphans.length >= 10) {
+    const sweepAlertPayload = {
+      event: 'stripe.sweep.alert',
+      actor: 'job:stripe-orphan-sweep',
+      severity: 'warning',
+      message: `${report.orphans.length} Stripe orphan customers detected — review required`,
+      orphans: report.orphans.map((o) => o.customerId),
+    };
+    console.log(JSON.stringify(sweepAlertPayload));
+  }
+
   if (report.errors.length > 0) {
     console.error('\n❌ Erros:');
     for (const err of report.errors) {
