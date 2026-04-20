@@ -371,12 +371,6 @@ model Tenant {
   ssoConfig       Json?    @map("sso_config") // SSO scaffold — implementation later
   wizardState     Json?    @map("wizard_state") // Setup wizard progress
 
-  /// Stripe Customer ID — created at tenant signup for billing identity (TD-15).
-  /// Nullable: pre-migration tenants will have null until their first checkout.
-  /// Uniqueness enforced via partial index (WHERE NOT NULL) in migration 20260411000000.
-  /// LEGACY: source of truth moves to BillingAccount.stripeCustomerId after F2.4.2 backfill.
-  stripeCustomerId String?  @unique @map("stripe_customer_id")
-
   /// F2.4 Multi-Workspace Ownership (Phase 1: nullable for backward-compat).
   /// Phase 3 (F2.4.5) will enforce NOT NULL after backfill completes.
   billingAccountId String?  @map("billing_account_id")
@@ -1035,10 +1029,6 @@ model Subscription {
 
   /// Associated price (specific billing interval)
   priceId String? @map("price_id")
-
-  /// Stripe Customer ID
-  /// @unique -- Maps 1:1 to Stripe customer; prevents duplicate billing accounts
-  stripeCustomerId String? @unique @map("stripe_customer_id")
 
   /// Stripe Subscription ID
   /// @unique -- Maps 1:1 to Stripe subscription; prevents duplicate subscription records

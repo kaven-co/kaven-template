@@ -142,16 +142,11 @@ async function classifyCustomer(
   });
   if (ba) return 'healthy';
 
-  // 2. Legacy fallback — Tenant.stripeCustomerId (pre-F2.4).
-  const tenantLegacy = await prisma.$queryRaw<Array<{ id: string }>>`
-    SELECT id FROM "Tenant"
-    WHERE stripe_customer_id = ${customerId}
-      AND "deletedAt" IS NULL
-    LIMIT 1
-  `;
-  if (tenantLegacy.length > 0) return 'healthy';
+  // F2.4.5: Tenant.stripe_customer_id column dropped — legacy fallback removed.
+  // Any Customer previously linked via Tenant.stripeCustomerId was either backfilled
+  // to BillingAccount (F2.4.2) or is a genuine orphan — handled below.
 
-  // 3. No DB owner. If metadata.tenantId exists, check if that tenant is alive.
+  // 2. No DB owner. If metadata.tenantId exists, check if that tenant is alive.
   if (tenantIdMeta) {
     const tenantRows = await prisma.$queryRaw<Array<{ id: string; deletedAt: Date | null }>>`
       SELECT id, "deletedAt"
