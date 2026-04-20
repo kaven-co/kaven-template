@@ -1,0 +1,7 @@
+# Env files — never commit credentials
+*.env
+.env
+.env.*
+.env.local
+.env.*.local
+!.env.example
