@@ -1,0 +1,194 @@
+# Ecosystem Audit Report
+# Data: 2026-04-19
+# Workflow: full-ecosystem-audit
+# Versão: 1.0.0
+
+metadata:
+  generated_at: "2026-04-19T18:00:00Z"
+  workflow_id: "full-ecosystem-audit"
+  projects_count: 5
+  agent: "Orion (AIOS Master)"
+
+projects:
+  - name: kaven-framework
+    path: /home/bychrisr/projects/work/kaven/kaven-framework
+    status: active
+    last_commit: "8d5229c8"
+    branch: feat/f1.4-artifact-registry-migration
+    node: ">=20"
+    issues_count: 7
+    severity: critical
+
+  - name: kaven-cli
+    path: /home/bychrisr/projects/work/kaven/kaven-cli
+    status: active
+    last_commit: "5dc30c4"
+    branch: docs/add-cli-status
+    node: ">=20"
+    issues_count: 0
+
+  - name: kaven-marketplace
+    path: /home/bychrisr/projects/work/kaven/kaven-marketplace
+    status: active
+    last_commit: "8c28354"
+    branch: docs/refresh-marketplace-status
+    node: ">=20"
+    issues_count: 3
+
+  - name: kaven-template
+    path: /home/bychrisr/projects/work/kaven/kaven-template
+    status: active
+    last_commit: "ef9fe24"
+    branch: docs/refresh-template-status
+    node: ">=20"
+    issues_count: 2
+
+  - name: kaven-ui-base
+    path: /home/bychrisr/projects/work/kaven/kaven-ui-base
+    status: stable
+    last_commit: "f3bf36f"
+    branch: main
+    node: ">=18"
+    issues_count: 1
+
+summary:
+  total_projects: 5
+  projects_with_git: 5
+  critical_issues: 12
+  warnings: 28
+  todos_pending: 1110
+  pass_rate: "51%"
+
+audit_results:
+  code:
+    status: partial
+    issues:
+      - file: apps/api/src/middleware/prisma-soft-delete.ts
+        function: hardDelete
+        severity: HIGH
+        description: Exportada mas não usada
+      - file: apps/api/src/services/authorization.service.ts
+        lines: 774
+        severity: HIGH
+        description: Alta complexidade - fragmentar
+      - file: apps/api/src/modules/auth/services/auth.service.ts
+        lines: 800
+        severity: HIGH
+        description: Alta complexidade - fragmentar
+
+  dependencies:
+    status: warning
+    issues:
+      - project: kaven-framework
+        package: prisma
+        current: "5.22.0"
+        latest: "7.7.0"
+        severity: CRITICAL
+      - project: kaven-marketplace
+        package: "@prisma/client"
+        current: "7.7.0"
+        latest: "7.7.0"
+        severity: OK
+
+  documentation:
+    status: warning
+    issues:
+      - file: docs/migrations/003-permissions-tenantid.md
+        line: 271
+        severity: HIGH
+        type: broken_link
+        description: Referencia architecture/multi-tenancy.md que não existe
+      - file: docs/architecture/infra-map.md
+        line: 0
+        severity: MEDIUM
+        type: outdated
+        description: Next.js 15 (deveria ser 16)
+      - file: docs/architecture/BROWNFIELD_DISCOVERY_GUIDE.md
+        line: 0
+        severity: MEDIUM
+        type: outdated
+        description: Next.js 14 (deveria ser 16)
+      - file: squads/kaven-squad/data/kaven-schema-reference.md
+        models: 54
+        enums: 28
+        severity: HIGH
+        type: outdated
+        description: Deveria ter 261 models, 183 enums
+
+  security:
+    status: warning
+    issues:
+      - project: kaven-ui-base
+        type: missing_gitignore
+        severity: CRITICAL
+        description: Falta *.env no .gitignore
+      - project: kaven-marketplace
+        type: basic_gitignore
+        severity: MEDIUM
+        description: .gitignore básico precisa expandir
+
+  git:
+    status: ok
+    branches_total: 25
+    branches_orphan: 13
+    issues:
+      - project: kaven-framework
+        branches:
+          [
+            feat/f1.4-artifact-registry-migration,
+            feat/f2.4.4b-webhook-hardening,
+          ]
+        type: orphan
+        severity: LOW
+        description: Precisam de merge ou delete
+
+checklist_validation:
+  name: ecosystem-audit-checklist
+  executed_at: "2026-04-19T18:30:00Z"
+  pass_rate: "51%"
+  verdict: NEEDS_WORK
+  failed_fases:
+    - phase: Fase 2 (Código)
+      rate: "25%"
+      reasons: [dead code analysis não executada, 24 arquivos >500 linhas]
+    - phase: Fase 4 (Documentação)
+      rate: "25%"
+      reasons: [34 arquivos .md com TODOs]
+    - phase: Fase 8 (Validação)
+      rate: "25%"
+      reasons: [kaven-ui-base sem script lint]
+
+actions:
+  immediate:
+    - priority: P0
+      action: Adicionar *.env ao .gitignore do kaven-ui-base
+      project: kaven-ui-base
+      effort: 5min
+    - priority: P0
+      action: Adicionar script lint ao package.json do kaven-ui-base
+      project: kaven-ui-base
+      effort: 5min
+
+  short_term:
+    - priority: P1
+      action: Migrar Prisma 5.x → 7.x
+      project: kaven-framework
+      effort: 4h
+    - priority: P1
+      action: Fragmentar AuthorizationService
+      project: kaven-framework
+      effort: 8h
+    - priority: P1
+      action: Limpar branches órfãs
+      project: kaven-framework
+      effort: 2h
+
+  medium_term:
+    - priority: P2
+      action: Executar full codebase-quality analysis
+      project: kaven-framework
+      effort: 4h
+    - priority: P2
+      action: Review TODOs pendentes
+      project: kaven-framework
+      effort: 8h
