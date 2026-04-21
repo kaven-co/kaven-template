@@ -1,10 +1,10 @@
 /**
- * @deprecated GDPR endpoints not yet implemented
- * TODO: Uncomment when implementing STORY-GDPR-001
+ * KNOWN GAP: GDPR Consent Management endpoints not yet implemented.
+ * Will be implemented in Epic: EPIC-Compliance-GDPR
  *
  * See: docs/compliance/gdpr.md
  */
-describe.skip("GDPR: Consent Management", () => {
+describe.todo("GDPR: Consent Management", () => {
   let tenant: any;
   let user: any;
   let userToken: string;

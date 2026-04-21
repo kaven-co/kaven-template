@@ -1,10 +1,10 @@
 /**
- * @deprecated GDPR endpoints not yet implemented
- * TODO: Uncomment when implementing STORY-GDPR-001
+ * KNOWN GAP: GDPR Right to Erasure endpoints not yet implemented.
+ * Will be implemented in Epic: EPIC-Compliance-GDPR
  *
  * See: docs/compliance/gdpr.md
  */
-describe.skip("GDPR: Right to Erasure (Right to be Forgotten)", () => {
+describe.todo("GDPR: Right to Erasure (Right to be Forgotten)", () => {
   let tenant: any;
   let user: any;
   let userToken: string;

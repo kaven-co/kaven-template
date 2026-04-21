@@ -1,10 +1,10 @@
 /**
- * @deprecated GDPR endpoints not yet implemented
- * TODO: Uncomment when implementing STORY-GDPR-001
+ * KNOWN GAP: GDPR Data Portability endpoints not yet implemented.
+ * Will be implemented in Epic: EPIC-Compliance-GDPR
  *
  * See: docs/compliance/gdpr.md
  */
-describe.skip("GDPR: Data Portability", () => {
+describe.todo("GDPR: Data Portability", () => {
   it("should export data in JSON format", async () => {
     await testDataPortability("user_id", "user_token", "json");
   });

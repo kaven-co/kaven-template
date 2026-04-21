@@ -1,21 +1,10 @@
 /**
- * Multi-Tenant Isolation Tests: Permissions System
+ * KNOWN GAP: Multi-Tenant Permissions Isolation requires full permission system implementation.
+ * Will be enabled when implementing Epic: EPIC-Multi-Tenant-Hardening
  *
- * Tests that Grant, GrantRequest, Policy, and Capability tables
- * properly isolate data between tenants.
- *
- * CRITICAL: These tests verify P0 security requirements.
- *
- * @deprecated Permission isolation tests require complex setup
- * TODO: Enable when implementing full permission system
  * See: docs/security/tenant-isolation.md
- *
- * @group multi-tenant
- * @group security
- * @group permissions
  */
-
-describe.skip("Multi-Tenant Isolation: Permissions System", () => {
+describe.todo("Multi-Tenant Isolation: Permissions System", () => {
   let tenantA: any;
   let tenantB: any;
   let userA: any;
@@ -252,11 +241,12 @@ describe.skip("Multi-Tenant Isolation: Permissions System", () => {
   });
 
   /**
-   * @deprecated Capability endpoints and global capabilities not yet fully implemented
-   * TODO: Enable when implementing global/tenant-scoped capabilities
+   * KNOWN GAP: Capability endpoints and global capabilities not yet fully implemented.
+   * Will be enabled when implementing Epic: EPIC-Multi-Tenant-Hardening
+   *
    * See: docs/compliance/capabilities.md
    */
-  describe.skip("Capability Isolation (Tenant-Scoped)", () => {
+  describe.todo("Capability Isolation (Tenant-Scoped)", () => {
     it("should allow global capabilities to be visible to all tenants", async () => {
       const globalCap = await prisma.capability.create({
         data: {

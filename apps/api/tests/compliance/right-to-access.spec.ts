@@ -1,10 +1,10 @@
 /**
- * @deprecated GDPR endpoints not yet implemented
- * TODO: Uncomment when implementing STORY-GDPR-001
+ * KNOWN GAP: GDPR Right to Access (Data Export) endpoints not yet implemented.
+ * Will be implemented in Epic: EPIC-Compliance-GDPR
  *
  * See: docs/compliance/gdpr.md
  */
-describe.skip("GDPR: Right to Access (Data Export)", () => {
+describe.todo("GDPR: Right to Access (Data Export)", () => {
   let tenantA: any;
   let tenantB: any;
   let userA: any;
