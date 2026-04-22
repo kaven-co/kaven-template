@@ -88,6 +88,6 @@
     "@types/react-dom": "19.2.3",
     "rimraf": "^5.0.0",
     "tsup": "^8.5.1",
-    "typescript": "^5"
+    "typescript": "^6"
   }
 }
