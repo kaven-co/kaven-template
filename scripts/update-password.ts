@@ -6,7 +6,13 @@ import { hashPassword } from './apps/api/src/lib/bcrypt'; // Assuming strict pat
 // The project uses `bcryptjs` or `bcrypt`. Let's assume the helper is available or just use bcryptjs directly.
 import * as bcrypt from 'bcryptjs';
 
-const prisma = new PrismaClient();
+import pg from 'pg';
+import { PrismaPg } from '@prisma/adapter-pg';
+
+const connectionString = process.env.DATABASE_URL;
+const pool = new pg.Pool({ connectionString });
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
 
 async function main() {
   const newPassword = process.env.NEW_ADMIN_PASSWORD;

@@ -7,22 +7,16 @@
  * @module test-data.fixtures
  */
 
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "../../src/lib/prisma";
 import { generateAccessToken } from "../../src/lib/jwt";
 import { hashPassword } from "../../src/lib/password";
-import { Role, UserStatus, AccessLevel, CapabilityScope } from "@prisma/client";
+import { Role, UserStatus, AccessLevel, CapabilityScope, PrismaClient } from "@prisma/client";
 
 // Re-export PrismaClient for external use
 export { PrismaClient };
 
-// Singleton prisma instance for tests
-let _prisma: PrismaClient | null = null;
-
 export function getPrisma(): PrismaClient {
-  if (!_prisma) {
-    _prisma = new PrismaClient();
-  }
-  return _prisma;
+  return prisma as unknown as PrismaClient;
 }
 
 /**

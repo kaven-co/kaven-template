@@ -1,9 +1,8 @@
-import { PrismaClient, Role, TenantStatus, Prisma } from '@prisma/client';
+import { Role, TenantStatus, Prisma } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { SeedConfig } from '../types/seed-config';
 import { UserMetadata, INTERNAL_ROLE_PERMISSIONS } from '../types/user-metadata';
-
-const prisma = new PrismaClient();
+import { prisma } from '../prisma';
 
 /**
  * Setup Service

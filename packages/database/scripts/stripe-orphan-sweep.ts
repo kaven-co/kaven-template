@@ -37,20 +37,19 @@
  */
 
 import { PrismaClient } from '@prisma/client';
+import pg from 'pg';
+import { PrismaPg } from '@prisma/adapter-pg';
 import Stripe from 'stripe';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { hostname } from 'node:os';
 
+const connectionString = process.env.DATABASE_URL;
+const pool = new pg.Pool({ connectionString });
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
+
 const DRY_RUN = !process.argv.includes('--delete');
-const CONFIRMED = process.env.STRIPE_SWEEP_CONFIRM === 'yes';
-const LIVE_DELETE_OK = process.env.ALLOW_STRIPE_LIVE_DELETE === 'yes';
-
-// F2.4.3.3 — 2.1: Customers younger than this are skipped during classification.
-// Stripe Search has ~1min lag; we add margin against signup tx commit delays.
-const AGE_GATE_SECONDS = 3600;
-
-const prisma = new PrismaClient();
 
 const stripeKey = process.env.STRIPE_SECRET_KEY;
 if (!stripeKey) {

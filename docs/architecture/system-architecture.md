@@ -1,8 +1,8 @@
 # KAVEN FRAMEWORK - SYSTEM ARCHITECTURE
 
-**Date:** 2026-04-11
-**Version:** v1.0.0-rc1 LIVE
-**Analyst:** Specialized Architect Agent
+**Date:** 2026-04-21
+**Version:** v1.1.0-alpha (Prisma 7 Consolidation)
+**Analyst:** Specialized Architect Agent (Chronicle Sync)
 
 ---
 
@@ -10,13 +10,13 @@
 
 O **Kaven Framework** é uma plataforma SaaS **enterprise-grade, multi-tenant** construída em Fastify (API) + Next.js 16 App Router (Admin e Tenant Apps). A arquitetura implementa padrões modernos de engenharia com foco em:
 
-1. **Multi-tenancy nativo** - Isolamento de dados via tenantId com middleware de detecção automática
+1. **Multi-tenancy nativo** - Isolamento de dados via tenantId com middleware de detecção automática e suporte a Billing Accounts (F2.4)
 2. **Segurança em camadas** - JWT + Refresh Tokens, RBAC, Capabilities, Policies, 2FA/MFA
 3. **Observabilidade enterprise** - Stack PLG (Prometheus/Loki/Grafana) com métricas de negócio
 4. **Monetização completa** - Planos, produtos, subscriptions, pagamentos (Stripe/PIX)
 5. **Qualidade garantida** - ~2100+ testes, 136 test files, quality gates stritos
 
-**Status Atual:** v1.0.0-rc1 LIVE — admin.kaven.site + tenant.kaven.site. Sprints 1–7 ✅, Marketplace M1–M3 ✅, CLI C1–C3 ✅, Deploy D1 ✅ (12/12), D2 ✅, Cross-squad CS1–CS4 ✅. PRs #1–#93 mergeados.
+**Status Atual:** v1.1.0-alpha LIVE — Consolidação do Prisma 7 e Billing Accounts (Epic F2.4).
 
 ---
 
@@ -26,16 +26,15 @@ O **Kaven Framework** é uma plataforma SaaS **enterprise-grade, multi-tenant** 
 
 | Componente | Versão | Propósito |
 |-----------|--------|----------|
-| **Fastify** | 5.6.2 | Framework HTTP performance (30k req/s) |
-| **Prisma** | 5.22.0 | ORM multi-tenant com migrations |
+| **Fastify** | 5.8.5 | Framework HTTP performance (30k req/s) |
+| **Prisma** | 7.0.0 | ORM multi-tenant com adapters Neon/Serverless |
 | **PostgreSQL** | 17-Alpine | Database principal com JSONB |
 | **Redis** | 7-Alpine | Cache + Job Queue (BullMQ) |
-| **JWT (jose)** | 6.1.3 | Autenticação stateless |
+| **JWT (jose)** | 6.2.2 | Autenticação stateless |
 | **Bcrypt** | 6.0.0 | Hashing seguro de senhas |
 | **Zod** | 4.2.1 | Validação schema TypeScript-first |
 | **Winston** | 3.19.0 | Logging estruturado |
-| **Sentry** | 10.32.1 | Error tracking em produção |
-| **Prometheus** | via prom-client | Métricas de aplicação |
+| **Sentry** | 10.48.0 | Error tracking em produção |
 
 **Plugins Fastify Ativados:**
 - `@fastify/cors` - CORS configurável
@@ -73,8 +72,8 @@ kaven-framework/
 │   ├── tenant/                 # Next.js Tenant App (porta 3001)
 │   └── docs/                   # Nextra Docs (porta 3002)
 ├── packages/
-│   ├── @kaven/database/        # Prisma ORM + Migrations
-│   └── @kaven/shared/          # Zod schemas, DTOs, constants
+│   ├── database/               # Prisma ORM + Migrations (Prisma 7)
+│   └── shared/                 # Zod schemas, DTOs, constants
 ├── infra/
 │   └── monitoring/             # Prometheus, Grafana, Loki configs
 ├── scripts/                    # Automação (.agent/)
@@ -87,16 +86,17 @@ kaven-framework/
 
 ### Schema Overview
 
-- **Total de Models:** 261 modelos Prisma
-- **Total de Enums:** 183 tipos enumerados
+- **Total de Models:** 262 modelos Prisma
+- **Total de Enums:** 184 tipos enumerados
 - **Arquivo Principal:** `schema.extended.prisma` (source) → `schema.prisma` (gerado)
-- **Estrutura:** `schema.base.prisma` (core imutável) + `schema.extended.prisma` (source completo com 261 models) → `schema.prisma` (gerado automaticamente via merge)
+- **Estrutura:** `schema.base.prisma` (core imutável) + `schema.extended.prisma` (source completo) → `schema.prisma` (gerado automaticamente via merge)
 
 ### Modelos Críticos (Multi-tenancy)
 
 ```
 CORE (Segurança & Tenancy):
 ├── Tenant              # ID + slug + domain (detecção automática)
+├── BillingAccount      # Multi-workspace ownership (F2.4)
 ├── User                # Email único + tenantId (soft delete)
 ├── RefreshToken        # JWT refresh + expiração
 ├── TenantInvite        # Convites de tenant com roles
@@ -164,12 +164,13 @@ model Invoice {
 ```
 apps/api/src/modules/
 ├── admin/                  # Admin panel routes
-├── ads/                    # Ads attribution (Meta CAPI, GA4 — EPIC-2.5)
+├── ads/                    # Ads attribution (Meta CAPI, GA4)
 ├── ai/                     # AI features
 ├── app/                    # App-level (projects, tasks)
-├── audit/                  # Audit logging (100% tested)
-├── auth/                   # JWT + 2FA + Password Reset (100% tested)
+├── audit/                  # Audit logging
+├── auth/                   # JWT + 2FA + Password Reset
 ├── billing/                # Billing core
+├── billing-accounts/       # Multi-workspace ownership (F2.4)
 ├── case-matter/            # Case & matter management
 ├── checkout/               # Checkout flow
 ├── clients/                # Client management
@@ -179,38 +180,38 @@ apps/api/src/modules/
 ├── dashboard/              # Dashboard analytics
 ├── documents/              # Document management
 ├── export/                 # Data export
-├── files/                  # File upload with quotas (100% tested)
+├── files/                  # File upload with quotas
 ├── finance/                # Finance module
 ├── finances-bi/            # Finance BI analytics
 ├── governance/             # Governance & policies
 ├── grants/                 # Capability grants
 ├── inventory/              # Inventory management
-├── invoices/               # Invoice generation (100% tested)
+├── invoices/               # Invoice generation
 ├── legal/                  # Legal module
 ├── marketing/              # Marketing & CRM
-├── notifications/          # In-app + Email (100% tested)
-├── observability/          # Prometheus + Loki (100% tested)
+├── notifications/          # In-app + Email
+├── observability/          # Prometheus + Loki
 ├── operations/             # Operations management
-├── orders/                 # Order processing (100% tested)
+├── orders/                 # Order processing
 ├── people/                 # People & HR
 ├── plans/                  # Plans CRUD
 ├── platform/               # Email integration + Config
 ├── policies/               # Access restrictions
-├── products/               # Products CRUD (100% tested)
+├── products/               # Products CRUD
 ├── projects/               # Project management
 ├── property-management/    # Property management
 ├── remote-work/            # Remote work features
 ├── roles/                  # RBAC
 ├── saas-ops/               # SaaS operations
-├── security/               # 2FA + Policies (100% tested)
+├── security/               # 2FA + Policies
 ├── service-tokens/         # Service tokens (D2.1)
 ├── spaces/                 # Workspace isolation
-├── subscriptions/          # Gating logic (100% tested)
+├── subscriptions/          # Gating logic
 ├── team-collaboration/     # Team collaboration
-├── tenants/                # Multi-tenancy (100% tested)
+├── tenants/                # Multi-tenancy
 ├── theme/                  # Theme customization
 ├── usage/                  # Usage tracking
-├── users/                  # CRUD + Invites (100% tested)
+├── users/                  # CRUD + Invites
 └── webhooks/               # Webhook integrations
 ```
 

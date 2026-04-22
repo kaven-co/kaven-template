@@ -8,6 +8,6 @@ const withNextra = nextra({
 
 export default withNextra({
   transpilePackages: ['lucide-react', '@kaven/ui-base'],
-  output: 'export',
+  // output: 'export',
   reactStrictMode: true,
 })

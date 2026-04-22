@@ -1,6 +1,6 @@
 # Coding Standards — Kaven Framework
 
-> Kaven Framework v1.0.0-rc1
+> Kaven Framework v1.1.0-alpha (Prisma 7 Consolidation)
 
 ## Git & Commits
 - **Branch strategy:** `feat/`, `fix/`, `chore/`, `refactor/`, `test/`, `docs/`
@@ -11,8 +11,7 @@
 ## TypeScript
 - **Strict mode:** `"strict": true` em todos os tsconfig
 - **No `any`:** usar `unknown` quando tipo não é conhecido
-- **Zod validation:** todos os inputs externos (API body, env vars) validados com Zod
-- **TypeBox:** schemas Fastify usam TypeBox para JSON Schema + inferência TypeScript
+- **Zod validation:** todos os inputs externos (API body, env vars) validados OBRIGATORIAMENTE com Zod
 
 ## API (Fastify)
 - **Route structure:** `src/modules/<module>/routes/<module>.routes.ts`
@@ -22,11 +21,11 @@
 - **Pagination:** `{ data: T[], meta: { total, page, limit } }`
 - **tenantId:** OBRIGATÓRIO em todas as queries de dados — nunca buscar sem tenant context
 
-## Database (Prisma)
+## Database (Prisma 7)
 - **Soft delete:** campo `deletedAt` em todos os models (nunca delete físico)
 - **Indexes:** composite index em `(tenantId, <primary-filter>)` em todos os models
 - **Migrations:** uma migration por feature/story — nomes descritivos
-- **RLS:** `prisma-rls.ts` intercepta todas as queries — não bypassar sem razão explícita
+- **Prisma Adapters:** usar `@prisma/adapter-neon` ou `@prisma/adapter-pg` conforme ambiente
 - **Extended schema:** novos models em `schema.extended.prisma`, não no `schema.base.prisma`
 
 ## Testing

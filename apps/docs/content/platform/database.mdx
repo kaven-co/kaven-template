@@ -7,49 +7,52 @@ version: 2.0.0
 tags: [database, prisma, architecture, scalability]
 ---
 
-# Database (Split-Schema)
+# Database (Split-Schema & Prisma 7)
 
-O Kaven v2.0 introduz o conceito de **Split-Schema** para o Prisma. Esta arquitetura resolve o maior problema de boilerplates: como atualizar o "core" do banco de dados sem perder as alterações customizadas do desenvolvedor.
+O Kaven Framework utiliza uma arquitetura de **Split-Schema** potencializada pelo **Prisma 7**. Esta abordagem permite que a plataforma evolua o "core" (262 models) sem interferir nas suas customizações.
 
 ## 🏗️ Como funciona
 
-O banco de dados não é definido por um único arquivo `.prisma`, mas sim por uma composição dinâmica:
+O banco de dados é uma composição dinâmica de dois arquivos:
 
-1.  **`schema.base.prisma`**: Localizado em `packages/database/prisma/`. Contém as tabelas fundamentais (User, Token, Tenant, Setting, etc). **Não deve ser editado manualmente pelo desenvolvedor.**
-2.  **`schema.extended.prisma`**: O seu playground. Aqui você adiciona os modelos específicos do seu negócio (ex: `Product`, `Order`, `Invoice`).
-3.  **`kaven db generate`**: O comando que une esses dois mundos.
+1.  **`schema.base.prisma`**: Localizado em `packages/database/prisma/`. Contém os modelos fundamentais de Multi-tenancy, Auth, Billing e Security. **Não deve ser editado.**
+2.  **`schema.extended.prisma`**: Onde você adiciona seus modelos de negócio.
+3.  **Merge Inteligente**: O sistema une os arquivos em um `schema.prisma` final otimizado para Prisma 7.
 
-## 🔄 Fluxo de Trabalho
+## 🔄 Fluxo de Trabalho com Kaven CLI
 
 ### 1. Adicionando uma nova tabela
 
-Abra o arquivo `packages/database/prisma/schema.extended.prisma` e adicione seu modelo:
+Adicione seu modelo em `packages/database/prisma/schema.extended.prisma`:
 
 ```prisma
-model MyAwesomeProduct {
+model MyProduct {
   id        String   @id @default(uuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
   name      String
   createdAt DateTime @default(now())
 }
 ```
 
-### 2. Gerando o Schema final
+### 2. Sincronizando o Framework
 
-Execute o comando da CLI:
+Use a Kaven CLI para realizar o merge e gerar o client:
 
 ```bash
-node kaven-cli/bin/kaven.js db generate
+kaven db generate
 ```
 
-Isso gerará o arquivo `packages/database/prisma/schema.prisma`, que é o arquivo que o Prisma realmente utiliza.
+### 3. Migrations no Prisma 7
 
-### 3. Executando a Migration
-
-Agora você pode usar os comandos padrão do Prisma:
+O Kaven utiliza adapters serverless para máxima performance. Execute suas migrations via:
 
 ```bash
 pnpm --filter database migrate:dev
 ```
+
+> [!IMPORTANT]
+> No Prisma 7, certifique-se de que seu `prisma.config.ts` está configurado corretamente para o seu ambiente (Neon, local ou CI).
 
 ## 💡 Vantagens
 

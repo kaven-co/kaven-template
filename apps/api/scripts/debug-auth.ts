@@ -1,5 +1,5 @@
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../src/lib/prisma';
 import { generateAccessToken, verifyToken } from '../src/lib/jwt';
 import { env } from '../src/config/env';
 
@@ -7,8 +7,6 @@ import { env } from '../src/config/env';
 async function main() {
   console.log('🕵️ STARTING AUTH DEBUG 🕵️');
   console.log('--------------------------------');
-
-  const prisma = new PrismaClient();
 
   try {
     const email = 'admin@test.com';

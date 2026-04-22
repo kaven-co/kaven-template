@@ -35,13 +35,13 @@ import { seedTeamCollaborationFeatureFlags } from "./seeds/feature-flags-team-co
 import { seedFinancesBIFeatureFlags } from "./seeds/feature-flags-finances-bi";
 import { seedAssetManagementFeatureFlags } from "./seeds/feature-flags-asset-management";
 
-const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: process.env.DATABASE_URL,
-    },
-  },
-});
+import pg from 'pg';
+import { PrismaPg } from '@prisma/adapter-pg';
+
+const connectionString = process.env.DATABASE_URL;
+const pool = new pg.Pool({ connectionString });
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
 
 // --- TYPES (Ported from apps/api/src/types) ---
 

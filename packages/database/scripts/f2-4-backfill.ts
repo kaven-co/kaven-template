@@ -25,8 +25,13 @@
  */
 
 import { PrismaClient } from '@prisma/client';
+import pg from 'pg';
+import { PrismaPg } from '@prisma/adapter-pg';
 
-const prisma = new PrismaClient();
+const connectionString = process.env.DATABASE_URL;
+const pool = new pg.Pool({ connectionString });
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
 const DRY_RUN = process.argv.includes('--dry-run');
 
 // F2.4.3.1 — H-3: mask PII/Stripe IDs in logs to avoid leakage.
