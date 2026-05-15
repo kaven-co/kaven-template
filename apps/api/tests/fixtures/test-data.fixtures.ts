@@ -275,6 +275,9 @@ export async function cleanupTestData(prisma?: PrismaClient): Promise<void> {
     // 1.8 User Data Export Logs (Cascade on userId)
     await tx.dataExportLog.deleteMany({});
 
+    // 1.8.1 User Consent Records (LGPD — Cascade on userId)
+    await (tx as any).userConsentRecord?.deleteMany({});
+
     // 1.9 User Devices (Cascade on userId)
     await tx.policyDeviceTracking.deleteMany({});
 

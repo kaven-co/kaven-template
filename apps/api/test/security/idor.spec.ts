@@ -632,6 +632,7 @@ describe('IDOR Security Tests', () => {
         async () => prisma.dataExportLog.create({
           data: {
             userId: testData.tenantB.user.id,
+            tenantId: testData.tenantB.tenant.id,
             exportType: 'csv',
             resource: 'users',
             recordCount: 100,

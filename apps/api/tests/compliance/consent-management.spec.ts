@@ -1,126 +1,126 @@
-/**
- * KNOWN GAP: GDPR Consent Management endpoints not yet implemented.
- * Will be implemented in Epic: EPIC-Compliance-GDPR
- *
- * See: docs/compliance/gdpr.md
- */
-describe.todo("GDPR: Consent Management", () => {
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { createTestTenant, createTestUser, cleanupTestData } from '../fixtures/test-data.fixtures';
+import { grantConsent, revokeConsent, listConsents } from '../helpers/gdpr.helpers';
+import { CONSENT_PURPOSES } from '../../src/modules/users/services/lgpd.service';
+
+describe('LGPD Art. 18, I — Consent Management', () => {
   let tenant: any;
   let user: any;
-  let userToken: string;
 
-  beforeAll(async () => {
-    tenant = await createTestTenant("Consent Test Tenant");
+  beforeEach(async () => {
+    tenant = await createTestTenant('Consent Test Tenant');
     user = await createTestUser({
       tenantId: tenant.id,
-      email: "consent-test@test.com",
-      name: "Consent Test User",
+      email: `consent-${Date.now()}@test.com`,
+      name: 'Consent Test User',
     });
-
-    userToken = user.accessToken;
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await cleanupTestData();
   });
 
-  describe("Marketing Emails Consent", () => {
-    it("should track marketing email opt-in and opt-out", async () => {
-      const result = await testConsentManagement(
-        user.id,
-        userToken,
-        "marketing_emails",
-        "2.1.0",
-      );
-
-      expect(result.consents).toHaveLength(2); // Grant + Revoke
-      expect(result.consents[0].type).toBe("marketing_emails");
-      expect(result.consents[0].granted).toBe(true);
-      expect(result.consents[1].granted).toBe(false);
+  describe('grant consent', () => {
+    it('should register consent and return 201', async () => {
+      const { status, body } = await grantConsent(user.id, user.accessToken, 'analytics', '2026-01');
+      expect(status).toBe(201);
+      expect(body.consent).toMatchObject({ purpose: 'analytics', version: '2026-01' });
+      expect(body.consent.revokedAt).toBeNull();
     });
 
-    it("should track policy version for marketing consent", async () => {
-      const result = await testConsentManagement(
-        user.id,
-        userToken,
-        "marketing_emails",
-        "3.0.0",
-      );
+    it('should be idempotent — re-granting same active consent updates ip/agent only', async () => {
+      await grantConsent(user.id, user.accessToken, 'marketing', '2026-01');
+      const { status } = await grantConsent(user.id, user.accessToken, 'marketing', '2026-01');
+      expect(status).toBe(201);
 
-      expect(result.consents[0].policy_version).toBe("3.0.0");
+      const { body } = await listConsents(user.id, user.accessToken);
+      const records = body.consents.filter((c: any) => c.purpose === 'marketing');
+      expect(records).toHaveLength(1);
     });
-  });
 
-  describe("Analytics Tracking Consent", () => {
-    it("should track analytics opt-in and opt-out", async () => {
-      const result = await testConsentManagement(
-        user.id,
-        userToken,
-        "analytics_tracking",
-        "2.1.0",
-      );
-
-      expect(result.consents).toHaveLength(2);
-      expect(result.consents[0].type).toBe("analytics_tracking");
+    it('should reject invalid purpose with 400 and allowedPurposes list', async () => {
+      const { status, body } = await grantConsent(user.id, user.accessToken, 'invalid_xyz', '2026-01');
+      expect(status).toBe(400);
+      expect(body.error).toBe('INVALID_CONSENT_PURPOSE');
+      expect(body.allowedPurposes).toEqual(expect.arrayContaining([...CONSENT_PURPOSES]));
     });
-  });
 
-  describe("Third-Party Sharing Consent", () => {
-    it("should track third-party sharing opt-in and opt-out", async () => {
-      const result = await testConsentManagement(
-        user.id,
-        userToken,
-        "third_party_sharing",
-        "2.1.0",
-      );
+    it('should reject re-grant of previously revoked consent (same version) with 409', async () => {
+      await grantConsent(user.id, user.accessToken, 'analytics', '2026-01');
+      await revokeConsent(user.id, user.accessToken, 'analytics');
 
-      expect(result.consents).toHaveLength(2);
-      expect(result.consents[0].type).toBe("third_party_sharing");
+      const { status, body } = await grantConsent(user.id, user.accessToken, 'analytics', '2026-01');
+      expect(status).toBe(409);
+      expect(body.error).toBe('CONSENT_PREVIOUSLY_REVOKED');
+    });
+
+    it('should allow re-grant of revoked consent with a new version', async () => {
+      await grantConsent(user.id, user.accessToken, 'analytics', '2026-01');
+      await revokeConsent(user.id, user.accessToken, 'analytics');
+
+      const { status } = await grantConsent(user.id, user.accessToken, 'analytics', '2026-02');
+      expect(status).toBe(201);
+    });
+
+    it('should reject missing purpose or version with 400', async () => {
+      const res1 = await grantConsent(user.id, user.accessToken, '', '2026-01');
+      expect(res1.status).toBe(400);
+
+      const res2 = await grantConsent(user.id, user.accessToken, 'analytics', '');
+      expect(res2.status).toBe(400);
     });
   });
 
-  describe("Consent Audit Trail", () => {
-    it("should record timestamp for each consent change", async () => {
-      const result = await testConsentManagement(
-        user.id,
-        userToken,
-        "marketing_emails",
-      );
+  describe('revoke consent', () => {
+    it('should revoke active consents for a purpose and return count', async () => {
+      await grantConsent(user.id, user.accessToken, 'marketing', '2026-01');
 
-      expect(result.consents[0]).toHaveProperty("granted_at");
-      expect(result.consents[1]).toHaveProperty("granted_at");
-
-      // Revoke timestamp should be after grant timestamp
-      const grantTime = new Date(result.consents[0].granted_at).getTime();
-      const revokeTime = new Date(result.consents[1].granted_at).getTime();
-
-      expect(revokeTime).toBeGreaterThan(grantTime);
+      const { status, body } = await revokeConsent(user.id, user.accessToken, 'marketing');
+      expect(status).toBe(200);
+      expect(body.revoked).toBe(1);
     });
 
-    it("should record IP address for consent changes", async () => {
-      const result = await testConsentManagement(
-        user.id,
-        userToken,
-        "analytics_tracking",
-      );
-
-      expect(result.consents[0]).toHaveProperty("ip_address");
-      expect(result.consents[1]).toHaveProperty("ip_address");
+    it('should return revoked: 0 when no active consents exist for purpose', async () => {
+      const { status, body } = await revokeConsent(user.id, user.accessToken, 'marketing');
+      expect(status).toBe(200);
+      expect(body.revoked).toBe(0);
     });
   });
 
-  describe("Policy Version Changes", () => {
-    it("should require re-consent when policy version changes", async () => {
-      // Grant consent for v2.0.0
-      await testConsentManagement(
-        user.id,
-        userToken,
-        "marketing_emails",
-        "2.0.0",
-      );
+  describe('list consents', () => {
+    it('should list all consents for the user ordered by consentedAt desc', async () => {
+      await grantConsent(user.id, user.accessToken, 'analytics', '2026-01');
+      await grantConsent(user.id, user.accessToken, 'marketing', '2026-01');
 
-      // Policy updated to v3.0.0 - should require re-opt-in
-      // TODO: Implement policy version validation logic
+      const { status, body } = await listConsents(user.id, user.accessToken);
+      expect(status).toBe(200);
+      expect(body.consents.length).toBeGreaterThanOrEqual(2);
+      expect(body.consents[0]).toHaveProperty('purpose');
+      expect(body.consents[0]).toHaveProperty('version');
+      expect(body.consents[0]).toHaveProperty('consentedAt');
+      expect(body.consents[0]).toHaveProperty('revokedAt');
+    });
+
+    it('should reflect revoked status after revocation', async () => {
+      await grantConsent(user.id, user.accessToken, 'analytics', '2026-01');
+      await revokeConsent(user.id, user.accessToken, 'analytics');
+
+      const { body } = await listConsents(user.id, user.accessToken);
+      const record = body.consents.find((c: any) => c.purpose === 'analytics');
+      expect(record.revokedAt).not.toBeNull();
+    });
+  });
+
+  describe('IDOR protection', () => {
+    it('should return 403 when user A accesses user B consents', async () => {
+      const userB = await createTestUser({
+        tenantId: tenant.id,
+        email: `consent-b-${Date.now()}@test.com`,
+        name: 'User B',
+      });
+
+      const { status } = await listConsents(userB.id, user.accessToken);
+      expect(status).toBe(403);
     });
   });
 });

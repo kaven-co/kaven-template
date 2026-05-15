@@ -1,145 +1,99 @@
-/**
- * KNOWN GAP: GDPR Right to Access (Data Export) endpoints not yet implemented.
- * Will be implemented in Epic: EPIC-Compliance-GDPR
- *
- * See: docs/compliance/gdpr.md
- */
-describe.todo("GDPR: Right to Access (Data Export)", () => {
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { createTestTenant, createTestUser, cleanupTestData } from '../fixtures/test-data.fixtures';
+import { exportData } from '../helpers/gdpr.helpers';
+
+describe('LGPD Art. 18, V — Right to Access (Data Export)', () => {
   let tenantA: any;
   let tenantB: any;
   let userA: any;
   let userB: any;
-  let userAToken: string;
-  let userBToken: string;
 
-  beforeAll(async () => {
-    // Create test tenants and users
-    tenantA = await createTestTenant("Tenant A GDPR");
-    tenantB = await createTestTenant("Tenant B GDPR");
+  beforeEach(async () => {
+    tenantA = await createTestTenant('Tenant A LGPD Export');
+    tenantB = await createTestTenant('Tenant B LGPD Export');
 
     userA = await createTestUser({
       tenantId: tenantA.id,
-      email: "user-a-gdpr@test.com",
-      name: "User A GDPR",
+      email: `export-a-${Date.now()}@test.com`,
+      name: 'User A Export',
     });
-
     userB = await createTestUser({
       tenantId: tenantB.id,
-      email: "user-b-gdpr@test.com",
-      name: "User B GDPR",
+      email: `export-b-${Date.now()}@test.com`,
+      name: 'User B Export',
     });
-
-    userAToken = userA.accessToken;
-    userBToken = userB.accessToken;
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await cleanupTestData();
   });
 
-  describe("JSON Export", () => {
-    it("should export user data in JSON format", async () => {
-      const data = await testDataExport(userA.id, userAToken, "json", [
-        "user_id",
-        "email",
-        "name",
-        "created_at",
-        "export_metadata",
-      ]);
-
-      expect(data.user_id).toBe(userA.id);
-      expect(data.email).toBe("user-a-gdpr@test.com");
-      expect(data.export_metadata.format).toBe("json");
+  describe('data export structure', () => {
+    it('should return 200 with export payload', async () => {
+      const { status, body } = await exportData(userA.id, userA.accessToken);
+      expect(status).toBe(200);
+      expect(body).toHaveProperty('exportedAt');
+      expect(body).toHaveProperty('version', '1.0');
     });
 
-    it("should include all user-related data in export", async () => {
-      const data = await testDataExport(userA.id, userAToken, "json");
-
-      // Personal data
-      expect(data).toHaveProperty("profile");
-      expect(data.profile).toHaveProperty("email");
-      expect(data.profile).toHaveProperty("name");
-
-      // Transactional data
-      expect(data).toHaveProperty("invoices");
-      expect(data).toHaveProperty("payments");
-      expect(data).toHaveProperty("subscriptions");
-
-      // Project data
-      expect(data).toHaveProperty("projects");
-      expect(data).toHaveProperty("tasks");
-
-      // Audit logs
-      expect(data).toHaveProperty("audit_logs");
+    it('should include user profile fields', async () => {
+      const { body } = await exportData(userA.id, userA.accessToken);
+      expect(body.user).toMatchObject({
+        id: userA.id,
+        email: userA.email,
+        name: userA.name,
+      });
     });
 
-    it("should include export metadata", async () => {
-      const data = await testDataExport(userA.id, userAToken, "json");
+    it('should NOT include sensitive fields (password, twoFactorSecret)', async () => {
+      const { body } = await exportData(userA.id, userA.accessToken);
+      expect(body.user).not.toHaveProperty('password');
+      expect(body.user).not.toHaveProperty('twoFactorSecret');
+      expect(body.user).not.toHaveProperty('backupCodes');
+    });
 
-      expect(data.export_metadata).toHaveProperty("export_date");
-      expect(data.export_metadata).toHaveProperty("data_version");
-      expect(data.export_metadata).toHaveProperty("user_id", userA.id);
-      expect(data.export_metadata).toHaveProperty("format", "json");
+    it('should include consents and auditLogs arrays', async () => {
+      const { body } = await exportData(userA.id, userA.accessToken);
+      expect(Array.isArray(body.consents)).toBe(true);
+      expect(Array.isArray(body.auditLogs)).toBe(true);
+      expect(Array.isArray(body.previousExports)).toBe(true);
+    });
+
+    it('should set Content-Disposition header for file download', async () => {
+      const res = await (await import('../../src/app')).app.inject({
+        method: 'GET',
+        url: `/api/users/${userA.id}/export`,
+        headers: { Authorization: `Bearer ${userA.accessToken}` },
+      });
+      expect(res.statusCode).toBe(200);
+      expect(res.headers['content-disposition']).toContain(`user-data-${userA.id}.json`);
     });
   });
 
-  describe("CSV Export", () => {
-    it("should export user data in CSV format", async () => {
-      await testDataPortability(userA.id, userAToken, "csv");
-    });
+  describe('audit trail', () => {
+    it('should create a DataExportLog entry on each export (LGPD Art. 37)', async () => {
+      const { app: fastify } = await import('../../src/app');
+      const prismaLib = await import('../../src/lib/prisma');
+      const prisma = prismaLib.default;
 
-    it("should have valid CSV headers", async () => {
-      const response = await testDataPortability(userA.id, userAToken, "csv");
+      const before = await prisma.dataExportLog.count({ where: { userId: userA.id } });
+      await exportData(userA.id, userA.accessToken);
+      const after = await prisma.dataExportLog.count({ where: { userId: userA.id } });
 
-      const csvText = response.text;
-      const lines = csvText.split("\n");
-      const headers = lines[0].split(",");
-
-      expect(headers).toContain("user_id");
-      expect(headers).toContain("email");
-      expect(headers).toContain("name");
+      expect(after).toBe(before + 1);
     });
   });
 
-  describe("XML Export", () => {
-    it("should export user data in XML format", async () => {
-      await testDataPortability(userA.id, userAToken, "xml");
+  describe('IDOR protection', () => {
+    it('should return 403 when user A tries to export user B data (cross-tenant)', async () => {
+      const { status } = await exportData(userB.id, userA.accessToken);
+      expect(status).toBe(403);
     });
 
-    it("should have valid XML structure", async () => {
-      const response = await testDataPortability(userA.id, userAToken, "xml");
-
-      const xmlText = response.text;
-
-      expect(xmlText).toMatch(/^<\?xml version="1\.0"/);
-      expect(xmlText).toMatch(/<user_data>/);
-      expect(xmlText).toMatch(/<\/user_data>/);
-      expect(xmlText).toMatch(/<user_id>/);
-      expect(xmlText).toMatch(/<email>/);
-    });
-  });
-
-  describe("Performance", () => {
-    it("should complete export in less than 30 seconds", async () => {
-      const startTime = Date.now();
-
-      await testDataExport(userA.id, userAToken, "json");
-
-      const duration = Date.now() - startTime;
-
-      expect(duration).toBeLessThan(30000);
-    });
-  });
-
-  describe("IDOR Protection", () => {
-    it("should prevent cross-tenant data export", async () => {
-      await testGDPRIDOR(userA.id, userAToken, userB.id);
-    });
-
-    it("should return 403 when user A tries to export user B data", async () => {
-      await expect(
-        testDataExport(userB.id, userAToken, "json"),
-      ).rejects.toThrow();
+    it('should return 404 for non-existent user', async () => {
+      const { status } = await exportData('non-existent-id', userA.accessToken);
+      // requireResourceOwnership or USER_NOT_FOUND
+      expect([403, 404]).toContain(status);
     });
   });
 });

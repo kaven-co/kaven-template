@@ -561,6 +561,8 @@ model Tenant {
   incidentTimelines      IncidentTimeline[]      @relation("TenantIncidentTimelines")
   insurancePolicies      InsurancePolicy[]       @relation("TenantInsurancePolicies")
   securityAssessments    SecurityAssessment[]    @relation("TenantSecurityAssessments")
+  dataExportLogs         DataExportLog[]         @relation("TenantDataExportLogs")
+  userConsentRecords     UserConsentRecord[]     @relation("TenantUserConsentRecords")
 
   // Ads Management Module
   adAccounts             AdAccount[]             @relation("TenantAdAccounts")
@@ -751,6 +753,12 @@ model User {
   /// Exemplo: { "internalRole": "FINANCE", "permissions": ["view:invoices", "manage:refunds"] }
   metadata Json?
 
+  // LGPD/GDPR Compliance Fields
+  termsAcceptedAt       DateTime?  @map("terms_accepted_at")        // LGPD Art. 7, 8 — timestamp do aceite dos Termos de Uso
+  privacyAcceptedAt     DateTime?  @map("privacy_accepted_at")      // LGPD Art. 7, 8 — timestamp do aceite da Política de Privacidade
+  privacyPolicyVersion  String?    @map("privacy_policy_version")   // versão aceita (ex: "2026-01")
+  gdprDeleteRequestedAt DateTime?  @map("gdpr_delete_requested_at") // LGPD Art. 15, 18 — null = não solicitado; data = quando solicitou
+
   // Relations
   tenant                    Tenant?                    @relation(fields: [tenantId], references: [id])
   ownedBillingAccounts      BillingAccount[]           @relation("BillingAccountOwner")
@@ -875,6 +883,7 @@ model User {
   impersonatorSessions  ImpersonationSession[]   @relation("Impersonator")
   impersonatedSessions  ImpersonationSession[]   @relation("Impersonated")
   dataExports           DataExportLog[]          @relation("UserDataExports")
+  userConsentRecords    UserConsentRecord[]      @relation("UserConsentRecords")
   securityRequests      SecurityRequest[]        @relation("SecurityRequests")
   securityTargetActions SecurityRequest[]        @relation("TargetUserSecurity")
   securityApprovals     SecurityRequest[]        @relation("SecurityApprovals")
@@ -1309,13 +1318,14 @@ model SecurityAuditLog {
   // SPRINT 1: Multi-tenant isolation
   tenantId  String   @map("tenant_id")
 
-  action    String
-  resource  String?
-  ipAddress String?
-  userAgent String?
-  success   Boolean  @default(true)
-  details   Json?
-  createdAt DateTime @default(now())
+  action         String
+  resource       String?
+  ipAddress      String?
+  userAgent      String?
+  success        Boolean   @default(true)
+  details        Json?
+  createdAt      DateTime  @default(now())
+  retentionUntil DateTime? @default(dbgenerated("NOW() + INTERVAL '2 years'")) // LGPD Art. 15, 16 — data limite de retenção
 
   // Relations
   user   User?   @relation(fields: [userId], references: [id])
@@ -1332,6 +1342,7 @@ model SecurityAuditLog {
   @@index([tenantId, userId])       // Tenant-scoped user security activity
   @@index([tenantId, action, createdAt]) // Analytics: security action frequency over time
   @@index([tenantId, success, createdAt]) // Analytics: security success/failure rate over time
+  @@index([tenantId, retentionUntil])    // Expurgo por retenção (LGPD Art. 15, 16)
 }
 
 // ============================================
@@ -2732,35 +2743,70 @@ model ImpersonationSession {
 model DataExportLog {
   id          String   @id @default(uuid())
   userId      String   @map("user_id")
-  
+  tenantId    String   @map("tenant_id") // LGPD Art. 37 — isolamento por tenant obrigatório para RLS
+
   exportType  String   @map("export_type") // 'csv', 'json', 'pdf'
   resource    String   // 'users', 'invoices', 'analytics'
-  
+
   // Controle
   recordCount Int      @map("record_count")
   columns     String[] // Colunas exportadas
   filters     Json?    // Filtros aplicados
-  
+
   // Segurança
   hasPII      Boolean  @default(false) @map("has_pii")
   watermark   String?  // UUID único para rastreamento
-  
+
   // Rastreamento
   ipAddress   String?  @map("ip_address")
   userAgent   String?  @map("user_agent")
-  
+
   createdAt   DateTime @default(now()) @map("created_at")
-  
+
   // Relations
   user        User     @relation("UserDataExports", fields: [userId], references: [id])
-  
+  tenant      Tenant   @relation("TenantDataExportLogs", fields: [tenantId], references: [id])
+
   @@index([userId])
+  @@index([tenantId])
+  @@index([tenantId, createdAt])
   @@index([resource])
   @@index([createdAt])
   @@index([hasPII])
   @@map("data_export_logs")
 }
 
+
+/// UserConsentRecord — Consentimento de usuários autenticados por finalidade (LGPD Art. 7, 8, 9, 18-IX)
+/// Separado do ConsentRecord de marketing (contatos CRM). Registra para qual finalidade o usuário
+/// consentiu, qual versão da política estava vigente, e quando/se revogou.
+model UserConsentRecord {
+  id          String    @id @default(uuid())
+  userId      String    @map("user_id")
+  tenantId    String    @map("tenant_id")
+
+  // Finalidade do tratamento (ex: "platform_usage", "analytics", "marketing", "third_party_sharing")
+  purpose     String
+  // Versão da política aceita (ex: "2026-01") — permite detectar re-consentimento necessário
+  version     String
+
+  consentedAt DateTime  @default(now()) @map("consented_at")
+  revokedAt   DateTime? @map("revoked_at")    // null = consentimento ativo
+  ipAddress   String?   @map("ip_address")
+  userAgent   String?   @map("user_agent")
+
+  // Relations
+  user   User   @relation("UserConsentRecords", fields: [userId], references: [id])
+  tenant Tenant @relation("TenantUserConsentRecords", fields: [tenantId], references: [id])
+
+  // Um registro por (tenant, user, purpose, version) — escopo multi-tenant obrigatório
+  @@unique([tenantId, userId, purpose, version])
+  @@index([userId, purpose])
+  @@index([tenantId])
+  @@index([tenantId, purpose])
+  @@index([revokedAt])
+  @@map("user_consent_records")
+}
 
 /// SecurityRequest - Solicitações de ações sensíveis (ex: 2FA Reset)
 model SecurityRequest {
