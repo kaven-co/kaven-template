@@ -2,7 +2,7 @@
 
 **Date:** 2026-04-27
 **Priority:** P0 CRITICAL — Compliance blocker
-**Status:** RESOLVED — 2026-05-08 (PR fix/lgpd-p0-schema-fields, migration 20260508000000)
+**Status:** RESOLVED — 2026-05-08 + 2026-05-15 (PR #149). Migration 20260508000000 adicionou campo. PR #149 corrigiu: default `NOW() + INTERVAL '2 years'`, backfill, compound index `(tenant_id, retentionUntil)`, e fix no SQL da migration (nome da tabela `"SecurityAuditLog"` sem @@map).
 **Category:** LGPD/Privacy
 
 ## Description

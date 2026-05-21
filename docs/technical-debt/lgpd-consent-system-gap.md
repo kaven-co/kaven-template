@@ -2,7 +2,7 @@
 
 **Date:** 2026-04-27
 **Priority:** P0 CRITICAL — Compliance blocker
-**Status:** RESOLVED — 2026-05-08/2026-05-15 (PR fix/lgpd-p0-schema-fields). Schema + 5 endpoints Art. 18 implementados (consents CRUD + export + gdpr-erase). UI de gestão de consentimento pendente como débito futuro.
+**Status:** RESOLVED — 2026-05-08/2026-05-15 (PR #149). Schema + 5 endpoints Art. 18 implementados (consents CRUD + export + gdpr-erase). PR #149 adicionou tenantId ao @@unique do UserConsentRecord (isolamento cross-tenant). UI de gestão de consentimento pendente como débito futuro.
 **Category:** LGPD/Privacy
 
 ## Description
