@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { createTestTenant, createTestUser, cleanupTestData } from '../fixtures/test-data.fixtures';
+import { createTestTenant, createTestUser, cleanupTestDataByTenant } from '../fixtures/test-data.fixtures';
+import prisma from '../../src/lib/prisma';
 import { grantConsent, revokeConsent, listConsents } from '../helpers/gdpr.helpers';
 import { CONSENT_PURPOSES } from '../../src/modules/users/services/lgpd.service';
 
@@ -17,7 +18,7 @@ describe('LGPD Art. 18, I — Consent Management', () => {
   });
 
   afterEach(async () => {
-    await cleanupTestData();
+    await cleanupTestDataByTenant(prisma, tenant.id);
   });
 
   describe('grant consent', () => {

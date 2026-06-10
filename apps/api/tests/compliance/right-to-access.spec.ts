@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { createTestTenant, createTestUser, cleanupTestData } from '../fixtures/test-data.fixtures';
+import { createTestTenant, createTestUser, cleanupTestDataByTenant } from '../fixtures/test-data.fixtures';
 import { exportData } from '../helpers/gdpr.helpers';
+import prisma from '../../src/lib/prisma';
 
 describe('LGPD Art. 18, V — Right to Access (Data Export)', () => {
   let tenantA: any;
@@ -25,7 +26,8 @@ describe('LGPD Art. 18, V — Right to Access (Data Export)', () => {
   });
 
   afterEach(async () => {
-    await cleanupTestData();
+    await cleanupTestDataByTenant(prisma, tenantA.id);
+    await cleanupTestDataByTenant(prisma, tenantB.id);
   });
 
   describe('data export structure', () => {

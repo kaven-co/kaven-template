@@ -241,6 +241,9 @@ export async function createTestAuditLog(data: {
 export async function cleanupTestData(prisma?: PrismaClient): Promise<void> {
   const client = prisma || getPrisma();
   await client.$transaction(async (tx) => {
+    // Disable FK checks so we can delete in any order without constraint violations
+    await tx.$executeRaw`SET session_replication_role = replica`;
+
     // ========================================
     // PHASE 1: DELETE ALL USER-RELATED RECORDS
     // ========================================
@@ -397,7 +400,10 @@ export async function cleanupTestData(prisma?: PrismaClient): Promise<void> {
     // 4.1 Delete Capabilities (reference Tenant via tenantId without cascade)
     await tx.capability.deleteMany({});
 
-    // 4.2 Delete Users
+    // 4.2 Delete Users (must delete child records with FK to User first)
+    await tx.billingAccount.deleteMany({});
+    await tx.userConsentRecord.deleteMany({});
+    await tx.dataExportLog.deleteMany({});
     await tx.user.deleteMany({});
 
     // 4.2 Delete Tenants
@@ -425,6 +431,8 @@ export async function cleanupTestDataByTenant(
   tenantId: string,
 ): Promise<void> {
   await prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SET session_replication_role = replica`;
+
     // 1. Subscription & Billing
     await tx.subscription.deleteMany({ where: { tenantId } } as any);
     await tx.invoice.deleteMany({ where: { tenantId } } as any);
@@ -487,7 +495,9 @@ export async function cleanupTestDataByTenant(
     await tx.inAppNotification.deleteMany({});
     await tx.refreshToken.deleteMany({});
     await tx.capabilityAuditEvent.deleteMany({});
-    await tx.dataExportLog.deleteMany({});
+    await tx.userConsentRecord.deleteMany({ where: { tenantId } } as any);
+    await tx.dataExportLog.deleteMany({ where: { tenantId } } as any);
+    await tx.billingAccount.deleteMany({});
     await tx.policyDeviceTracking.deleteMany({});
     await tx.user.deleteMany({ where: { tenantId } } as any);
 

@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { createTestTenant, createTestUser, cleanupTestData } from '../fixtures/test-data.fixtures';
+import { createTestTenant, createTestUser, cleanupTestDataByTenant } from '../fixtures/test-data.fixtures';
+import prisma from '../../src/lib/prisma';
 import { exportData, grantConsent } from '../helpers/gdpr.helpers';
 
 describe('LGPD Art. 18, V — Data Portability', () => {
@@ -16,7 +17,7 @@ describe('LGPD Art. 18, V — Data Portability', () => {
   });
 
   afterEach(async () => {
-    await cleanupTestData();
+    await cleanupTestDataByTenant(prisma, tenant.id);
   });
 
   describe('export completeness', () => {
