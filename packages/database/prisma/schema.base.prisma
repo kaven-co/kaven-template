@@ -34,12 +34,14 @@
 // ============================================
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  binaryTargets   = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  // NOTE: In Prisma 7, connection URL for migrations is moved to prisma.config.ts
+  // url      = env("DATABASE_URL")
 }
 
 // ===========================
@@ -371,11 +373,16 @@ model Tenant {
   ssoConfig       Json?    @map("sso_config") // SSO scaffold — implementation later
   wizardState     Json?    @map("wizard_state") // Setup wizard progress
 
+  /// F2.4 Multi-Workspace Ownership (Phase 1: nullable for backward-compat).
+  /// Phase 3 (F2.4.5) will enforce NOT NULL after backfill completes.
+  billingAccountId String?  @map("billing_account_id")
+
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
   deletedAt DateTime? // Soft delete
 
   // Relations
+  billingAccount BillingAccount? @relation(fields: [billingAccountId], references: [id])
   users         User[]
   subscriptions Subscription[]
   invoices      Invoice[]
@@ -554,6 +561,8 @@ model Tenant {
   incidentTimelines      IncidentTimeline[]      @relation("TenantIncidentTimelines")
   insurancePolicies      InsurancePolicy[]       @relation("TenantInsurancePolicies")
   securityAssessments    SecurityAssessment[]    @relation("TenantSecurityAssessments")
+  dataExportLogs         DataExportLog[]         @relation("TenantDataExportLogs")
+  userConsentRecords     UserConsentRecord[]     @relation("TenantUserConsentRecords")
 
   // Ads Management Module
   adAccounts             AdAccount[]             @relation("TenantAdAccounts")
@@ -652,6 +661,49 @@ model Tenant {
   @@index([slug])
   @@index([domain])
   @@index([status])
+  @@index([billingAccountId])
+}
+
+/// F2.4 Multi-Workspace Ownership Model.
+/// Owns N Tenants (up to MAX_TENANTS plan quota) and N Subscriptions (1:N, MVP uses 1:1).
+/// Replaces the implicit "1 Tenant = 1 Subscription = 1 Stripe Customer" model.
+/// See docs/planning/stories/epic-4-framework/sprint-f2/F2.4-multi-workspace-ownership-model.md
+model BillingAccount {
+  id               String   @id @default(uuid())
+
+  /// Billing admin / dono desta BillingAccount. Single-owner na v1.
+  /// Multi-owner via BillingAccountMember entra em F2.4.6 (deferred).
+  /// onDelete: Restrict — owner não pode ser removido enquanto for dono de uma BA
+  /// (precisa transferir ownership primeiro, flow implementado em F2.4.6).
+  ownerUserId      String   @map("owner_user_id")
+
+  /// Stripe Customer ID. Source of truth após F2.4.2 backfill move de Tenant.
+  /// Unique: uma BA mapeia 1:1 para um Customer Stripe.
+  stripeCustomerId String?  @unique @map("stripe_customer_id")
+
+  /// Display name / razão social (opcional v1).
+  name             String?
+
+  /// F2.4.3.1 — Origin of this BillingAccount record.
+  /// 'signup' (default) = created by user signup flow (auth.service.register).
+  /// 'backfill_f2_4_2' = created by f2-4-backfill.ts for pre-F2.4 tenants.
+  /// Used by f2-4-rollback.sql to distinguish which BAs are safe to delete
+  /// without losing signup data. Do NOT filter by created_at for rollback.
+  source           String    @default("signup")
+
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+  deletedAt        DateTime? @map("deleted_at")
+
+  // Relations
+  owner            User           @relation("BillingAccountOwner", fields: [ownerUserId], references: [id], onDelete: Restrict)
+  tenants          Tenant[]
+  subscriptions    Subscription[]
+
+  @@index([ownerUserId])
+  @@index([stripeCustomerId])
+  @@index([deletedAt])
+  @@map("billing_accounts")
 }
 
 model User {
@@ -701,8 +753,15 @@ model User {
   /// Exemplo: { "internalRole": "FINANCE", "permissions": ["view:invoices", "manage:refunds"] }
   metadata Json?
 
+  // LGPD/GDPR Compliance Fields
+  termsAcceptedAt       DateTime?  @map("terms_accepted_at")        // LGPD Art. 7, 8 — timestamp do aceite dos Termos de Uso
+  privacyAcceptedAt     DateTime?  @map("privacy_accepted_at")      // LGPD Art. 7, 8 — timestamp do aceite da Política de Privacidade
+  privacyPolicyVersion  String?    @map("privacy_policy_version")   // versão aceita (ex: "2026-01")
+  gdprDeleteRequestedAt DateTime?  @map("gdpr_delete_requested_at") // LGPD Art. 15, 18 — null = não solicitado; data = quando solicitou
+
   // Relations
   tenant                    Tenant?                    @relation(fields: [tenantId], references: [id])
+  ownedBillingAccounts      BillingAccount[]           @relation("BillingAccountOwner")
   refreshTokens             RefreshToken[]
   auditLogs                 AuditLog[]
   files                     File[]
@@ -824,6 +883,7 @@ model User {
   impersonatorSessions  ImpersonationSession[]   @relation("Impersonator")
   impersonatedSessions  ImpersonationSession[]   @relation("Impersonated")
   dataExports           DataExportLog[]          @relation("UserDataExports")
+  userConsentRecords    UserConsentRecord[]      @relation("UserConsentRecords")
   securityRequests      SecurityRequest[]        @relation("SecurityRequests")
   securityTargetActions SecurityRequest[]        @relation("TargetUserSecurity")
   securityApprovals     SecurityRequest[]        @relation("SecurityApprovals")
@@ -981,10 +1041,6 @@ model Subscription {
   /// Associated price (specific billing interval)
   priceId String? @map("price_id")
 
-  /// Stripe Customer ID
-  /// @unique -- Maps 1:1 to Stripe customer; prevents duplicate billing accounts
-  stripeCustomerId String? @unique @map("stripe_customer_id")
-
   /// Stripe Subscription ID
   /// @unique -- Maps 1:1 to Stripe subscription; prevents duplicate subscription records
   stripeSubscriptionId String? @unique @map("stripe_subscription_id")
@@ -1019,14 +1075,20 @@ model Subscription {
   /// Additional metadata
   metadata Json?
 
+  /// F2.4 Multi-Workspace Ownership (Phase 1: nullable for backward-compat).
+  /// Phase 2 (F2.4.2) backfill liga cada Subscription existente a uma BillingAccount.
+  /// Não vira NOT NULL em F2.4.5 (permite Subscriptions de plataforma sem BA no futuro).
+  billingAccountId String? @map("billing_account_id")
+
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
   deletedAt DateTime? @map("deleted_at")
 
   // Relations
-  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  plan     Plan      @relation(fields: [planId], references: [id], onDelete: Restrict)
-  price    Price?    @relation(fields: [priceId], references: [id], onDelete: SetNull)
+  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  plan           Plan            @relation(fields: [planId], references: [id], onDelete: Restrict)
+  price          Price?          @relation(fields: [priceId], references: [id], onDelete: SetNull)
+  billingAccount BillingAccount? @relation(fields: [billingAccountId], references: [id])
   invoices Invoice[]
 
   @@index([tenantId])
@@ -1034,6 +1096,7 @@ model Subscription {
   @@index([status])
   @@index([stripeSubscriptionId])
   @@index([currentPeriodEnd])
+  @@index([billingAccountId])
   @@map("subscriptions")
 }
 
@@ -1255,13 +1318,14 @@ model SecurityAuditLog {
   // SPRINT 1: Multi-tenant isolation
   tenantId  String   @map("tenant_id")
 
-  action    String
-  resource  String?
-  ipAddress String?
-  userAgent String?
-  success   Boolean  @default(true)
-  details   Json?
-  createdAt DateTime @default(now())
+  action         String
+  resource       String?
+  ipAddress      String?
+  userAgent      String?
+  success        Boolean   @default(true)
+  details        Json?
+  createdAt      DateTime  @default(now())
+  retentionUntil DateTime? @default(dbgenerated("NOW() + INTERVAL '2 years'")) // LGPD Art. 15, 16 — data limite de retenção
 
   // Relations
   user   User?   @relation(fields: [userId], references: [id])
@@ -1278,6 +1342,7 @@ model SecurityAuditLog {
   @@index([tenantId, userId])       // Tenant-scoped user security activity
   @@index([tenantId, action, createdAt]) // Analytics: security action frequency over time
   @@index([tenantId, success, createdAt]) // Analytics: security success/failure rate over time
+  @@index([tenantId, retentionUntil])    // Expurgo por retenção (LGPD Art. 15, 16)
 }
 
 // ============================================
@@ -1303,6 +1368,12 @@ model Feature {
 
   /// Feature type
   type FeatureType @default(BOOLEAN)
+
+  /// F2.4: Quota scope — define qual entidade é contada contra o limite.
+  /// TENANT (default) → contagem escopada pelo tenantId (ex: MAX_PROJECTS).
+  /// BILLING_ACCOUNT → contagem escopada pelo billingAccountId (ex: MAX_TENANTS).
+  /// Ver EntitlementService.resolveQuotaCurrentUsage para o dispatch.
+  scope FeatureScope @default(TENANT)
 
   /// Default value for features not explicitly set
   defaultValue String? @map("default_value")
@@ -1703,6 +1774,12 @@ enum FeatureType {
   BOOLEAN // Feature is on/off
   QUOTA // Feature has a numeric limit
   CUSTOM // Feature has a custom string value
+}
+
+/// F2.4: escopo de contagem para quotas. Ver Feature.scope.
+enum FeatureScope {
+  TENANT // Contagem por tenantId (ex: MAX_PROJECTS, STORAGE_MB)
+  BILLING_ACCOUNT // Contagem por billingAccountId (ex: MAX_TENANTS)
 }
 
 enum PlanType {
@@ -2666,35 +2743,70 @@ model ImpersonationSession {
 model DataExportLog {
   id          String   @id @default(uuid())
   userId      String   @map("user_id")
-  
+  tenantId    String   @map("tenant_id") // LGPD Art. 37 — isolamento por tenant obrigatório para RLS
+
   exportType  String   @map("export_type") // 'csv', 'json', 'pdf'
   resource    String   // 'users', 'invoices', 'analytics'
-  
+
   // Controle
   recordCount Int      @map("record_count")
   columns     String[] // Colunas exportadas
   filters     Json?    // Filtros aplicados
-  
+
   // Segurança
   hasPII      Boolean  @default(false) @map("has_pii")
   watermark   String?  // UUID único para rastreamento
-  
+
   // Rastreamento
   ipAddress   String?  @map("ip_address")
   userAgent   String?  @map("user_agent")
-  
+
   createdAt   DateTime @default(now()) @map("created_at")
-  
+
   // Relations
   user        User     @relation("UserDataExports", fields: [userId], references: [id])
-  
+  tenant      Tenant   @relation("TenantDataExportLogs", fields: [tenantId], references: [id])
+
   @@index([userId])
+  @@index([tenantId])
+  @@index([tenantId, createdAt])
   @@index([resource])
   @@index([createdAt])
   @@index([hasPII])
   @@map("data_export_logs")
 }
 
+
+/// UserConsentRecord — Consentimento de usuários autenticados por finalidade (LGPD Art. 7, 8, 9, 18-IX)
+/// Separado do ConsentRecord de marketing (contatos CRM). Registra para qual finalidade o usuário
+/// consentiu, qual versão da política estava vigente, e quando/se revogou.
+model UserConsentRecord {
+  id          String    @id @default(uuid())
+  userId      String    @map("user_id")
+  tenantId    String    @map("tenant_id")
+
+  // Finalidade do tratamento (ex: "platform_usage", "analytics", "marketing", "third_party_sharing")
+  purpose     String
+  // Versão da política aceita (ex: "2026-01") — permite detectar re-consentimento necessário
+  version     String
+
+  consentedAt DateTime  @default(now()) @map("consented_at")
+  revokedAt   DateTime? @map("revoked_at")    // null = consentimento ativo
+  ipAddress   String?   @map("ip_address")
+  userAgent   String?   @map("user_agent")
+
+  // Relations
+  user   User   @relation("UserConsentRecords", fields: [userId], references: [id])
+  tenant Tenant @relation("TenantUserConsentRecords", fields: [tenantId], references: [id])
+
+  // Um registro por (tenant, user, purpose, version) — escopo multi-tenant obrigatório
+  @@unique([tenantId, userId, purpose, version])
+  @@index([userId, purpose])
+  @@index([tenantId])
+  @@index([tenantId, purpose])
+  @@index([revokedAt])
+  @@map("user_consent_records")
+}
 
 /// SecurityRequest - Solicitações de ações sensíveis (ex: 2FA Reset)
 model SecurityRequest {

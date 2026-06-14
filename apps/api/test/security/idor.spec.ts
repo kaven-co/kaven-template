@@ -12,7 +12,7 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../src/lib/prisma';
 import { app } from '../../src/app';
 import { generateAccessToken } from '../../src/lib/jwt';
 import {
@@ -22,7 +22,6 @@ import {
 } from './fixtures/security.fixtures';
 import { testIDOR, createAndTestIDOR } from './helpers/security.helpers';
 
-const prisma = new PrismaClient();
 
 describe('IDOR Security Tests', () => {
   let testData: SecurityTestData;
@@ -633,6 +632,7 @@ describe('IDOR Security Tests', () => {
         async () => prisma.dataExportLog.create({
           data: {
             userId: testData.tenantB.user.id,
+            tenantId: testData.tenantB.tenant.id,
             exportType: 'csv',
             resource: 'users',
             recordCount: 100,

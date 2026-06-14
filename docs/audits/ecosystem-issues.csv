@@ -1,0 +1,13 @@
+severidade,projeto,arquivo,linha,tipo,descricao,prioridade
+CRITICAL,kaven-framework,apps/api/src/middleware/prisma-soft-delete.ts,121,dead_code,hardDelete não usada,P1
+CRITICAL,kaven-framework,apps/api/src/services/authorization.service.ts,0,complexity,774 linhas - fragmentar,P1
+CRITICAL,kaven-framework,apps/api/src/modules/auth/services/auth.service.ts,0,complexity,800+ linhas - fragmentar,P1
+CRITICAL,kaven-marketplace,docs/migrations/003-permissions-tenantid.md,271,broken_link,Referencia multi-tenancy.md não existe,P0
+CRITICAL,kaven-framework,docs/architecture/infra-map.md,0,outdated,Next.js 15 (deveria ser 16),P1
+CRITICAL,kaven-framework,docs/BROWNFIELD_DISCOVERY_GUIDE.md,0,outdated,Next.js 14 (deveria ser 16),P1
+CRITICAL,kaven-framework,squads/kaven-squad/data/kaven-schema-reference.md,0,outdated,54 models (deveria 261),P1
+HIGH,kaven-ui-base,.gitignore,0,missing,Falta *.env no .gitignore,P0
+HIGH,kaven-framework,node_modules/prisma,0,version,Prisma 5.22.0 vs 7.7.0 em marketplace,P1
+HIGH,kaven-framework,docs,multiple,todos,34 arquivos .md com TODOs,P2
+MEDIUM,kaven-marketplace,.gitignore,0,incomplete,Expansão necessária,P1
+MEDIUM,kaven-framework,git,multiple,orphan,13 branches órfãs,P2

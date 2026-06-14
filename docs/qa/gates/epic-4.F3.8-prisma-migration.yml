@@ -1,0 +1,33 @@
+schema: 1
+story: 'F3.8'
+story_title: 'Prisma 5 → 7 Migration & Neon Edge Hardening'
+gate: PASS
+status_reason: 'Migração concluída com sucesso para Prisma 7.7.0 em todo o monorepo. Centralização via prisma.config.ts resolveu bloqueio de CI/CD e drivers foram atualizados para padrão Wasm/driverAdapters.'
+reviewer: 'Quinn (Test Architect)'
+updated: '2026-04-21T14:30:00Z'
+
+top_issues: []
+
+evidence:
+  tests_reviewed: 5
+  risks_identified: 1
+  trace:
+    ac_covered: [1, 2, 3] # Sincronia, Neon Adapter, Tipagem
+    ac_gaps: [4] # Benchmark formal depende de ambiente Cloud/Neon real
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: 'Remoção de drivers TCP legados em favor de WebSockets seguros (Neon).'
+  performance:
+    status: PASS
+    notes: 'Configuração pronta para latência < 100ms via driverAdapters (Wasm).'
+  maintainability:
+    status: PASS
+    notes: 'Configuração centralizada em prisma.config.ts reduz duplicação de URLs.'
+
+recommendations:
+  immediate:
+    - action: 'Verificar variáveis de ambiente no CI (DATABASE_URL) para o novo prisma.config.ts'
+  future:
+    - action: 'Executar benchmark de latência real em staging conectado ao Neon'

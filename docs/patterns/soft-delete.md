@@ -1,8 +1,8 @@
 # Soft Delete Pattern
 
-> **Status:** ✅ Implemented
-> **Version:** 1.0.0
-> **Story:** STORY-006
+> **Status:** Planned, not active globally
+> **Version:** 1.1.0
+> **Story:** STORY-006, F3.2
 
 ---
 
@@ -15,7 +15,15 @@ Soft delete allows marking records as deleted without physically removing them f
 
 ---
 
-## How It Works
+## Current State
+
+There is no active global soft-delete implementation in `apps/api` today.
+
+The previous file `apps/api/src/middleware/prisma-soft-delete.ts` was removed in story `F3.2` because it was dead code and was never wired into the Fastify request pipeline.
+
+If global soft delete is needed in the future, the correct implementation point is Prisma itself, registered in `apps/api/src/lib/prisma.ts` via Prisma middleware or Prisma extension. It should not be implemented as a Fastify middleware file.
+
+## Intended Behavior
 
 Instead of `DELETE FROM users WHERE id = 'user_123'`, we:
 
@@ -23,7 +31,7 @@ Instead of `DELETE FROM users WHERE id = 'user_123'`, we:
 UPDATE users SET deleted_at = NOW() WHERE id = 'user_123';
 ```
 
-The soft delete middleware automatically filters out deleted records:
+A future Prisma-level implementation would automatically filter out deleted records:
 
 ```typescript
 // Queries automatically exclude deletedAt != null
@@ -39,31 +47,32 @@ const allUsers = await prisma.user.findMany({
 
 ---
 
-## Usage
+## Example API
 
 ### Soft Delete a Record
 
 ```typescript
-import { softDelete } from '../middleware/prisma-soft-delete';
-
-await softDelete(prisma.user, 'user_123');
+await prisma.user.update({
+  where: { id: 'user_123' },
+  data: { deletedAt: new Date() },
+});
 ```
 
 ### Restore a Record
 
 ```typescript
-import { restore } from '../middleware/prisma-soft-delete';
-
-await restore(prisma.user, 'user_123');
+await prisma.user.update({
+  where: { id: 'user_123' },
+  data: { deletedAt: null },
+});
 ```
 
 ### Hard Delete (Permanent)
 
 ```typescript
-import { hardDelete } from '../middleware/prisma-soft-delete';
-
-await hardDelete(prisma.user, 'user_123');
-// ⚠️ PERMANENT - Cannot be restored
+await prisma.user.delete({
+  where: { id: 'user_123' },
+});
 ```
 
 ---
@@ -73,20 +82,27 @@ await hardDelete(prisma.user, 'user_123');
 ```typescript
 // DELETE /api/users/:id (soft delete)
 router.delete('/users/:id', async (req, res) => {
-  await softDelete(prisma.user, req.params.id);
+  await prisma.user.update({
+    where: { id: req.params.id },
+    data: { deletedAt: new Date() },
+  });
   res.status(204).send();
 });
 
 // POST /api/users/:id/restore (restore)
 router.post('/users/:id/restore', async (req, res) => {
-  const user = await restore(prisma.user, req.params.id);
+  const user = await prisma.user.update({
+    where: { id: req.params.id },
+    data: { deletedAt: null },
+  });
   res.json(user);
 });
 
 // GET /api/users?includeDeleted=true (admin only)
 router.get('/users', requireAdmin, async (req, res) => {
+  const includeDeleted = req.query.includeDeleted === 'true';
   const users = await prisma.user.findMany({
-    includeDeleted: req.query.includeDeleted === 'true'
+    where: includeDeleted ? {} : { deletedAt: null },
   });
   res.json(users);
 });

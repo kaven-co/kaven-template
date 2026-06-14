@@ -7,10 +7,10 @@ import { Cards, Callout } from 'nextra/components';
 
 # Plataforma Kaven
 
-Plataforma SaaS multi-tenant completa com autenticação, RBAC, pagamentos e observabilidade, agora potencializada pela **Kaven CLI**.
+Plataforma SaaS multi-tenant completa com autenticação, RBAC, pagamentos e observabilidade, agora potencializada pela **Kaven CLI** e **Prisma 7**.
 
 <Callout type="info">
-  Baseado em Next.js 16, React 19, Prisma e PostgreSQL com arquitetura modular e
+  Baseado em Next.js 16, React 19, Fastify 5 e PostgreSQL 17 com arquitetura modular e
   escalável.
 </Callout>
 
@@ -27,30 +27,28 @@ Plataforma SaaS multi-tenant completa com autenticação, RBAC, pagamentos e obs
   />
 </Cards>
 
-## 📦 Stack Tecnológica
+## 📦 Stack Tecnológica (v1.1.0-alpha)
 
 ### Frontend
 
 - **Framework**: Next.js 16 (App Router)
-- **UI**: React 19 + Tailwind CSS 4
+- **UI**: React 19 + Tailwind CSS 4 (Zero-runtime)
 - **Estado**: TanStack Query + Zustand
-- **Formulários**: React Hook Form + Zod
 - **i18n**: next-intl
 
 ### Backend
 
-- **Runtime**: Node.js 20+
-- **Framework**: Express.js
-- **ORM**: Prisma
-- **Banco de Dados**: PostgreSQL
-- **Cache**: Redis
-- **Filas**: BullMQ
+- **Runtime**: Node.js 20 LTS
+- **Framework**: Fastify 5.8 (Performance-first)
+- **ORM**: Prisma 7 (Serverless Adapters)
+- **Banco de Dados**: PostgreSQL 17
+- **Filas**: BullMQ + Redis 7
 
-### DevOps
+### DevOps & Observability
 
-- **Containerização**: Docker + Docker Compose
-- **Monitoramento**: Prometheus + Grafana
-- **Logs**: Winston
+- **Containerização**: Docker Compose (13 services)
+- **Monitoramento**: Prometheus + Grafana + Loki
+- **Logs**: Winston Structured Logging
 - **CI/CD**: GitHub Actions
 
 ## 🏗️ Arquitetura

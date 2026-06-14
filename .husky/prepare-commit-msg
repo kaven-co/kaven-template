@@ -1,0 +1,22 @@
+#!/usr/bin/env sh
+
+# ==============================================================================
+# STRICT --NO-VERIFY BLOCKER
+# ==============================================================================
+# O Git ignora o hook 'pre-commit' quando a flag '--no-verify' é usada,
+# mas este hook ('prepare-commit-msg') sempre roda.
+# Aqui nós verificamos se o 'pre-commit' deixou a sua assinatura de execução.
+
+if [ ! -f ".git/PRE_COMMIT_RUN" ]; then
+    echo ""
+    echo "❌ [ERROR] COMMIT RECUSADO!"
+    echo "🚨 O uso da flag '--no-verify' (ou pular o pre-commit) é ESTREITAMENTE PROIBIDO neste projeto."
+    echo "Você deve garantir que os quality gates e a verificação de anchors passem."
+    echo ""
+    exit 1
+fi
+
+# Limpa a assinatura para o próximo commit
+rm -f ".git/PRE_COMMIT_RUN"
+
+exit 0

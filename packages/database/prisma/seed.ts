@@ -35,13 +35,13 @@ import { seedTeamCollaborationFeatureFlags } from "./seeds/feature-flags-team-co
 import { seedFinancesBIFeatureFlags } from "./seeds/feature-flags-finances-bi";
 import { seedAssetManagementFeatureFlags } from "./seeds/feature-flags-asset-management";
 
-const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: process.env.DATABASE_URL,
-    },
-  },
-});
+import pg from 'pg';
+import { PrismaPg } from '@prisma/adapter-pg';
+
+const connectionString = process.env.DATABASE_URL;
+const pool = new pg.Pool({ connectionString });
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
 
 // --- TYPES (Ported from apps/api/src/types) ---
 
@@ -562,6 +562,79 @@ async function main() {
     } else {
       console.log(`ℹ️ Plan exists: ${plan.name}`);
     }
+  }
+
+  // 4.3 MAX_TENANTS (quota por plano — contagem global de tenants ativos)
+  const maxTenantsFeature = await prisma.feature.upsert({
+    where: { code: "MAX_TENANTS" },
+    update: {
+      name: "Máximo de tenants",
+      description:
+        "Limite de organizações (tenants) ativas na plataforma por plano",
+      type: "QUOTA",
+      unit: "tenants",
+      category: "general",
+      sortOrder: 4,
+    },
+    create: {
+      code: "MAX_TENANTS",
+      name: "Máximo de tenants",
+      description:
+        "Limite de organizações (tenants) ativas na plataforma por plano",
+      type: "QUOTA",
+      unit: "tenants",
+      category: "general",
+      sortOrder: 4,
+    },
+  });
+
+  const tenantLimitsByPlan: Record<string, number> = {
+    free: 3,
+    pro: 10,
+    enterprise: -1,
+  };
+
+  for (const [code, limitValue] of Object.entries(tenantLimitsByPlan)) {
+    const planRow = await prisma.plan.findFirst({
+      where: { code, tenantId: null },
+    });
+    if (!planRow) continue;
+    await prisma.planFeature.upsert({
+      where: {
+        planId_featureId: {
+          planId: planRow.id,
+          featureId: maxTenantsFeature.id,
+        },
+      },
+      update: { limitValue, enabled: true },
+      create: {
+        planId: planRow.id,
+        featureId: maxTenantsFeature.id,
+        limitValue,
+        enabled: true,
+      },
+    });
+  }
+  console.log("MAX_TENANTS plan features ensured (free/pro/enterprise).");
+
+  // 4.4 Assinatura ativa do tenant admin (necessária para requireFeature / billing)
+  const enterprisePlanRow = await prisma.plan.findFirst({
+    where: { code: "enterprise", tenantId: null },
+  });
+  if (enterprisePlanRow) {
+    await prisma.subscription.upsert({
+      where: { tenantId: adminTenant.id },
+      update: {
+        planId: enterprisePlanRow.id,
+        status: "ACTIVE",
+      },
+      create: {
+        tenantId: adminTenant.id,
+        planId: enterprisePlanRow.id,
+        status: "ACTIVE",
+      },
+    });
+    console.log("Admin tenant subscription ensured (enterprise / ACTIVE).");
   }
 
   // 5. Spaces & Assignments (Tenant App Features)

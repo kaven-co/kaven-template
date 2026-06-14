@@ -157,3 +157,7 @@ migrate-workflow-*.py
 Kaven-Limbo/
 /src/
 KAVEN-STATUS-*.md
+
+# F2.4.3.1 — H-3: audit script PII sidecars (emails, Stripe IDs, tenantIds).
+docs/migrations/*-audit-*.json
+docs/migrations/*-audit-*-details.json

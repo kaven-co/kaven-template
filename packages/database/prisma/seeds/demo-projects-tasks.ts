@@ -1,6 +1,12 @@
 import { PrismaClient, ProjectStatus, TaskStatus, TaskPriority } from '@prisma/client';
 
-const prisma = new PrismaClient();
+import pg from 'pg';
+import { PrismaPg } from '@prisma/adapter-pg';
+
+const connectionString = process.env.DATABASE_URL;
+const pool = new pg.Pool({ connectionString });
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
 
 async function seedDemoProjectsAndTasks() {
   console.log('🌱 Seeding demo projects and tasks...');

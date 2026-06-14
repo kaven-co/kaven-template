@@ -1,0 +1,140 @@
+epic:
+  id: EPIC-007
+  title: "Sprint K1: Kaven Site Production Migration (Single-Flow)"
+  description: |
+    Migração do kaven-site_ para produto comercial em produção com validação
+    completa do fluxo crítico de negócio e estabilização via loop de correção.
+
+    Escopo operacional:
+    - Fase 0: auditoria total (envs, secrets, DNS, OAuth, init em sandbox)
+    - Fase 1: bootstrap via kaven init + deploy API/Admin/Tenant
+    - Fase 2: prova de fogo backend (auth social, signup/tenant, Stripe R$1)
+    - Fase 3: loop de correção framework -> release -> kaven upgrade (>=3 ciclos)
+    - Fase 4: apenas gate de parada e solicitação de autorização (sem implementação)
+
+    Goal:
+    - Tornar o kaven-site o produto real em produção, com zero P0 e evidência E2E.
+
+    Success Criteria:
+    - API e frontends em produção respondendo com 200 nos endpoints críticos
+    - Signup, auth social e pagamento Stripe validados ponta-a-ponta
+    - Webhook Stripe confirmado com 200 e subscription persistida
+    - kaven upgrade validado >= 3 vezes em produção
+    - Gate de parada da Fase 4 emitido para autorização explícita
+
+  priority: P0
+  effort_hours: 96
+  duration_days: 14
+  sprint: Sprint K1 (Single-Flow Migration)
+  start_date: 2026-04-16
+  end_date: 2026-04-30
+  team_size: 4
+
+  dependencies:
+    - EPIC-006  # deploy base e smoke legacy
+    - EPIC-002  # capacidade CLI (init, upgrade, marketplace)
+    - EPIC-003  # marketplace operacional
+
+  stories:
+    - K1.1   # Auditoria consolidada de envs e secrets
+    - K1.2   # Auditoria DNS + OAuth + mapa de mudanças
+    - K1.3   # Hardening do repo kaven-site_ + branch strategy
+    - K1.4   # Investigação real de módulos marketplace
+    - K1.5   # Validação kaven init em sandbox
+    - K1.6   # Bootstrap no repo alvo via kaven init
+    - K1.7   # Configuração de envs de produção
+    - K1.8   # Rollback readiness com drill
+    - K1.9   # Deploy API Cloud Run + smoke
+    - K1.10  # Deploy Admin/Tenant Vercel + smoke
+    - K1.11  # Prova de fogo backend I (auth/signup/tenant)
+    - K1.12  # Prova de fogo backend II (Stripe/webhook/subscription)
+    - K1.13  # Loop P0 + 3 upgrades + gate Fase 4
+
+  blocked_by: []
+  blocks:
+    - EPIC-003-site  # landing e expansão comercial dependem da migração estabilizada
+
+  acceptance_criteria:
+    - [ ] Todas as stories K1.1-K1.13 concluídas com evidência
+    - [ ] Zero bugs P0 em produção ao final da sprint
+    - [ ] `kaven upgrade` validado >= 3 vezes em ciclos reais
+    - [ ] Fluxo crítico completo validado: signup -> auth -> payment -> tenant access
+    - [ ] Rollback testado e executável em < 30 minutos
+    - [ ] Parada obrigatória da Fase 4 comunicada formalmente
+
+  risks:
+    - name: "Configuração incompleta de env/secrets causar falha pós-cutover"
+      probability: MEDIUM
+      impact: HIGH
+      mitigation: "Auditoria total + review 4-eyes + gate pré-deploy bloqueante"
+
+    - name: "OAuth callbacks inconsistentes entre ambientes"
+      probability: MEDIUM
+      impact: HIGH
+      mitigation: "Mapa de callbacks + validação explícita antes do deploy"
+
+    - name: "Webhook Stripe falhar por secret/config incorreta"
+      probability: MEDIUM
+      impact: HIGH
+      mitigation: "Teste de webhook + evidência no dashboard + verificação no banco"
+
+    - name: "Rollback incompleto em caso de incidente"
+      probability: LOW
+      impact: HIGH
+      mitigation: "Drill de rollback obrigatório com tempo real registrado"
+
+  metrics:
+    production_correctness: "estado atual -> zero P0 validado"
+    upgrade_reliability: "0 ciclos validados -> >=3 ciclos validados"
+    flow_validation: "parcial -> completo ponta-a-ponta"
+    deployment_confidence: "baixo -> alto com rollback ensaiado"
+
+  technical_notes: |
+    Fonte canônica do breakdown detalhado:
+    - docs/planning/KAVEN-SITE-EPIC-SPRINT-STORIES.md
+
+    Documento base de execução:
+    - docs/planning/KAVEN-SITE-PLAN.md
+
+    Ordem operacional recomendada:
+    1) Auditoria e preparação
+    2) Bootstrap e configuração
+    3) Deploy API -> Deploy frontends
+    4) Validação de negócio
+    5) Loop de correções P0 via framework + upgrade
+    6) Gate de parada antes da landing
+
+  documentation:
+    - path: docs/planning/KAVEN-SITE-PLAN.md
+      status: EXISTS
+      description: "Plano macro completo das fases 0-4"
+
+    - path: docs/planning/KAVEN-SITE-EPIC-SPRINT-STORIES.md
+      status: EXISTS
+      description: "Backlog detalhado de EPIC-007 e Sprint K1 (stories K1.1-K1.13)"
+
+  validation:
+    - type: HEALTH_CHECK
+      tool: curl
+      endpoint: "https://kaven-api-364441521455.us-east1.run.app/health"
+      expected: "HTTP 200"
+
+    - type: E2E_BUSINESS_FLOW
+      tool: browser + api + db
+      coverage: "signup -> auth social -> checkout -> webhook -> subscription -> tenant access"
+
+    - type: UPGRADE_LOOP
+      tool: kaven-cli
+      coverage: "framework fix -> release -> kaven upgrade -> produção (>=3 ciclos)"
+
+  rollback_plan: |
+    Rollback obrigatório e executável em <30 min:
+    1) API: retornar tráfego para revision anterior no Cloud Run
+    2) Admin/Tenant: promover deployment anterior no Vercel
+    3) Validar health + login + tenant + webhook após rollback
+    4) Abrir incidente, registrar causa raiz e corrigir antes de novo corte
+
+  status: PLANNED
+  created_at: 2026-04-16
+  created_by: "Kai (Kaven Squad Head) — orchestrated with specialist agents"
+  updated_at: 2026-04-16

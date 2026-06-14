@@ -1,7 +1,7 @@
 # KAVEN FRAMEWORK - TECHNICAL DEBT CONSOLIDATED
 
 **Date:** 2026-02-03 (Original Draft)
-**Last Updated:** 2026-02-17
+**Last Updated:** 2026-04-20
 **Phase:** Post-Sprint 7 + Tech Debt Complete — ALL 42/42 items resolved
 **Status:** APPROVED - 100% COMPLETE
 **Source:** Phases 1 (System), 2 (Database), 3 (Frontend/UX), cross-referenced with Sprints 1-7
@@ -74,8 +74,8 @@ This document consolidates **all technical debts** identified during the Brownfi
 
 #### DB-C4: Soft Delete NAO Filtrado Automaticamente -- DONE
 
-**Resolution:** Global Prisma middleware `prisma-soft-delete.ts` now automatically filters `deletedAt: null` on all queries for models with soft delete.
-**Resolved:** 2026-02-07 | Sprint 1, STORY-006 | PR#2
+**Resolution:** The previous `prisma-soft-delete.ts` implementation was identified as dead code and removed in `F3.2`. If global soft delete returns to the roadmap, it must be implemented in `apps/api/src/lib/prisma.ts` as Prisma middleware/extension instead of a Fastify middleware file.
+**Resolved:** 2026-02-07 | Updated 2026-04-20 in F3.2 to reflect current architecture
 
 ---
 

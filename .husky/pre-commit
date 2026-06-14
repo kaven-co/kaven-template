@@ -1,0 +1,62 @@
+#!/usr/bin/env sh
+
+echo ""
+echo "🔒 Running Kaven pre-commit checks..."
+echo ""
+
+# ==============================================================================
+# 1. KAVEN ANCHOR GUARD (Module System Protection)
+# ==============================================================================
+# This check ensures that structural comments like // [KAVEN_MODULE_IMPORTS]
+# are not accidentally removed, which would break future `kaven update` 
+# and module installations.
+
+if command -v kaven &> /dev/null; then
+  echo "🛡️  Checking Kaven Module Anchors..."
+  # Executa o doctor e captura o exit code
+  kaven module doctor > /dev/null 2>&1
+  EXIT_CODE=$?
+  
+  # Exit code 1 indica erros críticos (como falta de anchors estruturais). 
+  # Exit code 2 indica apenas warnings (ex: falta de chave de licença ou env vars).
+  if [ $EXIT_CODE -eq 1 ]; then
+    echo "❌ [ERROR] Anchor check or critical framework validation failed!"
+    echo "   Structural comments necessary for the Kaven Module System may be missing."
+    echo "   Please run 'kaven module doctor' to see details, or 'kaven module doctor --fix' to attempt repairs."
+    exit 1
+  fi
+  echo "✅ Anchor check passed."
+else
+  echo "⚠️  'kaven' CLI not found globally. Skipping anchor checks."
+fi
+echo ""
+
+# ==============================================================================
+# 2. QUALITY GATES
+# ==============================================================================
+echo "🧪 Running quality gates..."
+
+# Ensure tests use the local docker DB (vitest.setup.ts fallback requires DATABASE_URL to be unset)
+unset DATABASE_URL
+
+if [ -f "package.json" ]; then
+    if grep -q '"quality"' package.json; then
+        if command -v pnpm &> /dev/null; then
+            pnpm run quality
+        else
+            npm run quality
+        fi
+    else
+        echo "⚠️  No 'quality' script found in package.json, skipping."
+    fi
+else
+    echo "⚠️  No package.json found, skipping."
+fi
+
+echo ""
+echo "✅ Pre-commit checks completed."
+
+# Cria a flag provando que o pre-commit rodou (para o prepare-commit-msg verificar)
+touch .git/PRE_COMMIT_RUN
+
+exit 0

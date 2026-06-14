@@ -1,41 +1,10 @@
 ---
-project: kaven-template
-phase: baseline-stabilization
-updated: 2026-04-15T19:45:00Z
+project: kaven-framework
+phase: sprint-2-execution
+updated: 2026-04-15T19:40:00Z
 ---
 
-# Kaven Template — Current Status
-
-> **Nota (2026-04-15):** este arquivo estava incorretamente espelhando conteúdo do `kaven-framework`. O conteúdo antigo foi **preservado** abaixo em “Archive (stale)”, e o status real do template está no topo.
-
-## Estado geral
-
-| Item | Status | Detalhes |
-|------|--------|----------|
-| CI | ✅ Baseline restaurada | PRs **#42** e **#43** (mergeados) |
-| Objetivo | 🟡 Template “installable” | `pnpm i` + `pnpm run lint/typecheck/build` sem hacks |
-| Qualidade | 🟡 Parcial | CI foi reduzida para baseline; majors ainda pendentes |
-
-## PRs recentes (mergeados)
-
-- **#42** fix(template): restore baseline CI typecheck
-- **#43** chore(deps): bump axios + GitHub Actions (checkout/setup-node v6)
-
-## Débitos remanescentes (majors)
-
-> Estes upgrades precisam PRs humanos dedicados (um por major), com migração + CI verde.
-
-- **Stripe 20 → 22**
-- **TypeScript 5.9 → 6.0**
-- **@fastify/multipart 9 → 10**
-- **lucide-react 0.x → 1.x**
-- **rimraf 5 → 6**
-
----
-
-## Archive (stale) — conteúdo antigo preservado
-
-> Abaixo está o conteúdo anterior (não confiável) que foi encontrado neste arquivo antes da correção em 2026-04-15.
+# Kaven Framework - Current Status
 
 ## 🌐 Ecosystem Reality Check (Marketplace + CLI)
 
@@ -45,7 +14,13 @@ updated: 2026-04-15T19:45:00Z
 | **Download / artefatos** | 🛑 P0 dados | Runtime usa S3 + `artifactUrl` no DB. Seeds antigos ainda citam `registry.kaven.dev` — alinhar DB + bucket (F1.4). |
 | **CLI `marketplace browse`** | ✅ FIX 2026-04-14 | `getCategories()` agora chama **`GET /categories`** (JSON array). Antes: `/modules/categories` (404). Versão **kaven-cli ≥ 0.4.2-alpha.0**. |
 | **CI/CD** | ✅ OK | Últimos merges marketplace/framework conforme GitHub. |
-| **Docs** | ✅ SYNCED | `CLAUDE.md` (dir pai), `ECOSYSTEM_STATUS.md`, `MARKETPLACE-STATUS.md` reconciliados 2026-04-14. |
+| **Docs** | ✅ SYNCED | `../CLAUDE.md`, `../ECOSYSTEM_STATUS.md`, e `kaven-marketplace/MARKETPLACE-STATUS.md` reconciliados 2026-04-15. |
+
+### PRs recentes (stabilization)
+
+- **#109** chore(deps): bump API deps (Fastify/Sentry/BullMQ/etc.)
+- **#110** chore(deps): bump frontend deps (inclui fix de typings do `recharts` Tooltip formatter)
+- **#111** chore(deps): bump tooling deps (turbo/playwright/vitest/etc.)
 
 ---
 

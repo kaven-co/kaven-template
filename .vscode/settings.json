@@ -1,4 +1,8 @@
 {
     "snyk.advanced.autoSelectOrganization": true,
-    "snyk.advanced.organization": "ddb3b6be-1b38-4d29-968c-8b5bed54ba4a"
+    "snyk.advanced.organization": "ddb3b6be-1b38-4d29-968c-8b5bed54ba4a",
+    "chat.agent.enabled": true,
+    "chat.agentFilesLocations": {
+        ".github/agents": true
+    }
 }

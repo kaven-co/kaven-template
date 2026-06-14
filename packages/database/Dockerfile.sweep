@@ -1,0 +1,22 @@
+FROM node:20-alpine AS base
+WORKDIR /app
+
+# Copy package files for dependency install
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY packages/database/package.json ./packages/database/
+
+# Install pnpm
+RUN npm install -g pnpm@9.15.4
+
+# Install only database package deps
+RUN pnpm install --filter @kaven/database --frozen-lockfile
+
+# Copy source
+COPY packages/database/ ./packages/database/
+COPY packages/database/prisma/ ./packages/database/prisma/
+
+# Generate Prisma client
+RUN pnpm --filter @kaven/database exec prisma generate
+
+# Entry point
+CMD ["pnpm", "--filter", "@kaven/database", "stripe:sweep"]

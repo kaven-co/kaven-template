@@ -13,7 +13,7 @@
     "build": "turbo run build",
     "test": "turbo run test",
     "lint": "turbo run lint",
-    "typecheck": "turbo run typecheck --filter=@kaven/shared --filter=@kaven/ui-base --filter=api",
+    "typecheck": "turbo run typecheck",
     "db:generate": "pnpm --filter @kaven/database db:generate",
     "db:migrate": "pnpm --filter @kaven/database db:migrate",
     "db:seed": "pnpm --filter @kaven/database db:seed",
@@ -35,19 +35,22 @@
     "sync:ide:aiox": "node .aiox-core/infrastructure/scripts/ide-sync/index.js sync",
     "sync:ide:kaven": "node squads/kaven-squad/scripts/sync-kaven-ide.js",
     "sync:ide:all": "npm run sync:ide:aiox && npm run sync:ide:kaven",
-    "prepare": "echo 'no prepare step'"
+    "prepare": "husky"
   },
   "devDependencies": {
     "@types/node-cron": "^3.0.11",
+    "eslint-module-utils": "^2.13.0",
+    "eslint-plugin-import": "^2.32.0",
+    "husky": "^9.1.7",
     "kill-port": "^2.0.1",
     "prettier": "^3.4.2",
-    "prisma": "^5.22.0",
+    "prisma": "^7.0.0",
     "turbo": "^2.9.6",
     "typescript": "^6.0.2"
   },
   "packageManager": "pnpm@9.15.4",
   "dependencies": {
-    "@prisma/client": "5.22.0",
+    "@prisma/client": "^7.0.0",
     "fs-extra": "^11.3.4",
     "handlebars": "^4.7.8",
     "js-yaml": "^4.1.1",

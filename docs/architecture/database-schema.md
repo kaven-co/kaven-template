@@ -10,8 +10,8 @@
 
 ### Statistics
 
-- **Total Models:** 261
-- **Total Enums:** 183
+- **Total Models:** 262
+- **Total Enums:** 184
 - **Migrations:** 37+ applied em produção (Neon)
 - **Cascade Deletes:** 43+ occurrences
 - **Unique Constraints:** 44+ fields
@@ -25,11 +25,11 @@ O schema usa estratégia modular inovadora:
 ```
 packages/database/prisma/
 ├── schema.base.prisma          # Core imutável (Tenant, User, Auth, Billing)
-├── schema.extended.prisma      # Source real com todas as features (261 models)
+├── schema.extended.prisma      # Source real com todas as features (262 models)
 └── schema.prisma               # Gerado automaticamente (merged base + extended)
 ```
 
-> **Nota:** `schema.extended.prisma` é o source canônico — `schema.prisma` é gerado a partir do merge. Edite sempre em `schema.extended.prisma`.
+> **Nota:** `schema.extended.prisma` é o source canônico — `schema.prisma` é gerado a partir do merge. Edite sempre em `schema.extended.prisma`. No **Prisma 7**, a URL de conexão para migrations foi movida para `prisma.config.ts`.
 
 ---
 
@@ -40,10 +40,11 @@ packages/database/prisma/
 | Model | Fields | Purpose |
 |-------|--------|---------|
 | Tenant | id, name, slug, domain, status, deletedAt | Root multi-tenancy |
+| BillingAccount | id, ownerUserId, stripeCustomerId, source | Multi-workspace ownership (F2.4) |
 | User | id, email, password, tenantId, role, status, deletedAt | Usuários com soft delete |
 | RefreshToken | id, token, userId, expiresAt | JWT refresh tokens |
 | VerificationToken | id, identifier, token, expires | Email verification |
-| PasswordResetToken | id, identifier, token, expires | Password reset flow |
+| Password ResetToken | id, identifier, token, expires | Password reset flow |
 | TenantInvite | id, email, role, tenantId, token | Convites de tenant |
 
 ### SECURITY & AUTHORIZATION
