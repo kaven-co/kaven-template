@@ -1,17 +1,47 @@
 {
   "name": "Cloud Storage",
   "slug": "storage",
-  "version": "1.0.0",
-  "description": "S3, R2, and GCS storage providers with presigned URLs and multi-bucket support",
+  "version": "1.0.1",
+  "description": "S3, R2, and GCS storage providers with presigned URLs and multi-tenant support",
   "author": "kaven-co",
   "license": "proprietary",
-  "tier": "starter",
+  "tier": "builder",
   "kavenVersion": ">=1.0.0-rc1",
   "dependencies": {
-    "npm": ["@aws-sdk/client-s3"],
+    "npm": ["@aws-sdk/client-s3", "@aws-sdk/s3-request-presigner"],
     "modules": []
   },
-  "env": [],
-  "files": [],
-  "injections": []
+  "env": [
+    { "key": "STORAGE_PROVIDER", "required": false, "description": "s3 (default) ou r2" },
+    { "key": "AWS_ACCESS_KEY_ID", "required": true, "description": "AWS/R2 access key" },
+    { "key": "AWS_SECRET_ACCESS_KEY", "required": true, "description": "AWS/R2 secret key" },
+    { "key": "AWS_S3_BUCKET", "required": true, "description": "Nome do bucket" },
+    { "key": "AWS_REGION", "required": false, "description": "Região AWS (default: us-east-1)" },
+    { "key": "AWS_ENDPOINT_URL", "required": false, "description": "Para R2: https://<account>.r2.cloudflarestorage.com" }
+  ],
+  "files": [
+    { "src": "backend/routes/storage.routes.ts", "dest": "apps/api/src/modules/storage/routes.ts" },
+    { "src": "backend/services/storage.service.ts", "dest": "apps/api/src/modules/storage/storage.service.ts" },
+    { "src": "backend/services/providers/s3.provider.ts", "dest": "apps/api/src/modules/storage/providers/s3.provider.ts" },
+    { "src": "frontend/components/FileUploader.tsx", "dest": "apps/tenant/components/storage/FileUploader.tsx" },
+    { "src": "frontend/components/FileGallery.tsx", "dest": "apps/tenant/components/storage/FileGallery.tsx" },
+    { "src": "prisma/storage.prisma", "dest": "packages/database/prisma/storage.prisma" }
+  ],
+  "injections": [
+    {
+      "file": "apps/api/src/app.ts",
+      "anchor": "// [KAVEN_MODULE_IMPORTS]",
+      "moduleName": "storage-imports",
+      "code": "import { storageRoutes } from './modules/storage/routes';"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "anchor": "// [KAVEN_MODULE_ROUTES]",
+      "moduleName": "storage-routes",
+      "code": "app.register(storageRoutes, { prefix: '/api/storage' });"
+    }
+  ],
+  "prisma": {
+    "models": ["prisma/storage.prisma"]
+  }
 }

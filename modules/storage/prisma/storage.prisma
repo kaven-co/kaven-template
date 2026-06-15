@@ -1,0 +1,17 @@
+model StorageObject {
+  id          String    @id @default(cuid())
+  key         String    @unique
+  bucket      String
+  provider    String    // "s3" | "r2" | "gcs"
+  tenantId    String
+  userId      String?
+  size        Int       @default(0)
+  mimeType    String?
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([tenantId])
+  @@index([userId])
+  @@map("storage_objects")
+}

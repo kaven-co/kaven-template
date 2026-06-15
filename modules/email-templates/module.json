@@ -1,0 +1,26 @@
+{
+  "name": "Email Templates",
+  "slug": "email-templates",
+  "version": "1.0.0",
+  "description": "Professional React Email templates for all transactional emails with brand customization",
+  "author": "kaven-co",
+  "license": "proprietary",
+  "tier": "builder",
+  "kavenVersion": ">=1.0.0-rc1",
+  "dependencies": {
+    "npm": ["@react-email/render", "@react-email/components"],
+    "modules": []
+  },
+  "env": [],
+  "files": [
+    { "src": "backend/services/template-renderer.service.ts", "dest": "apps/api/src/modules/notifications/template-renderer.service.ts" },
+    { "src": "frontend/emails/welcome.email.tsx", "dest": "packages/ui/emails/welcome.email.tsx" },
+    { "src": "frontend/emails/password-reset.email.tsx", "dest": "packages/ui/emails/password-reset.email.tsx" },
+    { "src": "frontend/emails/invite.email.tsx", "dest": "packages/ui/emails/invite.email.tsx" },
+    { "src": "frontend/emails/plan-upgraded.email.tsx", "dest": "packages/ui/emails/plan-upgraded.email.tsx" },
+    { "src": "frontend/emails/payment-failed.email.tsx", "dest": "packages/ui/emails/payment-failed.email.tsx" },
+    { "src": "frontend/emails/tenant-created.email.tsx", "dest": "packages/ui/emails/tenant-created.email.tsx" }
+  ],
+  "injections": [],
+  "prisma": null
+}

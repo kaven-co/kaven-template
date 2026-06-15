@@ -11,11 +11,12 @@ echo ""
 # are not accidentally removed, which would break future `kaven update` 
 # and module installations.
 
-if command -v kaven &> /dev/null; then
+if command -v kaven > /dev/null 2>&1; then
   echo "🛡️  Checking Kaven Module Anchors..."
   # Executa o doctor e captura o exit code
-  kaven module doctor > /dev/null 2>&1
-  EXIT_CODE=$?
+  # NOTA: sh -e (husky) exigiria || para não abortar em exit code != 0
+  EXIT_CODE=0
+  kaven module doctor > /dev/null 2>&1 || EXIT_CODE=$?
   
   # Exit code 1 indica erros críticos (como falta de anchors estruturais). 
   # Exit code 2 indica apenas warnings (ex: falta de chave de licença ou env vars).
@@ -39,9 +40,14 @@ echo "🧪 Running quality gates..."
 # Ensure tests use the local docker DB (vitest.setup.ts fallback requires DATABASE_URL to be unset)
 unset DATABASE_URL
 
-if [ -f "package.json" ]; then
+# Increase Node heap for large monorepo typecheck (api OOMs at default 2GB)
+export NODE_OPTIONS="${NODE_OPTIONS} --max-old-space-size=8192"
+
+if [ ! -d "node_modules" ]; then
+    echo "⚠️  node_modules not found (isolated worktree). Skipping quality gates."
+elif [ -f "package.json" ]; then
     if grep -q '"quality"' package.json; then
-        if command -v pnpm &> /dev/null; then
+        if command -v pnpm > /dev/null 2>&1; then
             pnpm run quality
         else
             npm run quality
@@ -57,6 +63,7 @@ echo ""
 echo "✅ Pre-commit checks completed."
 
 # Cria a flag provando que o pre-commit rodou (para o prepare-commit-msg verificar)
-touch .git/PRE_COMMIT_RUN
+# Usa GIT_DIR para suportar git worktrees (onde .git é um arquivo, não um diretório)
+touch "$(git rev-parse --git-dir)/PRE_COMMIT_RUN"
 
 exit 0

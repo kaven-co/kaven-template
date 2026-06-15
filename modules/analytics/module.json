@@ -1,17 +1,74 @@
 {
   "name": "Analytics & Tracking",
   "slug": "analytics",
-  "version": "1.0.0",
-  "description": "PostHog and Google Analytics 4 integration for server and client events",
+  "version": "1.0.1",
+  "description": "Product analytics with PostHog dual-write, tenant metrics, and admin dashboard",
   "author": "kaven-co",
   "license": "proprietary",
-  "tier": "free",
+  "tier": "builder",
   "kavenVersion": ">=1.0.0-rc1",
   "dependencies": {
     "npm": ["posthog-node"],
     "modules": []
   },
-  "env": [],
-  "files": [],
-  "injections": []
+  "env": [
+    {
+      "key": "POSTHOG_API_KEY",
+      "required": false,
+      "description": "PostHog project API key (opcional — fallback para DB)"
+    },
+    {
+      "key": "POSTHOG_HOST",
+      "required": false,
+      "description": "PostHog host (default: https://app.posthog.com)"
+    },
+    {
+      "key": "ANALYTICS_SALT",
+      "required": false,
+      "description": "Salt para hash de userId (privacidade LGPD)"
+    }
+  ],
+  "files": [
+    {
+      "src": "backend/routes/analytics.routes.ts",
+      "dest": "apps/api/src/modules/analytics/routes.ts"
+    },
+    {
+      "src": "backend/services/analytics.service.ts",
+      "dest": "apps/api/src/modules/analytics/analytics.service.ts"
+    },
+    {
+      "src": "backend/services/posthog.client.ts",
+      "dest": "apps/api/src/modules/analytics/posthog.client.ts"
+    },
+    {
+      "src": "frontend/components/AnalyticsDashboard.tsx",
+      "dest": "apps/admin/components/analytics/AnalyticsDashboard.tsx"
+    },
+    {
+      "src": "frontend/components/MetricCard.tsx",
+      "dest": "apps/admin/components/analytics/MetricCard.tsx"
+    },
+    {
+      "src": "prisma/analytics.prisma",
+      "dest": "packages/database/prisma/analytics.prisma"
+    }
+  ],
+  "injections": [
+    {
+      "file": "apps/api/src/app.ts",
+      "anchor": "// [KAVEN_MODULE_IMPORTS]",
+      "moduleName": "analytics-imports",
+      "code": "import { analyticsRoutes } from './modules/analytics/routes';"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "anchor": "// [KAVEN_MODULE_ROUTES]",
+      "moduleName": "analytics-routes",
+      "code": "app.register(analyticsRoutes, { prefix: '/api/analytics' });"
+    }
+  ],
+  "prisma": {
+    "models": ["prisma/analytics.prisma"]
+  }
 }

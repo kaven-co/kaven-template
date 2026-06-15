@@ -1,0 +1,16 @@
+// Kaven Analytics Module — Prisma Schema
+// Armazena eventos de produto por tenant. userId é sempre SHA-256 (LGPD).
+
+model AnalyticsEvent {
+  id         String   @id @default(cuid())
+  tenantId   String
+  eventName  String
+  properties Json     @default("{}")
+  userId     String?  // SHA-256 hasheado — nunca PII direto
+  sessionId  String?
+  createdAt  DateTime @default(now())
+
+  @@index([tenantId, eventName])
+  @@index([tenantId, createdAt])
+  @@map("analytics_events")
+}

@@ -5,7 +5,7 @@
   "description": "Stripe and Paddle payment integration with subscriptions, invoices, and webhook handling",
   "author": "kaven-co",
   "license": "proprietary",
-  "tier": "pro",
+  "tier": "builder",
   "kavenVersion": ">=1.0.0-rc1",
   "dependencies": {
     "npm": ["stripe", "@paddle/paddle-node-sdk"],

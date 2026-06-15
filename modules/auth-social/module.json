@@ -1,17 +1,43 @@
 {
   "name": "Social Authentication",
   "slug": "auth-social",
-  "version": "1.0.0",
-  "description": "Google, GitHub, and Apple social login providers for Kaven",
+  "version": "1.0.1",
+  "description": "Google and GitHub social login providers for Kaven",
   "author": "kaven-co",
   "license": "proprietary",
-  "tier": "starter",
+  "tier": "builder",
   "kavenVersion": ">=1.0.0-rc1",
   "dependencies": {
-    "npm": ["@fastify/oauth2"],
+    "npm": [],
     "modules": []
   },
-  "env": [],
-  "files": [],
-  "injections": []
+  "env": [
+    { "key": "GOOGLE_CLIENT_ID", "required": false, "description": "Google OAuth client ID" },
+    { "key": "GOOGLE_CLIENT_SECRET", "required": false, "description": "Google OAuth client secret" },
+    { "key": "APP_URL", "required": true, "description": "Base URL da aplicação (ex: https://myapp.com)" }
+  ],
+  "files": [
+    { "src": "backend/routes/social-auth.routes.ts", "dest": "apps/api/src/modules/auth/social-auth.routes.ts" },
+    { "src": "backend/services/google-oauth.service.ts", "dest": "apps/api/src/modules/auth/services/google-oauth.service.ts" },
+    { "src": "frontend/components/SocialLoginButtons.tsx", "dest": "apps/tenant/components/auth/SocialLoginButtons.tsx" },
+    { "src": "frontend/components/SocialLoginButtons.admin.tsx", "dest": "apps/admin/components/auth/SocialLoginButtons.tsx" },
+    { "src": "prisma/social-auth.prisma", "dest": "packages/database/prisma/social-auth.prisma" }
+  ],
+  "injections": [
+    {
+      "file": "apps/api/src/app.ts",
+      "anchor": "// [KAVEN_MODULE_IMPORTS]",
+      "moduleName": "auth-social-imports",
+      "code": "import { socialAuthRoutes } from './modules/auth/social-auth.routes';"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "anchor": "// [KAVEN_MODULE_REGISTRATION]",
+      "moduleName": "auth-social-routes",
+      "code": "app.register(socialAuthRoutes, { prefix: '/api' });"
+    }
+  ],
+  "prisma": {
+    "models": ["prisma/social-auth.prisma"]
+  }
 }

@@ -1,0 +1,12 @@
+model SocialAccount {
+  id         String   @id @default(cuid())
+  provider   String   // "google" | "github"
+  providerId String
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([provider, providerId])
+  @@index([userId])
+  @@map("social_accounts")
+}
