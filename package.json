@@ -43,7 +43,7 @@
     "eslint-plugin-import": "^2.32.0",
     "husky": "^9.1.7",
     "kill-port": "^2.0.1",
-    "prettier": "^3.4.2",
+    "prettier": "^3.9.3",
     "prisma": "^7.0.0",
     "turbo": "^2.9.6",
     "typescript": "^6.0.2"
